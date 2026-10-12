@@ -18,7 +18,7 @@ html,body{margin:0;height:100%;overflow:hidden;font-family:-apple-system,"Hiragi
 </style></head><body>
 <div class="wrap"><div class="menu"><img id="mimg" src="/menu.jpg?v=4" alt="menu"></div>
 <div class="q"><div class="t">お呼び出し番号<small>请取餐</small></div>
-<div class="n" id="n">-</div><div class="sub">番のお客様、お待たせしました</div>
+<div class="n" id="n">-</div><div class="sub">お待たせしました</div>
 <div class="hist" style="margin-top:auto"><h2>制作中 / Preparing</h2><div class="l p" id="prep"></div></div><div class="hist" style="margin-top:1.2vh"><h2>最近の番号 / 最近叫号</h2><div class="l" id="hist"></div></div>
 <div class="brand">M Stand 池袋</div></div></div><div class="off" id="off"></div>
 <script>
@@ -31,11 +31,11 @@ const SOUND=new URLSearchParams(location.search).get('sound')!=='0';let ctx=null
 function initAudio(){if(!SOUND)return;try{ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')ctx.resume()}catch(e){}}
 function tone(f,t,d){const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=f;o.connect(g);g.connect(ctx.destination);g.gain.setValueAtTime(0,ctx.currentTime+t);g.gain.linearRampToValueAtTime(.4,ctx.currentTime+t+.02);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+t+d);o.start(ctx.currentTime+t);o.stop(ctx.currentTime+t+d)}
 function chime(){if(!SOUND)return;initAudio();if(!ctx)return;try{tone(880,0,1.2);tone(659,.45,1.5)}catch(e){}}
-function speak(num){if(!SOUND||!window.speechSynthesis)return;try{const u=new SpeechSynthesisUtterance(num+'番のお客様、お待たせしました');u.lang='ja-JP';u.rate=.9;const v=speechSynthesis.getVoices().find(v=>v.lang.startsWith('ja'));if(v)u.voice=v;setTimeout(()=>speechSynthesis.speak(u),1200)}catch(e){}}
+function speak(num){if(!SOUND||!window.speechSynthesis)return;try{const u=new SpeechSynthesisUtterance((/^[0-9]+$/.test(String(num))?num+'番のお客様':num+'様')+'、お待たせしました');u.lang='ja-JP';u.rate=.9;const v=speechSynthesis.getVoices().find(v=>v.lang.startsWith('ja'));if(v)u.voice=v;setTimeout(()=>speechSynthesis.speak(u),1200)}catch(e){}}
 initAudio();
 ['click','touchstart','keydown'].forEach(ev=>addEventListener(ev,()=>{initAudio();try{if(window.speechSynthesis&&!window._su){window._su=1;const w=new SpeechSynthesisUtterance('');speechSynthesis.speak(w)}}catch(e){}},{passive:true}));
 
-function render(s){n.style.fontSize=String(s.current||'-').length>3?'5.4vw':'8vw';prep.innerHTML=(s.preparing||[]).slice(0,12).map(x=>`<div>${x.num}</div>`).join('')||'<div style="font-size:1vw">—</div>';n.textContent=s.current||'-';hist.innerHTML=(s.history||[]).slice(1,7).map(x=>`<div>${x}</div>`).join('');
+function render(s){{const L=String(s.current||'-').length;n.style.fontSize=L>5?'2.6vw':L>3?'4.2vw':L>2?'5.4vw':'8vw'}prep.innerHTML=(s.preparing||[]).slice(0,12).map(x=>`<div>${x.num}</div>`).join('')||'<div style="font-size:1vw">—</div>';n.textContent=s.current||'-';hist.innerHTML=(s.history||[]).slice(1,7).map(x=>`<div>${x}</div>`).join('');
  if(lastSeq!==null&&s.seq!==lastSeq&&s.current&&s.event!=='reset'&&s.event!=='prep'){n.classList.remove('flash');void n.offsetWidth;n.classList.add('flash');chime();speak(s.current)}lastSeq=s.seq}
 function connect(){if(es)es.close();es=new EventSource('/events');es.onopen=()=>off.style.display='none';
  es.onmessage=e=>render(JSON.parse(e.data));es.onerror=()=>{off.style.display='block';es.close();setTimeout(connect,5000)}}

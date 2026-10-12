@@ -22,6 +22,7 @@ http.createServer((q,r)=>{
   else if(j.action==='set'){const n=parseInt(j.number);if(!(n>0&&n<10000)){r.writeHead(400);return r.end('{}')}st.current=n}
   else if(j.action==='recall'){if(!st.current){return r.end('{}')}ev='recall'}
   else if(j.action==='reset'){st={current:0,history:[],seq:st.seq,preparing:[],seenPay:st.seenPay,sqSince:st.sqSince};ev='reset'}
+  else if(j.action==='callid'){const x=st.preparing.find(y=>y.id===j.id);if(!x)return r.end('{}');callNum(/^[0-9]+$/.test(String(x.num))?parseInt(x.num):x.num);return r.end(JSON.stringify({ok:true,...pub()}))}
   else if(j.action==='done'){st.preparing=st.preparing.filter(x=>x.id!==j.id);ev='prep'}
   else {r.writeHead(400);return r.end('{}')}
   if(ev==='call'){st.preparing=st.preparing.filter(x=>String(x.num)!==String(st.current));st.history=[st.current,...st.history.filter(x=>x!==st.current)].slice(0,8)}
@@ -51,10 +52,11 @@ async function poll(){
    st.seenPay.push(p.id);
    const o=om[p.order_id];if(!o)continue;
    const src=((o.source&&o.source.name)||'');
-   const deliv=(o.fulfillments||[]).some(f=>f.type==='DELIVERY'||f.type==='SHIPMENT');
-   if(deliv||/uber|deliver/i.test(src))continue; // exclude Uber/delivery
+   if(/uber|giftcard/i.test(src))continue; // exclude only Uber Eats and gift card sales; POS + Kiosk self-order included
+
    if(st.preparing.some(x=>x.order===o.id))continue;
-   const num=/^\d+$/.test((o.ticket_name||'').trim())?o.ticket_name.trim():(o.ticket_name||'').trim()||o.id.slice(-4);
+   const rec=((o.fulfillments||[]).map(f=>((f.delivery_details||f.pickup_details||{}).recipient||{}).display_name).find(Boolean)||'').trim();
+   const num=((o.ticket_name||'').trim()||rec||o.id.slice(-4)).replace(/[<>&"'`\\]/g,'').slice(0,20);
    st.preparing.push({id:p.id,order:o.id,num,items:(o.line_items||[]).map(l=>l.name+(l.quantity!=='1'?'×'+l.quantity:'')).join('、'),at:Date.now()});added++;
   }
   st.seenPay=st.seenPay.slice(-1000);
