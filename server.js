@@ -7,7 +7,7 @@ try{st=JSON.parse(fs.readFileSync(SF))}catch(e){}
 st.preparing=st.preparing||[];st.seenPay=st.seenPay||[];
 const save=()=>fs.writeFileSync(SF,JSON.stringify(st));
 const clients=new Set();
-const pub=()=>{const{seenPay,sqSince,...o}=st;return o};
+const pub=()=>{const{seenPay,sqSince,rdySince,calledOrders,...o}=st;return o};
 const push=(ev)=>{const d=`data: ${JSON.stringify({...pub(),event:ev})}\n\n`;clients.forEach(c=>c.write(d));};
 const types={'.html':'text/html; charset=utf-8','.js':'text/javascript','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.wav':'audio/wav','.mp3':'audio/mpeg','.svg':'image/svg+xml','.webmanifest':'application/manifest+json'};
 http.createServer((q,r)=>{
@@ -56,10 +56,7 @@ async function poll(){
    if(/uber|giftcard/i.test(src))continue; // exclude only Uber Eats and gift card sales; POS + Kiosk self-order included
 
    if(st.preparing.some(x=>x.order===o.id))continue;
-   const rec=((o.fulfillments||[]).map(f=>((f.delivery_details||f.pickup_details||{}).recipient||{}).display_name).find(Boolean)||'').trim();
-   let label=(o.ticket_name||'').trim()||rec||o.id.slice(-4);
-   if(/^[0-9]+$/.test(label)&&o.customer_id){const fam=await familyName(o.customer_id);if(fam)label=fam}
-   const num=label.replace(/[<>&"'`\\]/g,'').slice(0,24);
+   const num=await labelOf(o);
    st.preparing.push({id:p.id,order:o.id,num,items:(o.line_items||[]).map(l=>l.name+(l.quantity!=='1'?'×'+l.quantity:'')).join('、'),at:Date.now()});added++;
   }
   st.seenPay=st.seenPay.slice(-1000);
@@ -71,15 +68,37 @@ if(TOK){poll();setInterval(poll,12000);console.log('square polling on')}
 
 // auto-call when Square marks a tracked order ready/completed
 function callNum(num){st.current=num;st.preparing=st.preparing.filter(x=>String(x.num)!==String(num));st.history=[num,...st.history.filter(x=>String(x)!==String(num))].slice(0,8);st.seq++;st.at=Date.now();st.callAt=st.at;save();push('call')}
+async function labelOf(o){
+ const rec=((o.fulfillments||[]).map(f=>((f.delivery_details||f.pickup_details||{}).recipient||{}).display_name).find(Boolean)||'').trim();
+ let label=(o.ticket_name||'').trim()||rec||o.id.slice(-4);
+ if(/^[0-9]+$/.test(label)&&o.customer_id){const fam=await familyName(o.customer_id);if(fam)label=fam}
+ return label.replace(/[<>&"'`\\]/g,'').slice(0,24);
+}
+// Auto-call: search ALL orders updated recently (not only tracked ones), so it works after
+// a server restart and regardless of which device (phone / Register) marked it done.
 async function checkReady(){
- const ids=st.preparing.map(x=>x.order).filter(Boolean);if(!ids.length)return;
- const od=await sq('/orders/batch-retrieve',{method:'POST',body:JSON.stringify({location_id:LOC,order_ids:ids})});
+ st.calledOrders=st.calledOrders||[];
+ const now=new Date().toISOString();
+ if(!st.rdySince){st.rdySince=now;save();return}
+ const since=new Date(Date.parse(st.rdySince)-120000).toISOString();
+ const body={location_ids:[LOC],limit:100,query:{filter:{date_time_filter:{updated_at:{start_at:since}},state_filter:{states:['OPEN','COMPLETED']}},sort:{sort_field:'UPDATED_AT',sort_order:'ASC'}}};
+ const od=await sq('/orders/search',{method:'POST',body:JSON.stringify(body)});
+ st.rdySince=now;
  for(const o of (od.orders||[])){
+  if(st.calledOrders.includes(o.id))continue;
+  const src=((o.source&&o.source.name)||'');if(/uber|giftcard/i.test(src))continue;
   const done=o.state==='COMPLETED'||(o.fulfillments||[]).some(f=>f.state==='PREPARED'||f.state==='COMPLETED');
-  if(!done)continue;const x=st.preparing.find(y=>y.order===o.id);if(!x)continue;
-  const n=/^\d+$/.test(String(x.num))?parseInt(x.num):x.num;console.log('auto-call',n);callNum(n);
-  await new Promise(r=>setTimeout(r,8000)); // let announcements finish before next
+  if(!done)continue;
+  if(Date.now()-Date.parse(o.created_at)>3*3600e3)continue; // ignore old tickets being cleaned up
+  if(Date.parse(o.updated_at)-Date.parse(o.created_at)<45000)continue; // auto-closed at checkout, not a real "ready"
+  st.calledOrders.push(o.id);st.calledOrders=st.calledOrders.slice(-500);
+  const x=st.preparing.find(y=>y.order===o.id);
+  const lab=x?x.num:await labelOf(o);
+  st.preparing=st.preparing.filter(y=>y.order!==o.id);
+  console.log('auto-call order');callNum(/^[0-9]+$/.test(String(lab))?parseInt(lab):lab);
+  await new Promise(r=>setTimeout(r,8000));
  }
+ save();
 }
 
 // --- voice clips via Google Translate TTS, cached; fallback to generic clip ---
