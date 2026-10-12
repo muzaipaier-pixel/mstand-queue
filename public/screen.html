@@ -32,7 +32,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-c
  <div class="brand">M Stand 池袋</div>
 </div>
 <div id="off"></div>
-<audio id="chime" src="/chime.wav" preload="auto"></audio>
+<audio id="chime" src="/chime.wav" preload="auto"></audio><audio id="vo" preload="none"></audio>
 <script>
 (function(){
 try{
@@ -44,10 +44,14 @@ function fit(){try{var m=$('menu'),W=window.innerWidth*0.84,H=window.innerHeight
  if(r/a<0.82){m.style.height=(W/a)+'px';m.style.top=((H-W/a)/2)+'px'}else if(r/a>1.08){m.style.width=(H*a)+'px';m.style.left=((W-H*a)/2)+'px'}else{m.style.width='84%';m.style.height='100%';m.style.top='0';m.style.left='0'}}catch(e){}}
 fit();if(window.addEventListener)window.addEventListener('resize',fit,false);
 function chime(){if(!SOUND)return;try{var a=$('chime');a.currentTime=0;var p=a.play();if(p&&p['catch'])p['catch'](function(){})}catch(e){}}
-function speak(num){if(!SOUND||!window.speechSynthesis||!window.SpeechSynthesisUtterance)return;
- try{var txt=(/^[0-9]+$/.test(String(num))?num+'番のお客様':num+'様')+'、お待たせしました';
- setTimeout(function(){try{var u=new SpeechSynthesisUtterance(txt);u.lang='ja-JP';u.rate=0.9;var vs=speechSynthesis.getVoices()||[];for(var i=0;i<vs.length;i++){if(vs[i].lang&&vs[i].lang.indexOf('ja')===0){u.voice=vs[i];break}}speechSynthesis.speak(u)}catch(e){}},1500)}catch(e){}}
-function unlock(){try{var a=$('chime');a.volume=0;var p=a.play();if(p&&p['catch'])p['catch'](function(){});setTimeout(function(){a.pause();a.volume=1},50)}catch(e){}}
+function hasJa(){try{if(!window.speechSynthesis||!window.SpeechSynthesisUtterance)return null;var vs=speechSynthesis.getVoices()||[];for(var i=0;i<vs.length;i++){if(vs[i].lang&&vs[i].lang.indexOf('ja')===0)return vs[i]}}catch(e){}return null}
+function speak(num){if(!SOUND)return;
+ setTimeout(function(){
+  var v=hasJa();
+  if(v){try{var u=new SpeechSynthesisUtterance((/^[0-9]+$/.test(String(num))?num+'番のお客様':num+'様')+'、お待たせしました');u.lang='ja-JP';u.rate=0.9;u.voice=v;speechSynthesis.speak(u);return}catch(e){}}
+  try{var a=$('vo');a.src='/voice?n='+encodeURIComponent(String(num));a.volume=1;if(a.load)a.load();var p=a.play();if(p&&p['catch'])p['catch'](function(){})}catch(e){}
+ },1800)}
+function unlock(){var ids=['chime','vo'];for(var k=0;k<ids.length;k++){try{var a=$(ids[k]);if(ids[k]==='vo'&&!a.src)a.src='/voice_fallback.mp3';a.volume=0;var p=a.play();if(p&&p['catch'])p['catch'](function(){});(function(b){setTimeout(function(){b.pause();b.volume=1},80)})(a)}catch(e){}}}
 if(document.addEventListener){document.addEventListener('click',unlock,false);document.addEventListener('touchstart',unlock,false)}
 var lastCallAt=null;
 function handle(s){

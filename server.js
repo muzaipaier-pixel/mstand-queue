@@ -9,10 +9,11 @@ const save=()=>fs.writeFileSync(SF,JSON.stringify(st));
 const clients=new Set();
 const pub=()=>{const{seenPay,sqSince,...o}=st;return o};
 const push=(ev)=>{const d=`data: ${JSON.stringify({...pub(),event:ev})}\n\n`;clients.forEach(c=>c.write(d));};
-const types={'.html':'text/html; charset=utf-8','.js':'text/javascript','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.wav':'audio/wav','.svg':'image/svg+xml','.webmanifest':'application/manifest+json'};
+const types={'.html':'text/html; charset=utf-8','.js':'text/javascript','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.wav':'audio/wav','.mp3':'audio/mpeg','.svg':'image/svg+xml','.webmanifest':'application/manifest+json'};
 http.createServer((q,r)=>{
  const u=new URL(q.url,'http://x');
  if(u.pathname==='/events'){r.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive','X-Accel-Buffering':'no'});r.write(`data: ${JSON.stringify({...pub(),event:'init'})}\n\n`);clients.add(r);const k=setInterval(()=>r.write(':k\n\n'),20000);q.on('close',()=>{clients.delete(r);clearInterval(k)});return;}
+if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r);return;}
  if(u.pathname==='/api/state')return r.end(JSON.stringify(pub()));
  if(u.pathname==='/api/action'&&q.method==='POST'){let b='';q.on('data',c=>b+=c);q.on('end',()=>{let j={};try{j=JSON.parse(b)}catch(e){}
   if(String(j.pin)!==PIN){r.writeHead(403);return r.end('{"error":"PIN"}')}
@@ -77,4 +78,24 @@ async function checkReady(){
   const n=/^\d+$/.test(String(x.num))?parseInt(x.num):x.num;console.log('auto-call',n);callNum(n);
   await new Promise(r=>setTimeout(r,8000)); // let announcements finish before next
  }
+}
+
+// --- voice clips via Google Translate TTS, cached; fallback to generic clip ---
+const vcache=new Map();
+function phrase(n){n=String(n).replace(/[<>&"'`\\]/g,'').trim().slice(0,20);return /^[0-9]+$/.test(n)?n+'番のお客様、お待たせしました':n+'様、お待たせしました'}
+async function voice(n,r){
+ const send=(b)=>{r.writeHead(200,{'Content-Type':'audio/mpeg','Content-Length':b.length,'Cache-Control':'public, max-age=86400'});r.end(b)};
+ const fb=()=>fs.readFile(path.join(__dirname,'public','voice_fallback.mp3'),(e,d)=>{if(e){r.writeHead(404);return r.end()}send(d)});
+ if(!n)return fb();
+ const t=phrase(n);
+ if(vcache.has(t))return send(vcache.get(t));
+ try{
+  const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),6000);
+  const x=await fetch('https://translate.google.com/translate_tts?ie=UTF-8&tl=ja&client=tw-ob&q='+encodeURIComponent(t),{headers:{'User-Agent':'Mozilla/5.0'},signal:ctl.signal});
+  clearTimeout(to);
+  if(!x.ok)throw new Error('tts '+x.status);
+  const b=Buffer.from(await x.arrayBuffer());if(b.length<1000)throw new Error('tts short');
+  vcache.set(t,b);if(vcache.size>300)vcache.delete(vcache.keys().next().value);
+  send(b);
+ }catch(e){console.error('voice',e.message);fb()}
 }
