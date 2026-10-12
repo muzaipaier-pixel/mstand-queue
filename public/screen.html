@@ -4,14 +4,14 @@
 <meta http-equiv="Cache-Control" content="no-cache">
 <title>M Stand Screen</title>
 <style>
-html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-color:#ff7a3d;background-image:-webkit-linear-gradient(-45deg,#ff9a3d,#ff5c8a);background-image:linear-gradient(135deg,#ff9a3d,#ff5c8a);font-family:"Hiragino Sans","Noto Sans CJK JP","Noto Sans JP","Droid Sans Fallback",sans-serif;color:#fff}
+html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-color:#8A00E6;background-image:-webkit-linear-gradient(-45deg,#FF1F9E,#B000E8,#4B00B5);background-image:linear-gradient(135deg,#FF1F9E,#B000E8,#4B00B5);font-family:"Hiragino Sans","Noto Sans CJK JP","Noto Sans JP","Droid Sans Fallback",sans-serif;color:#fff}
 #menu{position:absolute;left:0;top:0;width:84%;height:100%;display:block;border:0}
-#q{position:absolute;right:0;top:0;width:16%;height:100%;background-color:#ff6a5a;background-image:-webkit-linear-gradient(top,#ff7a3d,#ff4f86);background-image:linear-gradient(to bottom,#ff7a3d,#ff4f86);text-align:center}
+#q{position:absolute;right:0;top:0;width:16%;height:100%;background-color:#5A00C0;background-image:-webkit-linear-gradient(top,#8A00E6,#3A0096);background-image:linear-gradient(to bottom,#8A00E6,#3A0096);text-align:center}
 .t{position:absolute;left:0;width:100%;top:3%;font-size:1.5vw;font-weight:bold;line-height:1.3}
 .t span{display:block;font-size:1vw}
-#n{position:absolute;left:0;width:100%;top:13%;font-size:8vw;font-weight:bold;line-height:1.1;white-space:nowrap;overflow:hidden}
+#n{position:absolute;left:0;width:100%;top:13%;font-size:8vw;font-weight:bold;line-height:1.1;color:#FFE600;text-shadow:0 0 1.2vw rgba(255,230,0,.55);white-space:nowrap;overflow:hidden}
 .sub{position:absolute;left:0;width:100%;top:31%;font-size:.95vw;font-weight:bold}
-.box{position:absolute;left:4%;width:92%;background-color:rgba(255,255,255,.2);border-radius:.8vw;padding:1% 0}
+.box{position:absolute;left:4%;width:92%;background-color:rgba(255,255,255,.14);border-radius:.8vw;padding:1% 0}
 .box h2{margin:0 0 .5vh 0;font-size:.95vw}
 #prepb{top:52%;height:22%;overflow:hidden}
 #histb{top:76%;height:14%;overflow:hidden}
@@ -22,7 +22,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-c
 .flash{-webkit-animation:f .6s 5;animation:f .6s 5}
 @-webkit-keyframes f{50%{opacity:.25}}@keyframes f{50%{opacity:.25}}
 </style></head><body>
-<img id="menu" src="/menu.jpg?v=5" alt="menu">
+<img id="menu" src="/menu.jpg?v=6" alt="menu">
 <div id="q">
  <div class="t">お呼び出し番号<span>请取餐</span></div>
  <div id="n">-</div>
@@ -43,7 +43,7 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 function fit(){try{var m=$('menu'),W=Math.floor(window.innerWidth*0.84),H=window.innerHeight,a=1612/1080,w=W,h=Math.round(W/a);
  if(h>H){h=H;w=Math.round(H*a)}
  m.style.width=w+'px';m.style.height=h+'px';m.style.left=Math.floor((W-w)/2)+'px';m.style.top=Math.floor((H-h)/2)+'px';
- var dpr=window.devicePixelRatio||1,want=(w*dpr>1700)?'/menu@2x.jpg?v=5':'/menu.jpg?v=5';
+ var dpr=window.devicePixelRatio||1,want=(w*dpr>1700)?'/menu@2x.jpg?v=6':'/menu.jpg?v=6';
  if(m.getAttribute('src')!==want)m.setAttribute('src',want);
  if(location.search.indexOf('debug=1')>=0){var d=$('dbg');d.style.display='block';d.innerHTML=window.innerWidth+'x'+window.innerHeight+' dpr '+dpr+' img '+w+'x'+h+' '+want}
 }catch(e){}}
