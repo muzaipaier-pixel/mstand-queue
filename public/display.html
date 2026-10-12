@@ -11,7 +11,7 @@ html,body{margin:0;height:100%;font-family:-apple-system,"Hiragino Sans","PingFa
 #opt{position:fixed;right:1vw;bottom:1vw;font-size:1.6vw;opacity:.8}
 </style></head><body>
 <div class="wrap"><div class="main"><div class="t">お呼び出し番号<small>请取餐</small></div><div class="n" id="n">-</div><div class="t" style="font-size:3vw">番のお客様、お待たせしました</div></div>
-<div class="side"><h2>最近の番号<br>最近叫号</h2><div id="hist"></div></div></div>
+<div class="side"><h2>最近の番号<br>最近叫号</h2><div id="hist"></div><h2 style="margin-top:2vw">制作中<br>Preparing</h2><div id="prep" style="font-size:3.2vw;opacity:.8;display:flex;flex-wrap:wrap;justify-content:center;gap:0 1.5vw"></div></div></div>
 <div class="brand">M Stand 池袋</div>
 <label id="opt"><input type="checkbox" id="voice" checked> 音声読み上げ / 语音</label>
 <div id="start" onclick="unlock()">👆 タップして開始<br><small>点击开始（启用声音）</small></div>
@@ -21,8 +21,8 @@ function unlock(){ctx=new (window.AudioContext||window.webkitAudioContext)();sta
 function tone(f,t,d){const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=f;o.connect(g);g.connect(ctx.destination);g.gain.setValueAtTime(0,ctx.currentTime+t);g.gain.linearRampToValueAtTime(.4,ctx.currentTime+t+.02);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+t+d);o.start(ctx.currentTime+t);o.stop(ctx.currentTime+t+d)}
 function chime(){if(!ctx)return;tone(880,0,1.2);tone(659,.45,1.5)}
 function speak(num){if(!voice.checked||!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(num+'番のお客様、お待たせしました');u.lang='ja-JP';u.rate=.9;const v=speechSynthesis.getVoices().find(v=>v.lang.startsWith('ja'));if(v)u.voice=v;speechSynthesis.speak(u)}
-function render(s){n.textContent=s.current||'-';hist.innerHTML=s.history.slice(1,6).map(x=>`<div>${x}</div>`).join('');
- if(lastSeq!==null&&s.seq!==lastSeq&&s.current&&s.event!=='reset'){n.classList.remove('flash');void n.offsetWidth;n.classList.add('flash');chime();speak(s.current)}lastSeq=s.seq}
+function render(s){prep.innerHTML=(s.preparing||[]).map(x=>`<span>${x.num}</span>`).join('');n.textContent=s.current||'-';hist.innerHTML=s.history.slice(1,6).map(x=>`<div>${x}</div>`).join('');
+ if(lastSeq!==null&&s.seq!==lastSeq&&s.current&&s.event!=='reset'&&s.event!=='prep'){n.classList.remove('flash');void n.offsetWidth;n.classList.add('flash');chime();speak(s.current)}lastSeq=s.seq}
 const es=new EventSource('/events');es.onmessage=e=>render(JSON.parse(e.data));
 try{navigator.wakeLock&&navigator.wakeLock.request('screen')}catch(e){}
 </script></body></html>

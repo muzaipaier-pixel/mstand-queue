@@ -9,7 +9,7 @@ button{width:100%;border:0;border-radius:20px;font-size:22px;font-weight:800;pad
 #next{font-size:30px;padding:30px;background:linear-gradient(135deg,#ff8a3d,#ff5c8a);box-shadow:0 6px 16px #ff5c8a55}
 .row{display:flex;gap:10px}.row button{flex:1}#recall{background:#ffa64d}#reset{background:#c9a99a;font-size:16px;padding:14px}
 input{width:100%;font-size:28px;padding:14px;border-radius:16px;border:2px solid #ffc2a8;text-align:center;margin-top:12px}
-.hist{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}.hist span{background:#fff;border:2px solid #ffc2a8;border-radius:12px;padding:6px 12px;font-weight:700}
+.pr{display:flex;align-items:center;gap:10px;background:#fff;border:2px solid #ffd27a;border-radius:12px;padding:8px 12px;margin-top:8px}.pr b{font-size:28px;cursor:pointer;color:#e2552b;min-width:80px}.pr i{flex:1;font-style:normal;font-size:14px;color:#555}.pr button{font-size:16px;padding:6px 10px}.hist{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}.hist span{background:#fff;border:2px solid #ffc2a8;border-radius:12px;padding:6px 12px;font-weight:700}
 #lock{position:fixed;inset:0;background:#fff4ec;display:flex;flex-direction:column;justify-content:center;padding:30px}#msg{color:#e33;text-align:center;height:20px}
 </style></head><body>
 <div id="lock"><h1 style="text-align:center">M Stand 叫号 · スタッフ<br>请输入 PIN / PINを入力</h1><input id="pin" type="password" inputmode="numeric" maxlength="8"><button onclick="login()">进入 / 入る</button><div id="msg"></div></div>
@@ -19,6 +19,7 @@ input{width:100%;font-size:28px;padding:14px;border-radius:16px;border:2px solid
 <div class="row"><button id="recall" onclick="act('recall')">🔁 重叫<br><small style="font-size:13px">再呼び出し</small></button></div>
 <div class="row"><input id="num" type="number" inputmode="numeric" placeholder="手动输入号码 / 番号入力"></div>
 <button onclick="setNum()">叫这个号 / この番号を呼ぶ</button>
+<div style="margin-top:16px;font-weight:700">制作中 / Preparing（Square 自动，点号码叫号）</div><div id="prep"></div>
 <div style="margin-top:16px;font-weight:700">最近叫过 / 最近の呼び出し</div><div class="hist" id="hist"></div>
 <button id="reset" onclick="if(confirm('确定重置？号码从1开始\nリセットしますか？'))act('reset')">重置 / リセット</button>
 <p style="font-size:12px;text-align:center;opacity:.6">显示屏页面 / 表示画面: <a href="/display">/display</a></p>
@@ -29,6 +30,6 @@ async function login(){PIN=pin.value;try{await post({action:'check'});localStora
 if(PIN)post({action:'check'}).then(()=>lock.style.display='none').catch(()=>{});
 function act(a){navigator.vibrate&&navigator.vibrate(30);post({action:a}).catch(()=>{})}
 function setNum(){if(num.value){post({action:'set',number:num.value});num.value=''}}
-function render(s){n.textContent=s.current||'-';hist.innerHTML=s.history.map(x=>`<span onclick="post({action:'set',number:${x}})">${x}</span>`).join('')}
+function render(s){prep.innerHTML=(s.preparing||[]).map(x=>`<div class="pr"><b onclick="post({action:'set',number:'${x.num}'})">${x.num}</b><i>${(x.items||'').replace(/</g,'&lt;')}</i><button onclick="post({action:'done',id:'${x.id}'})">✕</button></div>`).join('')||'<div style="color:#999;margin-top:6px">—</div>';n.textContent=s.current||'-';hist.innerHTML=s.history.map(x=>`<span onclick="post({action:'set',number:${x}})">${x}</span>`).join('')}
 function conn_(){const es=new EventSource('/events');es.onmessage=e=>{conn.style.color='#3c3';render(JSON.parse(e.data))};es.onerror=()=>{conn.style.color='#e33'}}conn_();
 </script></body></html>

@@ -13,18 +13,18 @@ html,body{margin:0;height:100%;overflow:hidden;font-family:-apple-system,"Hiragi
 .hist{margin-top:auto;width:100%;background:#fff3;border-radius:.8vw;padding:1.2vh .4vw;box-sizing:border-box;text-align:center}
 .hist h2{margin:0 0 .8vh;font-size:.95vw}.hist .l{display:flex;flex-wrap:wrap;justify-content:center;gap:.3vw .9vw}
 .hist .l div{font-size:2.2vw;font-weight:800;opacity:.9}
-.brand{font-size:.9vw;font-weight:800;margin-top:1.2vh;opacity:.9}
+.hist .l.p div{font-size:1.6vw;opacity:.85}.brand{font-size:.9vw;font-weight:800;margin-top:1.2vh;opacity:.9}
 .off{position:fixed;right:.5vw;top:.5vh;width:.8vw;height:.8vw;border-radius:50%;background:#f33;display:none}
 </style></head><body>
 <div class="wrap"><div class="menu"><img src="/menu.jpg?v=4" alt="menu"></div>
 <div class="q"><div class="t">お呼び出し番号<small>请取餐</small></div>
 <div class="n" id="n">-</div><div class="sub">番のお客様、お待たせしました</div>
-<div class="hist"><h2>最近の番号 / 最近叫号</h2><div class="l" id="hist"></div></div>
+<div class="hist" style="margin-top:auto"><h2>制作中 / Preparing</h2><div class="l p" id="prep"></div></div><div class="hist" style="margin-top:1.2vh"><h2>最近の番号 / 最近叫号</h2><div class="l" id="hist"></div></div>
 <div class="brand">M Stand 池袋</div></div></div><div class="off" id="off"></div>
 <script>
 let lastSeq=null,es;
-function render(s){n.textContent=s.current||'-';hist.innerHTML=(s.history||[]).slice(1,7).map(x=>`<div>${x}</div>`).join('');
- if(lastSeq!==null&&s.seq!==lastSeq&&s.current&&s.event!=='reset'){n.classList.remove('flash');void n.offsetWidth;n.classList.add('flash')}lastSeq=s.seq}
+function render(s){n.style.fontSize=String(s.current||'-').length>3?'5.4vw':'8vw';prep.innerHTML=(s.preparing||[]).slice(0,12).map(x=>`<div>${x.num}</div>`).join('')||'<div style="font-size:1vw">—</div>';n.textContent=s.current||'-';hist.innerHTML=(s.history||[]).slice(1,7).map(x=>`<div>${x}</div>`).join('');
+ if(lastSeq!==null&&s.seq!==lastSeq&&s.current&&s.event!=='reset'&&s.event!=='prep'){n.classList.remove('flash');void n.offsetWidth;n.classList.add('flash')}lastSeq=s.seq}
 function connect(){if(es)es.close();es=new EventSource('/events');es.onopen=()=>off.style.display='none';
  es.onmessage=e=>render(JSON.parse(e.data));es.onerror=()=>{off.style.display='block';es.close();setTimeout(connect,5000)}}
 connect();
