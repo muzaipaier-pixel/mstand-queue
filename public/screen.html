@@ -1,45 +1,76 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache">
 <title>M Stand Screen</title>
 <style>
-html,body{margin:0;height:100%;overflow:hidden;font-family:-apple-system,"Hiragino Sans","Noto Sans CJK JP","PingFang SC",sans-serif;background:linear-gradient(135deg,#ff9a3d,#ff5c8a)}
-.wrap{display:flex;height:100vh;width:100vw}
-.menu{flex:0 0 84%;height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#ff9a3d,#ff5c8a)}
-.menu img{width:100%;height:100%;object-fit:fill;display:block}.menu img.fit{object-fit:contain}
-.q{flex:1;background:linear-gradient(170deg,#ff7a3d,#ff4f86);color:#fff;display:flex;flex-direction:column;align-items:center;padding:3vh .6vw;box-sizing:border-box;box-shadow:-.4vw 0 1vw #0002}
-.t{font-size:1.5vw;font-weight:800;text-align:center;line-height:1.2}.t small{display:block;font-size:1vw;opacity:.9}
-.n{font-size:8vw;font-weight:900;line-height:1;margin:2vh 0 1vh;text-shadow:0 .4vw 1vw #0003}
-.n.flash{animation:f .6s 5}@keyframes f{50%{opacity:.25;transform:scale(1.06)}}
-.sub{font-size:.95vw;font-weight:700;text-align:center}
-.hist{margin-top:auto;width:100%;background:#fff3;border-radius:.8vw;padding:1.2vh .4vw;box-sizing:border-box;text-align:center}
-.hist h2{margin:0 0 .8vh;font-size:.95vw}.hist .l{display:flex;flex-wrap:wrap;justify-content:center;gap:.3vw .9vw}
-.hist .l div{font-size:2.2vw;font-weight:800;opacity:.9}
-.hist .l.p div{font-size:1.6vw;opacity:.85}.brand{font-size:.9vw;font-weight:800;margin-top:1.2vh;opacity:.9}
-.off{position:fixed;right:.5vw;top:.5vh;width:.8vw;height:.8vw;border-radius:50%;background:#f33;display:none}
+html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-color:#ff7a3d;background-image:-webkit-linear-gradient(-45deg,#ff9a3d,#ff5c8a);background-image:linear-gradient(135deg,#ff9a3d,#ff5c8a);font-family:"Hiragino Sans","Noto Sans CJK JP","Noto Sans JP","Droid Sans Fallback",sans-serif;color:#fff}
+#menu{position:absolute;left:0;top:0;width:84%;height:100%;display:block;border:0}
+#q{position:absolute;right:0;top:0;width:16%;height:100%;background-color:#ff6a5a;background-image:-webkit-linear-gradient(top,#ff7a3d,#ff4f86);background-image:linear-gradient(to bottom,#ff7a3d,#ff4f86);text-align:center}
+.t{position:absolute;left:0;width:100%;top:3%;font-size:1.5vw;font-weight:bold;line-height:1.3}
+.t span{display:block;font-size:1vw}
+#n{position:absolute;left:0;width:100%;top:13%;font-size:8vw;font-weight:bold;line-height:1.1;white-space:nowrap;overflow:hidden}
+.sub{position:absolute;left:0;width:100%;top:31%;font-size:.95vw;font-weight:bold}
+.box{position:absolute;left:4%;width:92%;background-color:rgba(255,255,255,.2);border-radius:.8vw;padding:1% 0}
+.box h2{margin:0 0 .5vh 0;font-size:.95vw}
+#prepb{top:52%;height:22%;overflow:hidden}
+#histb{top:76%;height:14%;overflow:hidden}
+#prep span{display:inline-block;margin:0 .4vw;font-size:1.6vw;font-weight:bold}
+#hist span{display:inline-block;margin:0 .4vw;font-size:2.2vw;font-weight:bold}
+.brand{position:absolute;left:0;width:100%;bottom:2%;font-size:.9vw;font-weight:bold}
+#off{position:absolute;right:.5vw;top:.5vh;width:.8vw;height:.8vw;border-radius:50%;background:#f33;display:none}
+.flash{-webkit-animation:f .6s 5;animation:f .6s 5}
+@-webkit-keyframes f{50%{opacity:.25}}@keyframes f{50%{opacity:.25}}
 </style></head><body>
-<div class="wrap"><div class="menu"><img id="mimg" src="/menu.jpg?v=4" alt="menu"></div>
-<div class="q"><div class="t">お呼び出し番号<small>请取餐</small></div>
-<div class="n" id="n">-</div><div class="sub">お待たせしました</div>
-<div class="hist" style="margin-top:auto"><h2>制作中 / Preparing</h2><div class="l p" id="prep"></div></div><div class="hist" style="margin-top:1.2vh"><h2>最近の番号 / 最近叫号</h2><div class="l" id="hist"></div></div>
-<div class="brand">M Stand 池袋</div></div></div><div class="off" id="off"></div>
+<img id="menu" src="/menu.jpg?v=4" alt="menu">
+<div id="q">
+ <div class="t">お呼び出し番号<span>请取餐</span></div>
+ <div id="n">-</div>
+ <div class="sub">お待たせしました</div>
+ <div class="box" id="prepb"><h2>制作中 / Preparing</h2><div id="prep"></div></div>
+ <div class="box" id="histb"><h2>最近の番号 / 最近叫号</h2><div id="hist"></div></div>
+ <div class="brand">M Stand 池袋</div>
+</div>
+<div id="off"></div>
+<audio id="chime" src="/chime.wav" preload="auto"></audio>
 <script>
-let lastSeq=null,es;
-// fit menu: stretch slightly if close to aspect, otherwise contain (whole menu always visible)
-function fit(){const m=mimg.parentElement,r=m.clientWidth/m.clientHeight,a=1613/1080;mimg.classList.toggle('fit',r/a<0.82||r/a>1.08)}
-addEventListener('resize',fit);fit();
-// sound
-const SOUND=new URLSearchParams(location.search).get('sound')!=='0';let ctx=null;
-function initAudio(){if(!SOUND)return;try{ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')ctx.resume()}catch(e){}}
-function tone(f,t,d){const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=f;o.connect(g);g.connect(ctx.destination);g.gain.setValueAtTime(0,ctx.currentTime+t);g.gain.linearRampToValueAtTime(.4,ctx.currentTime+t+.02);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+t+d);o.start(ctx.currentTime+t);o.stop(ctx.currentTime+t+d)}
-function chime(){if(!SOUND)return;initAudio();if(!ctx)return;try{tone(880,0,1.2);tone(659,.45,1.5)}catch(e){}}
-function speak(num){if(!SOUND||!window.speechSynthesis)return;try{const u=new SpeechSynthesisUtterance((/^[0-9]+$/.test(String(num))?num+'番のお客様':num+'様')+'、お待たせしました');u.lang='ja-JP';u.rate=.9;const v=speechSynthesis.getVoices().find(v=>v.lang.startsWith('ja'));if(v)u.voice=v;setTimeout(()=>speechSynthesis.speak(u),1200)}catch(e){}}
-initAudio();
-['click','touchstart','keydown'].forEach(ev=>addEventListener(ev,()=>{initAudio();try{if(window.speechSynthesis&&!window._su){window._su=1;const w=new SpeechSynthesisUtterance('');speechSynthesis.speak(w)}}catch(e){}},{passive:true}));
-
-function render(s){{const L=String(s.current||'-').length;n.style.fontSize=L>5?'2.6vw':L>3?'4.2vw':L>2?'5.4vw':'8vw'}prep.innerHTML=(s.preparing||[]).slice(0,12).map(x=>`<div>${x.num}</div>`).join('')||'<div style="font-size:1vw">—</div>';n.textContent=s.current||'-';hist.innerHTML=(s.history||[]).slice(1,7).map(x=>`<div>${x}</div>`).join('');
- if(lastSeq!==null&&s.seq!==lastSeq&&s.current&&s.event!=='reset'&&s.event!=='prep'){n.classList.remove('flash');void n.offsetWidth;n.classList.add('flash');chime();speak(s.current)}lastSeq=s.seq}
-function connect(){if(es)es.close();es=new EventSource('/events');es.onopen=()=>off.style.display='none';
- es.onmessage=e=>render(JSON.parse(e.data));es.onerror=()=>{off.style.display='block';es.close();setTimeout(connect,5000)}}
-connect();
-setInterval(()=>fetch('/api/state').then(r=>r.json()).then(render).catch(()=>{}),60000);
-setTimeout(()=>location.reload(),30*60*1000);
-</script></body></html>
+(function(){
+try{
+var SOUND=location.search.indexOf('sound=0')<0;
+var lastSeq=null,ctx=null,fails=0;
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function fit(){try{var m=$('menu'),W=window.innerWidth*0.84,H=window.innerHeight,a=1613/1080,r=W/H;
+ if(r/a<0.82){m.style.height=(W/a)+'px';m.style.top=((H-W/a)/2)+'px'}else if(r/a>1.08){m.style.width=(H*a)+'px';m.style.left=((W-H*a)/2)+'px'}else{m.style.width='84%';m.style.height='100%';m.style.top='0';m.style.left='0'}}catch(e){}}
+fit();if(window.addEventListener)window.addEventListener('resize',fit,false);
+function chime(){if(!SOUND)return;try{var a=$('chime');a.currentTime=0;var p=a.play();if(p&&p['catch'])p['catch'](function(){})}catch(e){}}
+function speak(num){if(!SOUND||!window.speechSynthesis||!window.SpeechSynthesisUtterance)return;
+ try{var txt=(/^[0-9]+$/.test(String(num))?num+'番のお客様':num+'様')+'、お待たせしました';
+ setTimeout(function(){try{var u=new SpeechSynthesisUtterance(txt);u.lang='ja-JP';u.rate=0.9;var vs=speechSynthesis.getVoices()||[];for(var i=0;i<vs.length;i++){if(vs[i].lang&&vs[i].lang.indexOf('ja')===0){u.voice=vs[i];break}}speechSynthesis.speak(u)}catch(e){}},1500)}catch(e){}}
+function unlock(){try{var a=$('chime');a.volume=0;var p=a.play();if(p&&p['catch'])p['catch'](function(){});setTimeout(function(){a.pause();a.volume=1},50)}catch(e){}}
+if(document.addEventListener){document.addEventListener('click',unlock,false);document.addEventListener('touchstart',unlock,false)}
+var lastCallAt=null;
+function handle(s){
+ // new call = callAt changed
+ var isCall=lastCallAt!==null&&s.callAt&&s.callAt!==lastCallAt&&s.current;
+ var n=$('n'),cur=s.current||'-',L=String(cur).length;
+ n.style.fontSize=L>5?'2.6vw':L>3?'4.2vw':L>2?'5.4vw':'8vw';n.innerHTML=esc(cur);
+ var p=s.preparing||[],h='';for(var i=0;i<p.length&&i<12;i++)h+='<span>'+esc(p[i].num)+'</span>';$('prep').innerHTML=h||'—';
+ var hs=s.history||[];h='';for(var j=1;j<hs.length&&j<7;j++)h+='<span>'+esc(hs[j])+'</span>';$('hist').innerHTML=h;
+ if(isCall){n.className='';setTimeout(function(){n.className='flash'},20);chime();speak(s.current)}
+ lastCallAt=s.callAt||0;
+}
+function poll(){
+ try{var x=new XMLHttpRequest();x.open('GET','/api/state?t='+(new Date().getTime()),true);
+ x.onreadystatechange=function(){if(x.readyState!==4)return;
+  if(x.status===200){try{handle(JSON.parse(x.responseText));fails=0;$('off').style.display='none'}catch(e){}}
+  else{fails++;if(fails>2)$('off').style.display='block'}
+  setTimeout(poll,2500)};
+ x.send(null)}catch(e){setTimeout(poll,5000)}
+}
+poll();
+setTimeout(function(){location.reload()},30*60*1000);
+}catch(e){}
+})();
+</script>
+</body></html>
