@@ -37,6 +37,7 @@ async function sq(pth,opt={}){const r=await fetch('https://connect.squareup.com/
 async function poll(){
  try{
   if(!st.sqSince){st.sqSince=new Date().toISOString();save();return}
+  await checkReady();
   const since=new Date(Date.parse(st.sqSince)-120000).toISOString();
   const d=await sq(`/payments?location_id=${LOC}&begin_time=${encodeURIComponent(since)}&sort_order=ASC&limit=100`);
   const pays=(d.payments||[]).filter(p=>p.status==='COMPLETED'&&!st.seenPay.includes(p.id));
@@ -62,3 +63,16 @@ async function poll(){
  }catch(e){console.error('square poll',e.message)}
 }
 if(TOK){poll();setInterval(poll,12000);console.log('square polling on')}
+
+// auto-call when Square marks a tracked order ready/completed
+function callNum(num){st.current=num;st.preparing=st.preparing.filter(x=>String(x.num)!==String(num));st.history=[num,...st.history.filter(x=>String(x)!==String(num))].slice(0,8);st.seq++;st.at=Date.now();save();push('call')}
+async function checkReady(){
+ const ids=st.preparing.map(x=>x.order).filter(Boolean);if(!ids.length)return;
+ const od=await sq('/orders/batch-retrieve',{method:'POST',body:JSON.stringify({location_id:LOC,order_ids:ids})});
+ for(const o of (od.orders||[])){
+  const done=o.state==='COMPLETED'||(o.fulfillments||[]).some(f=>f.state==='PREPARED'||f.state==='COMPLETED');
+  if(!done)continue;const x=st.preparing.find(y=>y.order===o.id);if(!x)continue;
+  const n=/^\d+$/.test(String(x.num))?parseInt(x.num):x.num;console.log('auto-call',n);callNum(n);
+  await new Promise(r=>setTimeout(r,8000)); // let announcements finish before next
+ }
+}
