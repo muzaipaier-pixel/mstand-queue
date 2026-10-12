@@ -1,0 +1,34 @@
+<!doctype html><html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>M Stand 叫号 · スタッフ</title><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#ff7a45">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="M Stand叫号"><link rel="apple-touch-icon" href="/icon-180.png">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}body{margin:0;font-family:-apple-system,"Hiragino Sans","PingFang SC",sans-serif;background:#fff4ec;color:#4a2a1a;padding:env(safe-area-inset-top) 16px 24px}
+h1{font-size:18px;margin:14px 0;color:#ff5c8a}.cur{background:linear-gradient(135deg,#ff8a3d,#ff5c8a);color:#fff;border-radius:24px;padding:16px;text-align:center}
+.cur .n{font-size:96px;font-weight:900;line-height:1}.cur small{font-size:14px;opacity:.9}
+button{width:100%;border:0;border-radius:20px;font-size:22px;font-weight:800;padding:20px;margin-top:12px;color:#fff;background:#ff7a45}
+#next{font-size:30px;padding:30px;background:linear-gradient(135deg,#ff8a3d,#ff5c8a);box-shadow:0 6px 16px #ff5c8a55}
+.row{display:flex;gap:10px}.row button{flex:1}#recall{background:#ffa64d}#reset{background:#c9a99a;font-size:16px;padding:14px}
+input{width:100%;font-size:28px;padding:14px;border-radius:16px;border:2px solid #ffc2a8;text-align:center;margin-top:12px}
+.hist{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}.hist span{background:#fff;border:2px solid #ffc2a8;border-radius:12px;padding:6px 12px;font-weight:700}
+#lock{position:fixed;inset:0;background:#fff4ec;display:flex;flex-direction:column;justify-content:center;padding:30px}#msg{color:#e33;text-align:center;height:20px}
+</style></head><body>
+<div id="lock"><h1 style="text-align:center">M Stand 叫号 · スタッフ<br>请输入 PIN / PINを入力</h1><input id="pin" type="password" inputmode="numeric" maxlength="8"><button onclick="login()">进入 / 入る</button><div id="msg"></div></div>
+<h1>M Stand 叫号 · スタッフ用 <span id="conn">●</span></h1>
+<div class="cur"><small>当前号码 / 現在の番号</small><div class="n" id="n">-</div></div>
+<button id="next" onclick="act('next')">叫下一个号 ▶<br><small style="font-size:16px">次の番号を呼ぶ</small></button>
+<div class="row"><button id="recall" onclick="act('recall')">🔁 重叫<br><small style="font-size:13px">再呼び出し</small></button></div>
+<div class="row"><input id="num" type="number" inputmode="numeric" placeholder="手动输入号码 / 番号入力"></div>
+<button onclick="setNum()">叫这个号 / この番号を呼ぶ</button>
+<div style="margin-top:16px;font-weight:700">最近叫过 / 最近の呼び出し</div><div class="hist" id="hist"></div>
+<button id="reset" onclick="if(confirm('确定重置？号码从1开始\nリセットしますか？'))act('reset')">重置 / リセット</button>
+<p style="font-size:12px;text-align:center;opacity:.6">显示屏页面 / 表示画面: <a href="/display">/display</a></p>
+<script>
+let PIN=localStorage.pin||'';
+async function post(b){const r=await fetch('/api/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...b,pin:PIN})});if(r.status===403){localStorage.removeItem('pin');lock.style.display='flex';throw 0}return r.json()}
+async function login(){PIN=pin.value;try{await post({action:'check'});localStorage.pin=PIN;lock.style.display='none'}catch(e){msg.textContent='PIN 错误 / PINが違います'}}
+if(PIN)post({action:'check'}).then(()=>lock.style.display='none').catch(()=>{});
+function act(a){navigator.vibrate&&navigator.vibrate(30);post({action:a}).catch(()=>{})}
+function setNum(){if(num.value){post({action:'set',number:num.value});num.value=''}}
+function render(s){n.textContent=s.current||'-';hist.innerHTML=s.history.map(x=>`<span onclick="post({action:'set',number:${x}})">${x}</span>`).join('')}
+function conn_(){const es=new EventSource('/events');es.onmessage=e=>{conn.style.color='#3c3';render(JSON.parse(e.data))};es.onerror=()=>{conn.style.color='#e33'}}conn_();
+</script></body></html>

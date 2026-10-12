@@ -1,0 +1,13 @@
+{
+  "name": "mstand-queue",
+  "private": true,
+  "version": "1.0.0",
+  "description": "M Stand in-store queue number display",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
