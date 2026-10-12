@@ -57,7 +57,9 @@ async function poll(){
 
    if(st.preparing.some(x=>x.order===o.id))continue;
    const rec=((o.fulfillments||[]).map(f=>((f.delivery_details||f.pickup_details||{}).recipient||{}).display_name).find(Boolean)||'').trim();
-   const num=((o.ticket_name||'').trim()||rec||o.id.slice(-4)).replace(/[<>&"'`\\]/g,'').slice(0,20);
+   let label=(o.ticket_name||'').trim()||rec||o.id.slice(-4);
+   if(/^[0-9]+$/.test(label)&&o.customer_id){const fam=await familyName(o.customer_id);if(fam)label=fam}
+   const num=label.replace(/[<>&"'`\\]/g,'').slice(0,20);
    st.preparing.push({id:p.id,order:o.id,num,items:(o.line_items||[]).map(l=>l.name+(l.quantity!=='1'?'×'+l.quantity:'')).join('、'),at:Date.now()});added++;
   }
   st.seenPay=st.seenPay.slice(-1000);
@@ -98,4 +100,14 @@ async function voice(n,r){
   vcache.set(t,b);if(vcache.size>300)vcache.delete(vcache.keys().next().value);
   send(b);
  }catch(e){console.error('voice',e.message);fb()}
+}
+
+// POS orders with linked customer: show family name only (cached, never logged)
+const famCache=new Map();
+async function familyName(id){
+ if(famCache.has(id))return famCache.get(id);
+ let f='';
+ try{const c=await sq('/customers/'+encodeURIComponent(id));f=((c.customer&&c.customer.family_name)||'').trim()}catch(e){console.error('customer lookup failed');return ''}
+ famCache.set(id,f);if(famCache.size>500)famCache.delete(famCache.keys().next().value);
+ return f;
 }
