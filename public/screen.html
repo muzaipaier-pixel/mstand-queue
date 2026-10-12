@@ -63,7 +63,7 @@ function handle(s){
  // new call = callAt changed
  var isCall=lastCallAt!==null&&s.callAt&&s.callAt!==lastCallAt&&s.current;
  var n=$('n'),cur=s.current||'-',L=String(cur).length;
- n.style.fontSize=L>5?'2.6vw':L>3?'4.2vw':L>2?'5.4vw':'8vw';n.innerHTML=esc(cur);
+ n.style.fontSize=L>12?'1.4vw':L>8?'1.8vw':L>5?'2.6vw':L>3?'4.2vw':L>2?'5.4vw':'8vw';n.innerHTML=esc(cur);
  var p=s.preparing||[],h='';for(var i=0;i<p.length&&i<12;i++)h+='<span>'+esc(p[i].num)+'</span>';$('prep').innerHTML=h||'—';
  var hs=s.history||[];h='';for(var j=1;j<hs.length&&j<7;j++)h+='<span>'+esc(hs[j])+'</span>';$('hist').innerHTML=h;
  if(isCall){n.className='';setTimeout(function(){n.className='flash'},20);chime();speak(s.current)}

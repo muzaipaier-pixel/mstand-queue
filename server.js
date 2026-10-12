@@ -59,7 +59,7 @@ async function poll(){
    const rec=((o.fulfillments||[]).map(f=>((f.delivery_details||f.pickup_details||{}).recipient||{}).display_name).find(Boolean)||'').trim();
    let label=(o.ticket_name||'').trim()||rec||o.id.slice(-4);
    if(/^[0-9]+$/.test(label)&&o.customer_id){const fam=await familyName(o.customer_id);if(fam)label=fam}
-   const num=label.replace(/[<>&"'`\\]/g,'').slice(0,20);
+   const num=label.replace(/[<>&"'`\\]/g,'').slice(0,24);
    st.preparing.push({id:p.id,order:o.id,num,items:(o.line_items||[]).map(l=>l.name+(l.quantity!=='1'?'×'+l.quantity:'')).join('、'),at:Date.now()});added++;
   }
   st.seenPay=st.seenPay.slice(-1000);
@@ -84,7 +84,7 @@ async function checkReady(){
 
 // --- voice clips via Google Translate TTS, cached; fallback to generic clip ---
 const vcache=new Map();
-function phrase(n){n=String(n).replace(/[<>&"'`\\]/g,'').trim().slice(0,20);return /^[0-9]+$/.test(n)?n+'番のお客様、お待たせしました':n+'様、お待たせしました'}
+function phrase(n){n=String(n).replace(/[<>&"'`\\]/g,'').trim().slice(0,24);return /^[0-9]+$/.test(n)?n+'番のお客様、お待たせしました':n+'様、お待たせしました'}
 async function voice(n,r){
  const send=(b)=>{r.writeHead(200,{'Content-Type':'audio/mpeg','Content-Length':b.length,'Cache-Control':'public, max-age=86400'});r.end(b)};
  const fb=()=>fs.readFile(path.join(__dirname,'public','voice_fallback.mp3'),(e,d)=>{if(e){r.writeHead(404);return r.end()}send(d)});
@@ -103,11 +103,11 @@ async function voice(n,r){
 }
 
 // POS orders with linked customer: show family name only (cached, never logged)
-const famCache=new Map();
+const famCache=new Map(); // full name (family + given), never logged
 async function familyName(id){
  if(famCache.has(id))return famCache.get(id);
  let f='';
- try{const c=await sq('/customers/'+encodeURIComponent(id));f=((c.customer&&c.customer.family_name)||'').trim()}catch(e){console.error('customer lookup failed');return ''}
+ try{const c=await sq('/customers/'+encodeURIComponent(id));const cu=c.customer||{};f=[(cu.family_name||'').trim(),(cu.given_name||'').trim()].filter(Boolean).join(' ')}catch(e){console.error('customer lookup failed');return ''}
  famCache.set(id,f);if(famCache.size>500)famCache.delete(famCache.keys().next().value);
  return f;
 }
