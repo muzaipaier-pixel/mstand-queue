@@ -40,16 +40,17 @@ if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r);return;}
 
 // --- Square: auto-add in-store paid orders to "preparing" ---
 const TOK=process.env.SQUARE_ACCESS_TOKEN, LOC=process.env.SQUARE_LOCATION_ID||'LM4FNJNN3XFAH';
-async function sq(pth,opt={}){const r=await fetch('https://connect.squareup.com/v2'+pth,{...opt,headers:{'Authorization':'Bearer '+TOK,'Square-Version':'2025-01-23','Content-Type':'application/json'}});if(!r.ok)throw new Error('square '+r.status);return r.json()}
+async function sq(pth,opt={}){const r=await fetch('https://connect.squareup.com/v2'+pth,{...opt,headers:{'Authorization':'Bearer '+TOK,'Square-Version':'2025-01-23','Content-Type':'application/json'}});if(!r.ok){const err=new Error('square '+r.status);err.status=r.status;throw err}return r.json()}
+let pollMs=3000;
 async function poll(){
  try{
-  if(!st.sqSince){st.sqSince=new Date().toISOString();save();return}
+  if(!st.sqSince){st.sqSince=new Date().toISOString();save();pollMs=3000;return}
   await checkReady();
   const since=new Date(Date.parse(st.sqSince)-120000).toISOString();
   const d=await sq(`/payments?location_id=${LOC}&begin_time=${encodeURIComponent(since)}&sort_order=ASC&limit=100`);
   const pays=(d.payments||[]).filter(p=>p.status==='COMPLETED'&&!st.seenPay.includes(p.id));
   st.sqSince=new Date().toISOString();
-  if(!pays.length){save();return}
+  if(!pays.length){save();pollMs=3000;return}
   const ids=[...new Set(pays.map(p=>p.order_id).filter(Boolean))];
   const od=ids.length?await sq('/orders/batch-retrieve',{method:'POST',body:JSON.stringify({location_id:LOC,order_ids:ids})}):{};
   const om=Object.fromEntries((od.orders||[]).map(o=>[o.id,o]));
@@ -68,10 +69,11 @@ async function poll(){
   }
   st.seenPay=st.seenPay.slice(-1000);
   st.preparing=st.preparing.filter(x=>Date.now()-x.at<3*3600e3);
-  save();if(added){st.seq++;push('prep')}
- }catch(e){console.error('square poll',e.message)}
+  save();if(added){st.seq++;push('prep')}pollMs=3000;
+ }catch(e){console.error('square poll',e.message);if(e.status===429||/\b429\b/.test(e.message)){pollMs=10000;console.log('square 429, backoff to 10s')}}
 }
-if(TOK){poll();setInterval(poll,12000);console.log('square polling on')}
+function tickPoll(){poll().finally(()=>setTimeout(tickPoll,pollMs))}
+if(TOK){tickPoll();console.log('square polling on (3s, backoff 10s on 429)')}
 
 // auto-call when Square marks a tracked order ready/completed
 function callNum(num){st.current=num;st.preparing=st.preparing.filter(x=>String(x.num)!==String(num));st.history=[num,...st.history.filter(x=>String(x)!==String(num))].slice(0,8);st.seq++;st.at=Date.now();st.callAt=st.at;save();push('call')}

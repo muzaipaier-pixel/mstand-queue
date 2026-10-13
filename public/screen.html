@@ -74,7 +74,7 @@ function poll(){
  x.onreadystatechange=function(){if(x.readyState!==4)return;
   if(x.status===200){try{handle(JSON.parse(x.responseText));fails=0;$('off').style.display='none'}catch(e){}}
   else{fails++;if(fails>2)$('off').style.display='block'}
-  setTimeout(poll,2500)};
+  setTimeout(poll,1500)};
  x.send(null)}catch(e){setTimeout(poll,5000)}
 }
 poll();
