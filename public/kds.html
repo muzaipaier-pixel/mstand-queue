@@ -1,0 +1,54 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>M Stand KDS</title><style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,"Hiragino Sans","Noto Sans CJK JP",sans-serif;background:#1c1726;color:#222}
+header{display:flex;align-items:center;gap:14px;height:56px;padding:0 16px;background:#2a1f3d;color:#fff;border-bottom:4px solid #c2185b}
+header h1{margin:0;font-size:22px}header h1 b{color:#ffe600}
+.tabs{display:flex;gap:6px;margin-left:16px}.tab{padding:8px 18px;border-radius:22px;font-size:18px;font-weight:700;background:#3d2f57;color:#ddd;cursor:pointer}
+.tab.on{background:#ffe600;color:#2a0640}#clock{margin-left:auto;font-size:24px;font-weight:800}
+#grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:10px;align-items:start}
+.t{background:#fff;border-radius:10px;overflow:hidden;display:flex;flex-direction:column;min-height:300px}
+.hd{padding:8px 10px;color:#fff;cursor:pointer}.hd .r1{display:flex;justify-content:space-between;align-items:baseline}
+.nm{font-size:24px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tm{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;margin-left:6px}
+.r2{display:flex;justify-content:space-between;font-size:15px;opacity:.95;margin-top:2px}
+.bar{height:6px;background:#eee}.bar i{display:block;height:100%;background:#c2185b}
+.src-店头{background:#7a1fa2}.src-手机点单{background:#c2185b}.src-自助{background:#5e35b1}.src-Uber{background:#06804a}
+.t.y .hd{background:#f5b800;color:#222}.t.r .hd{background:#e0242f}
+.it{display:flex;gap:10px;padding:8px 10px;border-bottom:1px solid #eee}.q{font-size:22px;font-weight:900;min-width:30px;color:#7a1fa2}
+.in{font-size:21px;font-weight:800;line-height:1.25}.md{font-size:18px;font-weight:600;color:#c2185b;line-height:1.35}.md.v{color:#555}
+.nt{margin:8px 10px;padding:6px 8px;background:#fff6c2;border-left:5px solid #ffe600;font-size:18px}
+.sp{flex:1}button{margin:8px;padding:14px;font-size:24px;font-weight:900;border:0;border-radius:8px;background:#ffe600;color:#2a0640}
+button.rc{background:#eee;color:#555}.done .hd{background:#888!important}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#000d;color:#fff;padding:12px 24px;border-radius:10px;font-size:20px;display:none}
+</style></head><body>
+<header><h1>M Stand <b>KDS</b></h1><div class="tabs"><span class="tab on" data-v="open">进行中 <span id="nO"></span></span><span class="tab" data-v="done">已完成 <span id="nD"></span></span></div><div id="clock"></div></header>
+<div id="grid"></div><div id="toast"></div>
+<script>
+var q=location.search,key=(q.match(/key=([^&]+)/)||[])[1]||'',view='open',data=[],skew=0,busy={};
+function now(){return Date.now()+skew}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return'&#'+c.charCodeAt(0)+';'})}
+function mmss(ms){var s=Math.max(0,Math.floor(ms/1000)),m=Math.floor(s/60);return m>=60?Math.floor(m/60)+'h'+('0'+m%60).slice(-2):m+':'+('0'+s%60).slice(-2)}
+function isDone(o){return o.state==='PREPARED'||o.state==='COMPLETED'}
+function toast(t){var e=document.getElementById('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display='none'},2500)}
+function render(){var t=now(),h='',nO=0,nD=0,list=data.slice();if(view==='done')list.sort(function(a,b){return b.updated_at<a.updated_at?-1:1});
+list.forEach(function(o){var d=isDone(o);d?nD++:nO++;if((view==='done')!==d)return;
+var ms=t-new Date(o.created_at),m=ms/60000,cl=d?'':m>=10?'r':m>=5?'y':'',d8=new Date(o.created_at),i=data.indexOf(o);
+h+='<div class="t '+cl+(d?' done':'')+'"><div class="hd src-'+o.source+'"'+(!d&&!o.readonly?' onclick="act('+i+')"':'')+'><div class="r1"><span class="nm">'+esc(o.name)+'</span><span class="tm">'+mmss(ms)+'</span></div>'+
+'<div class="r2"><span>'+esc(o.source)+'</span><span>'+('0'+d8.getHours()).slice(-2)+':'+('0'+d8.getMinutes()).slice(-2)+' 下单</span></div></div>'+
+'<div class="bar"><i style="width:'+Math.min(100,m*10)+'%"></i></div>';
+o.items.forEach(function(it){h+='<div class="it"><span class="q">'+(it.qty||1)+'</span><div><div class="in">'+esc(it.name)+'</div>'+(it.variation?'<div class="md v">'+esc(it.variation)+'</div>':'')+
+it.mods.map(function(x){return'<div class="md">· '+esc(x)+'</div>'}).join('')+(it.note?'<div class="md">📝 '+esc(it.note)+'</div>':'')+'</div></div>'});
+h+=(o.note?'<div class="nt">📝 '+esc(o.note)+'</div>':'')+'<div class="sp"></div>'+
+(o.readonly?'<button class="rc" disabled>Uber 单 · 仅显示</button>':busy[o.id]?'<button class="rc" disabled>处理中…</button>':d?(o.state==='PREPARED'?'<button class="rc" onclick="act('+i+',1)">召回</button>':'<button class="rc" disabled>已取餐</button>'):'<button onclick="act('+i+')">完成</button>')+'</div>'});
+document.getElementById('grid').innerHTML=h||'<p style="color:#aaa;font-size:24px;padding:20px">没有订单</p>';
+document.getElementById('nO').textContent=nO;document.getElementById('nD').textContent=nD;
+var c=new Date(t);document.getElementById('clock').textContent=('0'+c.getHours()).slice(-2)+':'+('0'+c.getMinutes()).slice(-2);
+[].forEach.call(document.querySelectorAll('.tab'),function(e){e.className='tab'+(e.getAttribute('data-v')===view?' on':'')})}
+function api(m,p,b,cb){var x=new XMLHttpRequest();x.open(m,p);x.setRequestHeader('X-KDS-Key',decodeURIComponent(key));x.setRequestHeader('Content-Type','application/json');
+x.onload=function(){var j={};try{j=JSON.parse(x.responseText)}catch(e){}cb(x.status,j)};x.onerror=function(){cb(0,{})};x.send(b?JSON.stringify(b):null)}
+function act(i,rc){var o=data[i];if(!o||busy[o.id])return;busy[o.id]=1;render();
+api('POST','/api/kds/'+(rc?'recall':'done'),{id:o.id},function(s,j){delete busy[o.id];if(s===200&&j.order){data[i]=j.order;toast(j.warn?j.warn:rc?'已召回：'+o.name:'已完成，正在叫号：'+o.name)}else toast('失败：'+(j.error||s));render();load()})}
+function load(){api('GET','/api/kds',null,function(s,j){if(s===403){document.getElementById('grid').innerHTML='<p style="color:#fff;font-size:24px;padding:20px">网址里的 key 不对，请用正确的 KDS 链接打开。</p>';return}
+if(s===200){skew=j.now-Date.now();data=j.orders||[];render()}})}
+[].forEach.call(document.querySelectorAll('.tab'),function(e){e.onclick=function(){view=e.getAttribute('data-v');render()}});
+load();setInterval(load,3000);setInterval(render,1000);
+</script></body></html>
