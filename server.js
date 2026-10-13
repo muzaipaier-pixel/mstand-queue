@@ -14,6 +14,9 @@ http.createServer((q,r)=>{
  const u=new URL(q.url,'http://x');
  if(u.pathname==='/events'){r.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive','X-Accel-Buffering':'no'});r.write(`data: ${JSON.stringify({...pub(),event:'init'})}\n\n`);clients.add(r);const k=setInterval(()=>r.write(':k\n\n'),20000);q.on('close',()=>{clients.delete(r);clearInterval(k)});return;}
 if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r);return;}
+ if(u.pathname==='/api/menu'){menu().then(m=>{r.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-cache'});r.end(JSON.stringify(m))}).catch(e=>{console.error('menu',e.message);r.writeHead(502);r.end('{"error":"menu"}')});return;}
+ if(u.pathname==='/api/checkout'&&q.method==='POST'){let b='';q.on('data',c=>{b+=c;if(b.length>2e4)q.destroy()});q.on('end',()=>checkout(b,q,r));return;}
+ if(u.pathname==='/api/order-status'){orderStatus(u.searchParams.get('id')||'',r);return;}
  if(u.pathname==='/api/state')return r.end(JSON.stringify(pub()));
  if(u.pathname==='/api/action'&&q.method==='POST'){let b='';q.on('data',c=>b+=c);q.on('end',()=>{let j={};try{j=JSON.parse(b)}catch(e){}
   if(String(j.pin)!==PIN){r.writeHead(403);return r.end('{"error":"PIN"}')}
@@ -28,7 +31,7 @@ if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r);return;}
   else {r.writeHead(400);return r.end('{}')}
   if(ev==='call'){st.preparing=st.preparing.filter(x=>String(x.num)!==String(st.current));st.history=[st.current,...st.history.filter(x=>x!==st.current)].slice(0,8)}
   st.seq++;st.at=Date.now();if(ev==='call'||ev==='recall')st.callAt=st.at;save();push(ev);r.end(JSON.stringify({ok:true,...pub()}));});return;}
- let p=u.pathname==='/'?'/display.html':u.pathname==='/staff'?'/staff.html':u.pathname==='/display'?'/display.html':u.pathname==='/screen'?'/screen.html':u.pathname==='/screen-test'?'/screen-test.html':u.pathname;
+ let p=u.pathname==='/'?'/display.html':u.pathname==='/staff'?'/staff.html':u.pathname==='/display'?'/display.html':u.pathname==='/screen'?'/screen.html':u.pathname==='/screen-test'?'/screen-test.html':u.pathname==='/order'?'/order.html':u.pathname==='/order/done'?'/order-done.html':u.pathname;
  const f=path.join(__dirname,'public',path.normalize(p).replace(/^(\.\.[\/\\])+/,''));
  fs.readFile(f,(e,d)=>{if(e){r.writeHead(404);return r.end('404')}r.writeHead(200,{'Content-Type':types[path.extname(f)]||'application/octet-stream','Cache-Control':path.extname(f)==='.html'?'no-cache':'public, max-age=3600'});r.end(d)});
 }).listen(PORT,'0.0.0.0',()=>console.log('listening',PORT));
@@ -87,7 +90,9 @@ async function checkReady(){
  for(const o of (od.orders||[])){
   if(st.calledOrders.includes(o.id))continue;
   const src=((o.source&&o.source.name)||'');if(/uber|giftcard/i.test(src))continue;
-  const done=o.state==='COMPLETED'||(o.fulfillments||[]).some(f=>f.state==='PREPARED'||f.state==='COMPLETED');
+  const fdone=(o.fulfillments||[]).some(f=>f.state==='PREPARED'||f.state==='COMPLETED');
+  // mobile orders: only the pickup fulfillment going PREPARED/COMPLETED counts (payment alone must not trigger a call)
+  const done=o.reference_id==='mstand-web'?fdone:(o.state==='COMPLETED'||fdone);
   if(!done)continue;
   if(Date.now()-Date.parse(o.created_at)>3*3600e3)continue; // ignore old tickets being cleaned up
   if(Date.parse(o.updated_at)-Date.parse(o.created_at)<45000)continue; // auto-closed at checkout, not a real "ready"
@@ -129,4 +134,49 @@ async function familyName(id){
  try{const c=await sq('/customers/'+encodeURIComponent(id));const cu=c.customer||{};f=[(cu.family_name||'').trim(),(cu.given_name||'').trim()].filter(Boolean).join(' ')}catch(e){console.error('customer lookup failed');return ''}
  famCache.set(id,f);if(famCache.size>500)famCache.delete(famCache.keys().next().value);
  return f;
+}
+
+// --- Mobile order: live menu (cached) + Square Checkout payment links ---
+let menuC={at:0,data:null};
+async function menu(){
+ if(menuC.data&&Date.now()-menuC.at<5*60e3)return menuC.data;
+ let objs=[],cur;do{const d=await sq('/catalog/list?types=ITEM,CATEGORY,IMAGE'+(cur?'&cursor='+encodeURIComponent(cur):''));objs=objs.concat(d.objects||[]);cur=d.cursor}while(cur);
+ const img={},cat={};objs.forEach(o=>{if(o.type==='IMAGE')img[o.id]=o.image_data.url;if(o.type==='CATEGORY')cat[o.id]=o.category_data.name});
+ const at=o=>(o.present_at_all_locations||(o.present_at_location_ids||[]).includes(LOC))&&!(o.absent_at_location_ids||[]).includes(LOC);
+ const items=[];
+ for(const o of objs){if(o.type!=='ITEM'||o.is_deleted||!at(o))continue;const d=o.item_data;
+  if(d.product_type==='GIFT_CARD'||/ギフト|gift/i.test(d.name))continue;
+  const vars=(d.variations||[]).filter(v=>at(v)&&v.item_variation_data.price_money).map(v=>({id:v.id,name:v.item_variation_data.name||'',price:Number(v.item_variation_data.price_money.amount)}));
+  if(!vars.length)continue;
+  const c=(d.categories||[]).map(x=>cat[x.id]).find(Boolean)||cat[d.category_id]||'その他';
+  items.push({id:o.id,name:d.name,cat:c,desc:(d.description_plaintext||'').split('\n')[0].slice(0,40),img:img[(d.image_ids||[])[0]]||'',vars});}
+ menuC={at:Date.now(),data:items};return items;
+}
+const cleanName=s=>String(s||'').replace(/[<>&"'`\\\u0000-\u001f]/g,'').trim().slice(0,12);
+async function checkout(b,q,r){
+ const bad=(c,m)=>{r.writeHead(c,{'Content-Type':'application/json'});r.end(JSON.stringify({error:m}))};
+ try{
+  let j;try{j=JSON.parse(b)}catch(e){return bad(400,'json')}
+  const name=cleanName(j.name);if(!name)return bad(400,'name');
+  const m=await menu();const vm={};m.forEach(i=>i.vars.forEach(v=>vm[v.id]=v));
+  const lines=(Array.isArray(j.items)?j.items:[]).filter(x=>vm[x.v]).map(x=>({catalog_object_id:x.v,quantity:String(Math.min(20,Math.max(1,parseInt(x.q)||1)))})).slice(0,30);
+  if(!lines.length)return bad(400,'items');
+  const base=process.env.PUBLIC_URL||('https://'+(q.headers['x-forwarded-host']||q.headers.host));
+  const body={idempotency_key:require('crypto').randomUUID(),
+   order:{location_id:LOC,source:{name:'M Stand スマホ注文'},ticket_name:name,reference_id:'mstand-web',line_items:lines,
+    fulfillments:[{type:'PICKUP',state:'PROPOSED',pickup_details:{recipient:{display_name:name},schedule_type:'ASAP',prep_time_duration:'PT10M',note:'スマホ注文'}}]},
+   checkout_options:{redirect_url:base+'/order/done',ask_for_shipping_address:false},
+   payment_note:'M Stand スマホ注文'};
+  const d=await sq('/online-checkout/payment-links',{method:'POST',body:JSON.stringify(body)});
+  const pl=d.payment_link||{};
+  r.writeHead(200,{'Content-Type':'application/json'});r.end(JSON.stringify({url:pl.url,order_id:pl.order_id,link_id:pl.id}));
+ }catch(e){console.error('checkout',e.message);bad(502,'square')}
+}
+async function orderStatus(id,r){
+ r.setHeader('Content-Type','application/json');
+ if(!/^[A-Za-z0-9]{10,40}$/.test(id)){r.writeHead(400);return r.end('{}')}
+ try{const o=(await sq('/orders/'+id)).order||{};if(o.location_id!==LOC||o.reference_id!=='mstand-web'){r.writeHead(404);return r.end('{}')}
+  const f=(o.fulfillments||[])[0]||{};
+  r.end(JSON.stringify({name:cleanName(o.ticket_name),paid:o.state==='COMPLETED'||!!(o.tenders||[]).length||Number((o.net_amount_due_money||{}).amount)===0&&Number((o.total_money||{}).amount)>0,state:f.state||o.state,total:Number((o.total_money||{}).amount||0),items:(o.line_items||[]).map(l=>({n:l.name,v:l.variation_name,q:l.quantity}))}))}
+ catch(e){r.writeHead(502);r.end('{}')}
 }
