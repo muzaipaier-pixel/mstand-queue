@@ -19,9 +19,16 @@ header h1{margin:0;font-size:22px}header h1 b{color:#ffe600}
 .sp{flex:1}button{margin:8px;padding:14px;font-size:24px;font-weight:900;border:0;border-radius:8px;background:#ffe600;color:#2a0640}
 button.rc{background:#eee;color:#555}.done .hd{background:#888!important}
 #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#000d;color:#fff;padding:12px 24px;border-radius:10px;font-size:20px;display:none}
+@keyframes glow{0%,100%{box-shadow:0 0 0 4px #ffe600,0 0 18px 6px #ffe600aa}50%{box-shadow:0 0 0 4px #fff,0 0 4px 1px #ffe60055}}
+@keyframes glow2{0%,100%{box-shadow:0 0 0 6px #ff2d8a,0 0 30px 12px #ff2d8acc;transform:scale(1.015)}50%{box-shadow:0 0 0 6px #fff,0 0 6px 2px #ff2d8a55;transform:scale(1)}}
+.t.nw{animation:glow 1.1s ease-in-out infinite;position:relative}.t.nw.ph{animation:glow2 .8s ease-in-out infinite}
+.nb{position:absolute;top:-2px;right:-2px;background:#ffe600;color:#2a0640;font-weight:900;font-size:16px;padding:3px 10px;border-radius:0 10px 0 10px;z-index:2}.t.ph .nb{background:#ff2d8a;color:#fff}
+#nbar{display:none;position:sticky;top:0;z-index:5;background:#ffe600;color:#2a0640;font-size:26px;font-weight:900;text-align:center;padding:12px;cursor:pointer;animation:bp 1s infinite}#nbar.ph{background:#ff2d8a;color:#fff}
+@keyframes bp{50%{opacity:.75}}
+#unlock{position:fixed;inset:0;background:#000c;z-index:9;display:flex;align-items:center;justify-content:center;color:#fff;font-size:30px;font-weight:900;text-align:center;line-height:1.6}#unlock div{background:#c2185b;padding:30px 40px;border-radius:20px}
 </style></head><body>
 <header><h1>M Stand <b>KDS</b></h1><div class="tabs"><span class="tab on" data-v="open">进行中 <span id="nO"></span></span><span class="tab" data-v="done">已完成 <span id="nD"></span></span></div><div id="clock"></div></header>
-<div id="grid"></div><div id="toast"></div>
+<div id="nbar" onclick="ack()"></div><div id="unlock" onclick="unlockAudio()"><div>🔔 点一下开启新订单提示音<br>タップして通知音をオン</div></div><div id="grid"></div><div id="toast"></div>
 <script>
 var q=location.search,key=(q.match(/key=([^&]+)/)||[])[1]||'',view='open',data=[],skew=0,busy={};
 function now(){return Date.now()+skew}
@@ -32,7 +39,7 @@ function toast(t){var e=document.getElementById('toast');e.textContent=t;e.style
 function render(){var t=now(),h='',nO=0,nD=0,list=data.slice();if(view==='done')list.sort(function(a,b){return b.updated_at<a.updated_at?-1:1});
 list.forEach(function(o){var d=isDone(o);d?nD++:nO++;if((view==='done')!==d)return;
 var ms=t-new Date(o.created_at),m=ms/60000,cl=d?'':m>=10?'r':m>=5?'y':'',d8=new Date(o.created_at),i=data.indexOf(o);
-h+='<div class="t '+cl+(d?' done':'')+'"><div class="hd src-'+o.source+'"'+(!d&&!o.readonly?' onclick="act('+i+')"':'')+'><div class="r1"><span class="nm">'+esc(o.name)+'</span><span class="tm">'+mmss(ms)+'</span></div>'+
+var nw=!d&&fresh[o.id]&&t<fresh[o.id];h+='<div class="t '+cl+(d?' done':'')+(nw?' nw':'')+(o.source==='手机点单'?' ph':'')+'" ontouchstart="seen(\''+esc(o.id)+'\')" onmousedown="seen(\''+esc(o.id)+'\')">'+(nw?'<span class="nb">'+(o.source==='手机点单'?'NEW 手机·未付款':'NEW')+'</span>':'')+'<div class="hd src-'+o.source+'"'+(!d&&!o.readonly?' onclick="act('+i+')"':'')+'><div class="r1"><span class="nm">'+esc(o.name)+'</span><span class="tm">'+mmss(ms)+'</span></div>'+
 '<div class="r2"><span>'+esc(o.source)+'</span><span>'+('0'+d8.getHours()).slice(-2)+':'+('0'+d8.getMinutes()).slice(-2)+' 下单</span></div></div>'+
 '<div class="bar"><i style="width:'+Math.min(100,m*10)+'%"></i></div>';
 o.items.forEach(function(it){h+='<div class="it"><span class="q">'+(it.qty||1)+'</span><div><div class="in">'+esc(it.name)+'</div>'+(it.variation?'<div class="md v">'+esc(it.variation)+'</div>':'')+
@@ -48,7 +55,28 @@ x.onload=function(){var j={};try{j=JSON.parse(x.responseText)}catch(e){}cb(x.sta
 function act(i,rc){var o=data[i];if(!o||busy[o.id])return;busy[o.id]=1;render();
 api('POST','/api/kds/'+(rc?'recall':'done'),{id:o.id},function(s,j){delete busy[o.id];if(s===200&&j.order){data[i]=j.order;toast(j.warn?j.warn:rc?'已召回：'+o.name:'已完成，正在叫号：'+o.name)}else toast('失败：'+(j.error||s));render();load()})}
 function load(){api('GET','/api/kds',null,function(s,j){if(s===403){document.getElementById('grid').innerHTML='<p style="color:#fff;font-size:24px;padding:20px">网址里的 key 不对，请用正确的 KDS 链接打开。</p>';return}
-if(s===200){skew=j.now-Date.now();data=j.orders||[];render()}})}
+if(s===200){skew=j.now-Date.now();data=j.orders||[];detectNew();render()}})}
 [].forEach.call(document.querySelectorAll('.tab'),function(e){e.onclick=function(){view=e.getAttribute('data-v');render()}});
+
+var fresh={},known=null,ac=null,rep=0,repT=null,titleT=null;
+function unlockAudio(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume();var b=ac.createBuffer(1,1,22050),n=ac.createBufferSource();n.buffer=b;n.connect(ac.destination);n.start(0)}catch(e){}
+try{localStorage.kdsSnd='1'}catch(e){}document.getElementById('unlock').style.display='none'}
+document.addEventListener('touchend',function(){if(ac&&ac.state!=='running')ac.resume()},true);
+function bell(phone){if(!ac)return;var t0=ac.currentTime+.02,notes=phone?[1318.5,1568,2093,1568,2093]:[1046.5,1318.5,1568,2093];
+notes.forEach(function(f,i){var t=t0+i*.14;[1,2.01].forEach(function(h,k){var o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=f*h;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(k?.06:.28,t+.008);g.gain.exponentialRampToValueAtTime(.0005,t+(k?.4:1.1));o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+1.2)})})}
+function pending(){var t=now(),n=0,ph=0;data.forEach(function(o){if(!isDone(o)&&fresh[o.id]&&t<fresh[o.id]){n++;if(o.source==='手机点单')ph++}});return{n:n,ph:ph}}
+function banner(){var p=pending(),b=document.getElementById('nbar');if(!p.n){b.style.display='none';stopAlert();return}
+b.className=p.ph?'ph':'';b.textContent='🔔 新订单 / 新しい注文 ×'+p.n+(p.ph?'（手机点单 '+p.ph+' · 未付款）':'')+'　点此确认';b.style.display='block'}
+function alertNew(phone){rep=0;clearInterval(repT);bell(phone);try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}
+repT=setInterval(function(){if(++rep>=3||!pending().n){clearInterval(repT);return}bell(pending().ph>0)},10000);
+clearInterval(titleT);var f=0;titleT=setInterval(function(){document.title=(f=!f)?'🔔 新订单 ×'+pending().n:'M Stand KDS';if(!pending().n){clearInterval(titleT);document.title='M Stand KDS'}},1000)}
+function stopAlert(){clearInterval(repT);clearInterval(titleT);document.title='M Stand KDS'}
+function ack(){fresh={};stopAlert();banner();render()}
+function seen(id){if(fresh[id]){delete fresh[id];if(!pending().n)stopAlert();banner();setTimeout(render,0)}}
+function detectNew(){var ids={},nw=[];data.forEach(function(o){ids[o.id]=1;if(known&&!known[o.id]&&!isDone(o))nw.push(o)});
+if(known&&nw.length){var t=now();nw.forEach(function(o){fresh[o.id]=t+30000});alertNew(nw.some(function(o){return o.source==='手机点单'}))}
+known=ids;banner()}
+try{if(localStorage.kdsSnd)document.getElementById('unlock').querySelector('div').innerHTML+='<br><small style="font-size:18px">（iPad 每次打开都需要点一下）</small>'}catch(e){}
+setInterval(banner,1000);
 load();setInterval(load,3000);setInterval(render,1000);
 </script></body></html>
