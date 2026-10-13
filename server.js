@@ -1,3 +1,4 @@
+const crypto=require('crypto');
 const http=require('http'),fs=require('fs'),path=require('path');
 const PORT=process.env.PORT||8787, PIN=String(process.env.PIN||(()=>{try{return fs.readFileSync(__dirname+'/pin.txt','utf8')}catch(e){return ''}})()).trim();
 if(!PIN)console.warn('WARNING: no PIN set');
@@ -16,6 +17,7 @@ http.createServer((q,r)=>{
  if(u.pathname==='/events'){r.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive','X-Accel-Buffering':'no'});r.write(`data: ${JSON.stringify({...pub(),event:'init'})}\n\n`);clients.add(r);const k=setInterval(()=>r.write(':k\n\n'),20000);q.on('close',()=>{clients.delete(r);clearInterval(k)});return;}
 if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r,u.searchParams.get('lang'));return;}
  if(u.pathname==='/api/menu'){menu().then(m=>{r.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-cache'});r.end(JSON.stringify(m))}).catch(e=>{console.error('menu',e.message);r.writeHead(502);r.end('{"error":"menu"}')});return;}
+ if(u.pathname==='/square/webhook'&&q.method==='POST'){webhook(q,r);return;}
  if(u.pathname==='/api/checkout'&&q.method==='POST'){let b='';q.on('data',c=>{b+=c;if(b.length>2e4)q.destroy()});q.on('end',()=>checkout(b,q,r));return;}
  if(u.pathname==='/api/order-status'){orderStatus(u.searchParams.get('id')||'',r);return;}
  if(u.pathname.startsWith('/api/kds')){kdsApi(u,q,r);return;}
@@ -41,7 +43,7 @@ if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r,u.searchParams.get
 
 // --- Square: auto-add in-store paid orders to "preparing" ---
 const TOK=process.env.SQUARE_ACCESS_TOKEN, LOC=process.env.SQUARE_LOCATION_ID||'LM4FNJNN3XFAH';
-async function sq(pth,opt={}){const r=await fetch('https://connect.squareup.com/v2'+pth,{...opt,headers:{'Authorization':'Bearer '+TOK,'Square-Version':'2025-01-23','Content-Type':'application/json'}});if(!r.ok){const err=new Error('square '+r.status);err.status=r.status;throw err}return r.json()}
+async function sq(pth,opt={}){const r=await fetch((process.env.SQUARE_API_BASE||'https://connect.squareup.com/v2')+pth,{...opt,headers:{'Authorization':'Bearer '+TOK,'Square-Version':'2025-01-23','Content-Type':'application/json'}});if(!r.ok){const err=new Error('square '+r.status);err.status=r.status;throw err}return r.json()}
 let pollMs=3000;
 async function poll(){
  try{
@@ -84,6 +86,52 @@ async function labelOf(o){
  if(/^[0-9]+$/.test(label)&&o.customer_id){const fam=await familyName(o.customer_id);if(fam)label=fam}
  return label.replace(/[<>&"'`\\]/g,'').slice(0,24);
 }
+// shared auto-call decision (used by the 3s poll and the webhook); returns true if it called
+async function tryCall(o){
+ st.calledOrders=st.calledOrders||[];
+ if(!o||o.state==='CANCELED')return false;
+ if(st.calledOrders.includes(o.id))return false;
+ const src=((o.source&&o.source.name)||'');if(/uber|giftcard/i.test(src))return false;
+ const fdone=(o.fulfillments||[]).some(f=>f.state==='PREPARED'||f.state==='COMPLETED');
+ // mobile orders: only the pickup fulfillment going PREPARED/COMPLETED counts (payment alone must not trigger a call)
+ const done=o.reference_id==='mstand-web'?fdone:(o.state==='COMPLETED'||fdone);
+ if(!done)return false;
+ if(Date.now()-Date.parse(o.created_at)>3*3600e3)return false; // ignore old tickets being cleaned up
+ if(Date.parse(o.updated_at)-Date.parse(o.created_at)<45000)return false; // auto-closed at checkout, not a real "ready"
+ st.calledOrders.push(o.id);st.calledOrders=st.calledOrders.slice(-500); // mark before any await: no double call
+ const x=st.preparing.find(y=>y.order===o.id||y.paidOrder===o.id);
+ const lab=x?x.num:await labelOf(o);
+ st.preparing=st.preparing.filter(y=>y.order!==o.id&&y.paidOrder!==o.id);
+ console.log('auto-call order');callNum(/^[0-9]+$/.test(String(lab))?parseInt(lab):lab);save();
+ return true;
+}
+// --- Square webhook: instant call on order.updated / order.fulfillment.updated ---
+const WH_KEY=process.env.SQUARE_WEBHOOK_SIGNATURE_KEY||'';
+const WH_URL=process.env.SQUARE_WEBHOOK_URL||'https://mstand-queue.onrender.com/square/webhook';
+function whValid(raw,sig){
+ if(!WH_KEY||!sig)return false;
+ const exp=crypto.createHmac('sha256',WH_KEY).update(WH_URL+raw).digest('base64');
+ const a=Buffer.from(exp),b=Buffer.from(String(sig));
+ return a.length===b.length&&crypto.timingSafeEqual(a,b);
+}
+function webhook(q,r){
+ const ch=[];let n=0;
+ q.on('data',c=>{n+=c.length;if(n>1e6){q.destroy();return}ch.push(c)});
+ q.on('end',()=>{
+  const raw=Buffer.concat(ch).toString('utf8');
+  if(!whValid(raw,q.headers['x-square-hmacsha256-signature'])){r.writeHead(403);return r.end()}
+  r.writeHead(200);r.end();
+  let ev={};try{ev=JSON.parse(raw)}catch(e){return}
+  if(ev.type!=='order.updated'&&ev.type!=='order.fulfillment.updated')return;
+  const d=ev.data||{},id=d.id||(((d.object||{})[ev.type==='order.updated'?'order_updated':'order_fulfillment_updated'])||{}).order_id;
+  if(!id||!TOK)return;
+  (async()=>{const j=await sq('/orders/'+encodeURIComponent(id));const o=j.order;
+   if(!o||(o.location_id&&o.location_id!==LOC))return;
+   try{await kdsUpsert(o)}catch(e){}
+   await tryCall(o);
+  })().catch(e=>console.error('webhook',e.message));
+ });
+}
 // Auto-call: search ALL orders updated recently (not only tracked ones), so it works after
 // a server restart and regardless of which device (phone / Register) marked it done.
 async function checkReady(){
@@ -95,23 +143,7 @@ async function checkReady(){
  const od=await sq('/orders/search',{method:'POST',body:JSON.stringify(body)});
  st.rdySince=now;
  for(const o of (od.orders||[]))await kdsUpsert(o);
- for(const o of (od.orders||[])){
-  if(o.state==='CANCELED')continue;
-  if(st.calledOrders.includes(o.id))continue;
-  const src=((o.source&&o.source.name)||'');if(/uber|giftcard/i.test(src))continue;
-  const fdone=(o.fulfillments||[]).some(f=>f.state==='PREPARED'||f.state==='COMPLETED');
-  // mobile orders: only the pickup fulfillment going PREPARED/COMPLETED counts (payment alone must not trigger a call)
-  const done=o.reference_id==='mstand-web'?fdone:(o.state==='COMPLETED'||fdone);
-  if(!done)continue;
-  if(Date.now()-Date.parse(o.created_at)>3*3600e3)continue; // ignore old tickets being cleaned up
-  if(Date.parse(o.updated_at)-Date.parse(o.created_at)<45000)continue; // auto-closed at checkout, not a real "ready"
-  st.calledOrders.push(o.id);st.calledOrders=st.calledOrders.slice(-500);
-  const x=st.preparing.find(y=>y.order===o.id||y.paidOrder===o.id);
-  const lab=x?x.num:await labelOf(o);
-  st.preparing=st.preparing.filter(y=>y.order!==o.id&&y.paidOrder!==o.id);
-  console.log('auto-call order');callNum(/^[0-9]+$/.test(String(lab))?parseInt(lab):lab);
-  await new Promise(r=>setTimeout(r,8000));
- }
+ for(const o of (od.orders||[])){if(await tryCall(o))await new Promise(r=>setTimeout(r,8000))}
  save();
 }
 
