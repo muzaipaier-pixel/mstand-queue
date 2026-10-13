@@ -28,6 +28,7 @@ if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r);return;}
   else if(j.action==='recall'){if(!st.current){return r.end('{}')}ev='recall'}
   else if(j.action==='reset'){st={current:0,history:[],seq:st.seq,preparing:[],seenPay:st.seenPay,sqSince:st.sqSince};ev='reset'}
   else if(j.action==='callid'){const x=st.preparing.find(y=>y.id===j.id);if(!x)return r.end('{}');callNum(/^[0-9]+$/.test(String(x.num))?parseInt(x.num):x.num);return r.end(JSON.stringify({ok:true,...pub()}))}
+  else if(j.action==='paid'){const x=st.preparing.find(y=>y.id===j.id);if(x)x.unpaid=false;ev='prep'}
   else if(j.action==='done'){st.preparing=st.preparing.filter(x=>x.id!==j.id);ev='prep'}
   else {r.writeHead(400);return r.end('{}')}
   if(ev==='call'){st.preparing=st.preparing.filter(x=>String(x.num)!==String(st.current));st.history=[st.current,...st.history.filter(x=>x!==st.current)].slice(0,8)}
@@ -61,6 +62,8 @@ async function poll(){
 
    if(st.preparing.some(x=>x.order===o.id))continue;
    const num=await labelOf(o);
+   const w=st.preparing.find(x=>x.web&&x.unpaid&&String(x.num)===String(num));
+   if(w){w.unpaid=false;w.paidOrder=o.id;added++;continue}
    st.preparing.push({id:p.id,order:o.id,num,items:(o.line_items||[]).map(l=>l.name+(l.quantity!=='1'?'×'+l.quantity:'')).join('、'),at:Date.now()});added++;
   }
   st.seenPay=st.seenPay.slice(-1000);
@@ -98,9 +101,9 @@ async function checkReady(){
   if(Date.now()-Date.parse(o.created_at)>3*3600e3)continue; // ignore old tickets being cleaned up
   if(Date.parse(o.updated_at)-Date.parse(o.created_at)<45000)continue; // auto-closed at checkout, not a real "ready"
   st.calledOrders.push(o.id);st.calledOrders=st.calledOrders.slice(-500);
-  const x=st.preparing.find(y=>y.order===o.id);
+  const x=st.preparing.find(y=>y.order===o.id||y.paidOrder===o.id);
   const lab=x?x.num:await labelOf(o);
-  st.preparing=st.preparing.filter(y=>y.order!==o.id);
+  st.preparing=st.preparing.filter(y=>y.order!==o.id&&y.paidOrder!==o.id);
   console.log('auto-call order');callNum(/^[0-9]+$/.test(String(lab))?parseInt(lab):lab);
   await new Promise(r=>setTimeout(r,8000));
  }
@@ -154,6 +157,8 @@ async function menu(){
  menuC={at:Date.now(),data:items};return items;
 }
 const cleanName=s=>String(s||'').replace(/[<>&"'`\\\u0000-\u001f]/g,'').trim().slice(0,12);
+const rl=new Map(); // ip -> [timestamps]
+function limited(ip){const now=Date.now(),a=(rl.get(ip)||[]).filter(t=>now-t<10*60e3);if(a.length>=3){rl.set(ip,a);return true}a.push(now);rl.set(ip,a);if(rl.size>5000)rl.delete(rl.keys().next().value);return false}
 async function checkout(b,q,r){
  const bad=(c,m)=>{r.writeHead(c,{'Content-Type':'application/json'});r.end(JSON.stringify({error:m}))};
  try{
@@ -162,22 +167,24 @@ async function checkout(b,q,r){
   const m=await menu();const vm={};m.forEach(i=>i.vars.forEach(v=>vm[v.id]=v));
   const lines=(Array.isArray(j.items)?j.items:[]).filter(x=>vm[x.v]).map(x=>({catalog_object_id:x.v,quantity:String(Math.min(20,Math.max(1,parseInt(x.q)||1)))})).slice(0,30);
   if(!lines.length)return bad(400,'items');
-  const base=process.env.PUBLIC_URL||('https://'+(q.headers['x-forwarded-host']||q.headers.host));
+  const ip=String(q.headers['x-forwarded-for']||q.socket.remoteAddress||'').split(',')[0].trim();
+  if(limited(ip))return bad(429,'rate');
   const body={idempotency_key:require('crypto').randomUUID(),
-   order:{location_id:LOC,source:{name:'M Stand スマホ注文'},ticket_name:name,reference_id:'mstand-web',line_items:lines,
-    fulfillments:[{type:'PICKUP',state:'PROPOSED',pickup_details:{recipient:{display_name:name},schedule_type:'ASAP',prep_time_duration:'PT10M',note:'スマホ注文'}}]},
-   checkout_options:{redirect_url:base+'/order/done',ask_for_shipping_address:false},
-   payment_note:'M Stand スマホ注文'};
-  const d=await sq('/online-checkout/payment-links',{method:'POST',body:JSON.stringify(body)});
-  const pl=d.payment_link||{};
-  r.writeHead(200,{'Content-Type':'application/json'});r.end(JSON.stringify({url:pl.url,order_id:pl.order_id,link_id:pl.id}));
+   order:{location_id:LOC,state:'OPEN',source:{name:'M Stand スマホ注文'},ticket_name:name,reference_id:'mstand-web',line_items:lines,
+    fulfillments:[{type:'PICKUP',state:'PROPOSED',pickup_details:{recipient:{display_name:name},schedule_type:'ASAP',prep_time_duration:'PT10M',note:'スマホ注文（レジで支払い）'}}]}};
+  const o=(await sq('/orders',{method:'POST',body:JSON.stringify(body)})).order||{};
+  const no=shortNo(o.id);
+  // Unpaid API orders are NOT visible in Square POS, so list it on the queue right away (marked unpaid)
+  if(!st.preparing.some(x=>x.order===o.id)){st.preparing.push({id:'web-'+o.id,order:o.id,num:name,no,unpaid:true,web:true,items:(o.line_items||[]).map(l=>l.name+(l.variation_name?'('+l.variation_name+')':'')+(l.quantity!=='1'?'×'+l.quantity:'')).join('、'),total:Number((o.total_money||{}).amount||0),at:Date.now()});st.seq++;save();push('prep')}
+  r.writeHead(200,{'Content-Type':'application/json'});r.end(JSON.stringify({order_id:o.id,no}));
  }catch(e){console.error('checkout',e.message);bad(502,'square')}
 }
+const shortNo=id=>'W'+String(id||'').replace(/[^A-Z0-9]/gi,'').slice(-4).toUpperCase();
 async function orderStatus(id,r){
  r.setHeader('Content-Type','application/json');
  if(!/^[A-Za-z0-9]{10,40}$/.test(id)){r.writeHead(400);return r.end('{}')}
  try{const o=(await sq('/orders/'+id)).order||{};if(o.location_id!==LOC||o.reference_id!=='mstand-web'){r.writeHead(404);return r.end('{}')}
   const f=(o.fulfillments||[])[0]||{};
-  r.end(JSON.stringify({name:cleanName(o.ticket_name),paid:o.state==='COMPLETED'||!!(o.tenders||[]).length||Number((o.net_amount_due_money||{}).amount)===0&&Number((o.total_money||{}).amount)>0,state:f.state||o.state,total:Number((o.total_money||{}).amount||0),items:(o.line_items||[]).map(l=>({n:l.name,v:l.variation_name,q:l.quantity}))}))}
+  r.end(JSON.stringify({no:shortNo(o.id),name:cleanName(o.ticket_name),paid:o.state==='COMPLETED'||!!(o.tenders||[]).length||Number((o.net_amount_due_money||{}).amount)===0&&Number((o.total_money||{}).amount)>0,state:f.state||o.state,total:Number((o.total_money||{}).amount||0),items:(o.line_items||[]).map(l=>({n:l.name,v:l.variation_name,q:l.quantity}))}))}
  catch(e){r.writeHead(502);r.end('{}')}
 }

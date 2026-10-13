@@ -5,17 +5,17 @@ header{background:linear-gradient(120deg,#f72fa8,#7b2ff7);color:#fff;padding:28p
 .nm{display:inline-block;background:#7b2ff7;color:#ffe14d;font-size:34px;font-weight:900;padding:10px 26px;border-radius:14px;margin:10px 0}
 .li{display:flex;justify-content:space-between;text-align:left;border-bottom:1px solid #eee;padding:9px 0;font-size:14px}
 .st{font-weight:800;color:#f72fa8;margin-top:14px}a{display:inline-block;margin:10px;color:#7b2ff7;font-weight:700}</style></head><body>
-<header><h1>ご注文ありがとうございます</h1></header>
-<div class="box"><div>お呼び出し名</div><div class="nm" id="nm">…</div>
-<p style="font-size:14px">できあがりましたら、店頭スクリーンで<br>お名前をお呼びします。カウンターでお受け取りください。</p>
+<header><h1>ご注文を受け付けました</h1></header>
+<div class="box"><div class="pay" style="background:#ffe14d;color:#5a1fb8;font-weight:900;border-radius:12px;padding:12px;font-size:17px;margin-bottom:14px">レジでお名前をお伝えのうえ、<br>お支払いください</div><div>注文番号 <b id="no" style="font-size:20px;color:#7b2ff7">—</b></div><div style="margin-top:8px">お呼び出し名</div><div class="nm" id="nm">…</div>
+<p style="font-size:14px">できあがりましたら、店頭スクリーンで<br>お名前をお呼びします。</p>
 <div id="li"></div><div class="st" id="st"></div></div><a href="/order">メニューに戻る</a>
 <script>
 var p=new URLSearchParams(location.search),id=p.get('orderId')||p.get('order_id');try{id=id||localStorage.getItem('ms_last')}catch(e){}
-var S={PROPOSED:'準備中',RESERVED:'準備中',PREPARED:'できあがりました！',COMPLETED:'お受け取り済み',CANCELED:'キャンセル'};
+var S={PROPOSED:'受付済み',RESERVED:'準備中',PREPARED:'できあがりました！',COMPLETED:'お受け取り済み',CANCELED:'キャンセル'};
 function load(){if(!id){document.getElementById('nm').textContent='—';return}
 fetch('/api/order-status?id='+encodeURIComponent(id)).then(function(r){return r.json()}).then(function(d){
-document.getElementById('nm').textContent=(d.name||'')+' 様';
+document.getElementById('nm').textContent=(d.name||'')+' 様';document.getElementById('no').textContent=d.no||'—';
 document.getElementById('li').innerHTML=(d.items||[]).map(function(i){return '<div class="li"><span>'+i.n+' '+(i.v||'')+'</span><b>×'+i.q+'</b></div>'}).join('')+'<div class="li"><b>合計</b><b>¥'+(d.total||0).toLocaleString()+'</b></div>';
-document.getElementById('st').textContent=d.paid?('状態：'+(S[d.state]||'準備中')):'お支払いの確認中です…'})}
+document.getElementById('st').textContent=d.state==='CANCELED'?'この注文はキャンセルされました':(d.paid?'お支払い済み・':'')+'状態：'+(S[d.state]||'受付済み')})}
 load();setInterval(load,15000);
 </script></body></html>
