@@ -9,5 +9,9 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "msedge-tts": "^2.1.0",
+    "opencc-js": "^1.4.2"
   }
 }

@@ -32,7 +32,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-c
  <div class="brand">M Stand 池袋</div>
 </div>
 <div id="off"></div><div id="dbg" style="display:none;position:absolute;left:0;bottom:0;background:#000;color:#fff;font-size:14px;padding:2px 6px"></div>
-<audio id="chime" src="/chime.wav" preload="auto"></audio><audio id="vo" preload="none"></audio>
+<audio id="chime" src="/chime_marimba.mp3" preload="auto"></audio><audio id="vo" preload="none"></audio>
 <script>
 (function(){
 try{
@@ -50,11 +50,11 @@ function fit(){try{var m=$('menu'),W=Math.floor(window.innerWidth*0.84),H=window
 fit();if(window.addEventListener)window.addEventListener('resize',fit,false);
 function chime(){if(!SOUND)return;try{var a=$('chime');a.currentTime=0;var p=a.play();if(p&&p['catch'])p['catch'](function(){})}catch(e){}}
 function hasJa(){try{if(!window.speechSynthesis||!window.SpeechSynthesisUtterance)return null;var vs=speechSynthesis.getVoices()||[];for(var i=0;i<vs.length;i++){if(vs[i].lang&&vs[i].lang.indexOf('ja')===0)return vs[i]}}catch(e){}return null}
+var LANGS=(function(){var m=/[?&]lang=([^&]*)/.exec(location.search);return m?decodeURIComponent(m[1]):'ja,zh,en'})();
+function localSpeak(num){var v=hasJa();if(!v)return;try{var u=new SpeechSynthesisUtterance((/^[0-9]+$/.test(String(num))?num+'番':num+'様')+'、お待たせしました');u.lang='ja-JP';u.rate=0.9;u.voice=v;speechSynthesis.speak(u)}catch(e){}}
 function speak(num){if(!SOUND)return;
  setTimeout(function(){
-  var v=hasJa();
-  if(v){try{var u=new SpeechSynthesisUtterance((/^[0-9]+$/.test(String(num))?num+'番のお客様':num+'様')+'、お待たせしました');u.lang='ja-JP';u.rate=0.9;u.voice=v;speechSynthesis.speak(u);return}catch(e){}}
-  try{var a=$('vo');a.src='/voice?n='+encodeURIComponent(String(num));a.volume=1;if(a.load)a.load();var p=a.play();if(p&&p['catch'])p['catch'](function(){})}catch(e){}
+  try{var a=$('vo');a.onerror=function(){a.onerror=null;localSpeak(num)};a.src='/voice?n='+encodeURIComponent(String(num))+'&lang='+encodeURIComponent(LANGS);a.volume=1;if(a.load)a.load();var p=a.play();if(p&&p['catch'])p['catch'](function(){})}catch(e){localSpeak(num)}
  },1800)}
 function unlock(){var ids=['chime','vo'];for(var k=0;k<ids.length;k++){try{var a=$(ids[k]);if(ids[k]==='vo'&&!a.src)a.src='/voice_fallback.mp3';a.volume=0;var p=a.play();if(p&&p['catch'])p['catch'](function(){});(function(b){setTimeout(function(){b.pause();b.volume=1},80)})(a)}catch(e){}}}
 if(document.addEventListener){document.addEventListener('click',unlock,false);document.addEventListener('touchstart',unlock,false)}

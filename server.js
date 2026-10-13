@@ -14,7 +14,7 @@ http.createServer((q,r)=>{
  const u=new URL(q.url,'http://x');
  if(u.pathname.length>1&&u.pathname.endsWith('/'))u.pathname=u.pathname.replace(/\/+$/,'')||'/'; // /order/ -> /order
  if(u.pathname==='/events'){r.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive','X-Accel-Buffering':'no'});r.write(`data: ${JSON.stringify({...pub(),event:'init'})}\n\n`);clients.add(r);const k=setInterval(()=>r.write(':k\n\n'),20000);q.on('close',()=>{clients.delete(r);clearInterval(k)});return;}
-if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r);return;}
+if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r,u.searchParams.get('lang'));return;}
  if(u.pathname==='/api/menu'){menu().then(m=>{r.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-cache'});r.end(JSON.stringify(m))}).catch(e=>{console.error('menu',e.message);r.writeHead(502);r.end('{"error":"menu"}')});return;}
  if(u.pathname==='/api/checkout'&&q.method==='POST'){let b='';q.on('data',c=>{b+=c;if(b.length>2e4)q.destroy()});q.on('end',()=>checkout(b,q,r));return;}
  if(u.pathname==='/api/order-status'){orderStatus(u.searchParams.get('id')||'',r);return;}
@@ -115,23 +115,54 @@ async function checkReady(){
  save();
 }
 
-// --- voice clips via Google Translate TTS, cached; fallback to generic clip ---
-const vcache=new Map();
-function phrase(n){n=String(n).replace(/[<>&"'`\\]/g,'').trim().slice(0,24);return /^[0-9]+$/.test(n)?n+'番のお客様、お待たせしました':n+'様、お待たせしました'}
-async function voice(n,r){
+// --- voice: edge neural TTS -> Google TTS -> generic clip; ?lang=ja,zh,en ---
+const {MsEdgeTTS,OUTPUT_FORMAT}=require('msedge-tts');
+const t2s=require('opencc-js').Converter({from:'tw',to:'cn'});
+const VOICES={ja:'ja-JP-NanamiNeural',zh:'zh-CN-XiaoxiaoNeural',en:'en-US-JennyNeural'};
+const GTL={ja:'ja',zh:'zh-CN',en:'en'};
+const DEFAULT_LANGS=(process.env.VOICE_LANGS||'ja,zh,en');
+let GAP=null;try{GAP=fs.readFileSync(path.join(__dirname,'public','gap.mp3'))}catch(e){}
+const vcache=new Map(),acache=new Map();
+function cput(m,k,v){m.set(k,v);if(m.size>300)m.delete(m.keys().next().value)}
+function parseLangs(q){const out=[];String(q||DEFAULT_LANGS).split(',').forEach(x=>{x=x.trim().toLowerCase();if(VOICES[x]&&!out.includes(x))out.push(x)});return out.length?out:['ja']}
+function phrase(n,lang){
+ n=String(n).replace(/[<>&"'`\\]/g,'').trim().slice(0,24);const num=/^[0-9]+$/.test(n);
+ if(lang==='zh'){if(num)return n+'号宝宝，你的饮品做好啦，请取餐';if(/[\u3040-\u30ff]/.test(n))return '宝宝，你的饮品做好啦，请取餐';return t2s(n).replace(/\s+/g,'')+'宝宝，你的饮品做好啦，请取餐'}
+ if(lang==='en'){if(num)return 'Number '+n+', your order is ready';if(/^[A-Za-z][A-Za-z .'-]*$/.test(n))return 'Order for '+n+' is ready';return 'Your order is ready'}
+ return num?n+'番、お待たせしました':n+'様、お待たせしました';
+}
+function withTimeout(p,ms){return Promise.race([p,new Promise((_,j)=>setTimeout(()=>j(new Error('timeout')),ms))])}
+async function edgeTTS(text,lang){
+ const t=new MsEdgeTTS();
+ try{await t.setMetadata(VOICES[lang],OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
+  const b=await new Promise((res,rej)=>{const {audioStream}=t.toStream(text);const c=[];audioStream.on('data',d=>c.push(d));audioStream.on('error',rej);audioStream.on('close',()=>res(Buffer.concat(c)))});
+  if(b.length<1000)throw new Error('edge short');return b;
+ }finally{try{t.close()}catch(e){}}
+}
+async function googleTTS(text,lang){
+ const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),6000);
+ try{const x=await fetch('https://translate.google.com/translate_tts?ie=UTF-8&tl='+GTL[lang]+'&client=tw-ob&q='+encodeURIComponent(text),{headers:{'User-Agent':'Mozilla/5.0'},signal:ctl.signal});
+  if(!x.ok)throw new Error('tts '+x.status);const b=Buffer.from(await x.arrayBuffer());if(b.length<1000)throw new Error('tts short');return b}finally{clearTimeout(to)}
+}
+async function segment(n,lang){
+ const text=phrase(n,lang),k=lang+'|'+text;
+ if(vcache.has(k))return vcache.get(k);
+ let b=null;
+ try{b=await withTimeout(edgeTTS(text,lang),7000)}catch(e){console.error('voice edge',lang,e.message)}
+ if(!b){try{b=await googleTTS(text,lang)}catch(e){console.error('voice google',lang,e.message)}}
+ if(b)cput(vcache,k,b);return b;
+}
+async function voice(n,r,langQ){
  const send=(b)=>{r.writeHead(200,{'Content-Type':'audio/mpeg','Content-Length':b.length,'Cache-Control':'public, max-age=86400'});r.end(b)};
  const fb=()=>fs.readFile(path.join(__dirname,'public','voice_fallback.mp3'),(e,d)=>{if(e){r.writeHead(404);return r.end()}send(d)});
  if(!n)return fb();
- const t=phrase(n);
- if(vcache.has(t))return send(vcache.get(t));
+ const langs=parseLangs(langQ),key=langs.join(',')+'|'+String(n).trim().slice(0,24);
+ if(acache.has(key))return send(acache.get(key));
  try{
-  const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),6000);
-  const x=await fetch('https://translate.google.com/translate_tts?ie=UTF-8&tl=ja&client=tw-ob&q='+encodeURIComponent(t),{headers:{'User-Agent':'Mozilla/5.0'},signal:ctl.signal});
-  clearTimeout(to);
-  if(!x.ok)throw new Error('tts '+x.status);
-  const b=Buffer.from(await x.arrayBuffer());if(b.length<1000)throw new Error('tts short');
-  vcache.set(t,b);if(vcache.size>300)vcache.delete(vcache.keys().next().value);
-  send(b);
+  const parts=(await Promise.all(langs.map(l=>segment(n,l)))).filter(Boolean);
+  if(!parts.length)return fb();
+  const out=[];parts.forEach((p,i)=>{if(i&&GAP)out.push(GAP);out.push(p)});
+  const b=Buffer.concat(out);cput(acache,key,b);send(b);
  }catch(e){console.error('voice',e.message);fb()}
 }
 
