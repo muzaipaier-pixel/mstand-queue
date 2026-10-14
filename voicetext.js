@@ -92,4 +92,15 @@ function thanks(n,lang){
 }
 // long lines (drink names) are spoken a bit faster to keep 3 languages within ~15s
 function rateFor(t,lang){const L=lang==='en'?t.length/2.2:t.length;return L>26?'+15%':L>18?'+8%':'+0%'}
-module.exports={thanks,rateFor,phrase,parseItems,names,drink,MENU};
+// fun extras appended to the call line: bday | ms<N> (today's Nth cup) | life<N> | reg<N> (Nth visit)
+function parseFx(q){const fx={};String(q||'').split(',').slice(0,4).forEach(x=>{if(x==='bday')fx.bday=1;let m=/^(ms|life|reg)(\d{1,6})$/.exec(x);if(m)fx[m[1]]=+m[2]});return fx}
+const fxKey=fx=>Object.keys(fx).sort().map(k=>k+fx[k]).join(',');
+function withFx(text,lang,fx){
+ if(!fx)return text;const add=[];
+ if(fx.bday)add.push(lang==='zh'?'祝你生日快乐！':lang==='en'?'Happy birthday!':'お誕生日おめでとうございます！');
+ if(fx.life)add.push(lang==='zh'?'这是本店第'+fx.life+'杯，恭喜你！':lang==='en'?'This is our '+fx.life+'th cup ever, congratulations!':'当店通算'+fx.life+'杯目、おめでとうございます！');
+ if(fx.ms)add.push(lang==='zh'?'这是今天第'+fx.ms+'杯，恭喜你！':lang==='en'?"You got today's "+fx.ms+'th cup, congratulations!':'本日'+fx.ms+'杯目、おめでとうございます！');
+ if(fx.reg)add.push(lang==='zh'?'谢谢你一直以来的支持！':lang==='en'?'Thank you for always coming!':'いつもありがとうございます！');
+ return add.length?text+'。'.replace('。',lang==='en'?'. ':'。')+add.join(lang==='en'?' ':''):text;
+}
+module.exports={parseFx,fxKey,withFx,thanks,rateFor,phrase,parseItems,names,drink,MENU};

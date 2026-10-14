@@ -15,23 +15,24 @@ http.createServer((q,r)=>{
  const u=new URL(q.url,'http://x');
  if(u.pathname.length>1&&u.pathname.endsWith('/'))u.pathname=u.pathname.replace(/\/+$/,'')||'/'; // /order/ -> /order
  if(u.pathname==='/events'){r.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive','X-Accel-Buffering':'no'});r.write(`data: ${JSON.stringify({...pub(),event:'init'})}\n\n`);clients.add(r);const k=setInterval(()=>r.write(':k\n\n'),20000);q.on('close',()=>{clients.delete(r);clearInterval(k)});return;}
-if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r,u.searchParams.get('lang'),u.searchParams.get('i'),u.searchParams.get('t'));return;}
+if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r,u.searchParams.get('lang'),u.searchParams.get('i'),u.searchParams.get('t'),u.searchParams.get('fx'));return;}
  if(u.pathname==='/api/menu'){menu().then(m=>{r.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-cache'});r.end(JSON.stringify(m))}).catch(e=>{console.error('menu',e.message);r.writeHead(502);r.end('{"error":"menu"}')});return;}
  if(u.pathname==='/square/webhook'&&q.method==='POST'){webhook(q,r);return;}
  if(u.pathname==='/api/checkout'&&q.method==='POST'){let b='';q.on('data',c=>{b+=c;if(b.length>2e4)q.destroy()});q.on('end',()=>checkout(b,q,r));return;}
  if(u.pathname==='/api/order-status'){orderStatus(u.searchParams.get('id')||'',r);return;}
  if(u.pathname.startsWith('/api/kds')){kdsApi(u,q,r);return;}
+ if(u.pathname==='/api/fun')return jres(r,200,funState());
  if(u.pathname==='/api/state')return r.end(JSON.stringify(pub()));
  if(u.pathname==='/api/action'&&q.method==='POST'){let b='';q.on('data',c=>b+=c);q.on('end',()=>{let j={};try{j=JSON.parse(b)}catch(e){}
   if(String(j.pin)!==PIN){r.writeHead(403);return r.end('{"error":"PIN"}')}
   if(j.action==='check')return r.end('{"ok":true}');
   let ev='call';
-  if(j.action==='next'||j.action==='set')st.callItems=[];
+  if(j.action==='next'||j.action==='set'){st.callItems=[];st.callFx=null}
   if(j.action==='next')st.current=st.current+1;
   else if(j.action==='set'){const n=parseInt(j.number);if(!(n>0&&n<10000)){r.writeHead(400);return r.end('{}')}st.current=n}
   else if(j.action==='recall'){if(!st.current){return r.end('{}')}ev='recall'}
   else if(j.action==='reset'){st={current:0,history:[],seq:st.seq,preparing:[],seenPay:st.seenPay,sqSince:st.sqSince};ev='reset'}
-  else if(j.action==='callid'){const x=st.preparing.find(y=>y.id===j.id);if(!x)return r.end('{}');{const k=kds.get(x.order);callNum(/^[0-9]+$/.test(String(x.num))?parseInt(x.num):x.num,k?itemsOf(k.raw):[])}return r.end(JSON.stringify({ok:true,...pub()}))}
+  else if(j.action==='callid'){const x=st.preparing.find(y=>y.id===j.id);if(!x)return r.end('{}');{const k=kds.get(x.order);callNum(/^[0-9]+$/.test(String(x.num))?parseInt(x.num):x.num,k?itemsOf(k.raw):[],k&&k.raw)}return r.end(JSON.stringify({ok:true,...pub()}))}
   else if(j.action==='paid'){const x=st.preparing.find(y=>y.id===j.id);if(x)x.unpaid=false;ev='prep'}
   else if(j.action==='done'){st.preparing=st.preparing.filter(x=>x.id!==j.id);ev='prep'}
   else {r.writeHead(400);return r.end('{}')}
@@ -81,7 +82,13 @@ if(TOK){kdsSeed().finally(tickPoll);console.log('square polling on (3s, backoff 
 
 // auto-call when Square marks a tracked order ready/completed
 const itemsOf=o=>((o&&o.line_items)||[]).map(l=>({n:l.name,q:parseInt(l.quantity)||1}));
-function callNum(num,items){st.current=num;st.callItems=(items||[]).slice(0,10);st.preparing=st.preparing.filter(x=>String(x.num)!==String(num));st.history=[num,...st.history.filter(x=>String(x)!==String(num))].slice(0,8);st.seq++;st.at=Date.now();st.callAt=st.at;save();push('call')}
+function callNum(num,items,o){
+ // fun fx (birthday / milestone / regular) computed before the call is pushed; never blocks >1.5s, never throws
+ let fx={};try{fx=cupFx(o,items)}catch(e){}
+ const go=()=>{try{st.callFx=Object.keys(fx).length?fx:null}catch(e){}callNum0(num,items)};
+ if(o&&o.customer_id&&TOK)withTimeout(custFx(o),1500).then(c=>{Object.assign(fx,c||{})}).catch(()=>{}).finally(go);else go();
+}
+function callNum0(num,items){st.current=num;st.callItems=(items||[]).slice(0,10);st.preparing=st.preparing.filter(x=>String(x.num)!==String(num));st.history=[num,...st.history.filter(x=>String(x)!==String(num))].slice(0,8);st.seq++;st.at=Date.now();st.callAt=st.at;save();push('call')}
 async function labelOf(o){
  const rec=((o.fulfillments||[]).map(f=>((f.delivery_details||f.pickup_details||{}).recipient||{}).display_name).find(Boolean)||'').trim();
  let label=(o.ticket_name||'').trim()||rec||o.id.slice(-4);
@@ -104,7 +111,7 @@ async function tryCall(o){
  const x=st.preparing.find(y=>y.order===o.id||y.paidOrder===o.id);
  const lab=x?x.num:await labelOf(o);
  st.preparing=st.preparing.filter(y=>y.order!==o.id&&y.paidOrder!==o.id);
- console.log('auto-call order');callNum(/^[0-9]+$/.test(String(lab))?parseInt(lab):lab,itemsOf(o));save();
+ console.log('auto-call order');callNum(/^[0-9]+$/.test(String(lab))?parseInt(lab):lab,itemsOf(o),o);save();
  return true;
 }
 // --- Square webhook: instant call on order.updated / order.fulfillment.updated ---
@@ -173,24 +180,24 @@ async function googleTTS(text,lang){
  try{const x=await fetch('https://translate.google.com/translate_tts?ie=UTF-8&tl='+GTL[lang]+'&client=tw-ob&q='+encodeURIComponent(text),{headers:{'User-Agent':'Mozilla/5.0'},signal:ctl.signal});
   if(!x.ok)throw new Error('tts '+x.status);const b=Buffer.from(await x.arrayBuffer());if(b.length<1000)throw new Error('tts short');return b}finally{clearTimeout(to)}
 }
-async function segment(n,lang,items,kind){
- const text=kind==='thanks'?VT.thanks(n,lang):phrase(n,lang,items),k=lang+'|'+text;
+async function segment(n,lang,items,kind,fx){
+ const text=kind==='thanks'?VT.thanks(n,lang):VT.withFx(phrase(n,lang,items),lang,fx),k=lang+'|'+text;
  if(vcache.has(k))return vcache.get(k);
  let b=null;
  try{b=await withTimeout(edgeTTS(text,lang),7000)}catch(e){console.error('voice edge',lang,e.message)}
  if(!b){try{b=await googleTTS(text,lang)}catch(e){console.error('voice google',lang,e.message)}}
  if(b)cput(vcache,k,b);return b;
 }
-async function voice(n,r,langQ,itemsQ,kind){
- kind=kind==='thanks'?'thanks':'call';
+async function voice(n,r,langQ,itemsQ,kind,fxQ){
+ const fx=VT.parseFx(fxQ);kind=kind==='thanks'?'thanks':'call';
  const items=VT.parseItems(itemsQ);
  const send=(b)=>{r.writeHead(200,{'Content-Type':'audio/mpeg','Content-Length':b.length,'Cache-Control':'public, max-age=86400'});r.end(b)};
  const fb=()=>fs.readFile(path.join(__dirname,'public','voice_fallback.mp3'),(e,d)=>{if(e){r.writeHead(404);return r.end()}send(d)});
  if(!n&&kind!=='thanks')return fb();
- const langs=parseLangs(langQ),key=langs.join(',')+'|'+String(n).trim().slice(0,24)+'|'+String(itemsQ||'').slice(0,300)+'|'+kind;
+ const langs=parseLangs(langQ),key=langs.join(',')+'|'+String(n).trim().slice(0,24)+'|'+String(itemsQ||'').slice(0,300)+'|'+kind+'|'+VT.fxKey(fx);
  if(acache.has(key))return send(acache.get(key));
  try{
-  const parts=(await Promise.all(langs.map(l=>segment(n,l,items,kind)))).filter(Boolean);
+  const parts=(await Promise.all(langs.map(l=>segment(n,l,items,kind,fx)))).filter(Boolean);
   if(!parts.length)return fb();
   const out=[];parts.forEach((p,i)=>{if(i&&GAP)out.push(GAP);out.push(p)});
   const b=Buffer.concat(out);cput(acache,key,b);send(b);
@@ -311,7 +318,7 @@ function kdsApi(u,q,r){
     catch(e){console.error('kds done square update failed',e.message);warn='Square 状态没改到（收银机建的单 API 不能改），只在 KDS 和叫号屏上标完成';kdsLoc()[x.id]='done';await kdsUpsert(x.raw)}
     st.calledOrders=st.calledOrders||[];if(!st.calledOrders.includes(x.id))st.calledOrders.push(x.id);st.calledOrders=st.calledOrders.slice(-500);
     st.preparing=st.preparing.filter(y=>y.order!==x.id&&y.paidOrder!==x.id);
-    callNum(/^[0-9]+$/.test(String(x.name))?parseInt(x.name):x.name,itemsOf(x.raw));
+    callNum(/^[0-9]+$/.test(String(x.name))?parseInt(x.name):x.name,itemsOf(x.raw),x.raw);
    }else{
     // Square cannot move PREPARED back to RESERVED, so recall is a KDS/screen-side reopen
     kdsLoc()[x.id]='open';await kdsUpsert(x.raw);
@@ -324,3 +331,61 @@ function kdsApi(u,q,r){
   }catch(e){console.error('kds',u.pathname,e.message);jres(r,e.code||502,{error:e.message})}
  });
 }
+
+// --- Fun features: today's top 3, cup milestones, birthday / regular greeting, weather (all fail-safe) ---
+const FUN_REWARD=String(process.env.FUN_REWARD_TEXT||'').slice(0,60); // e.g. "次回トッピング無料" — empty by default
+const LIFE_BASE=parseInt(process.env.LIFETIME_CUPS_BASE||''); // lifetime cups sold before this counter existed; unset = lifetime milestones off
+const tokyoDay=(t)=>new Date((t||Date.now())+9*3600e3).toISOString().slice(0,10);
+const cupsOf=o=>((o&&o.line_items)||[]).reduce((a,l)=>a+(/ギフト|gift|袋|bag/i.test(l.name||'')?0:(parseInt(l.quantity)||0)),0);
+let stats={day:'',top3:[],cum:{},total:0,at:0};
+async function statsRefresh(){
+ if(!TOK)return;
+ try{
+  const day=tokyoDay();const start=new Date(Date.parse(day+'T00:00:00+09:00')).toISOString();
+  let orders=[],cur,pages=0;
+  do{const d=await sq('/orders/search',{method:'POST',body:JSON.stringify({location_ids:[LOC],limit:500,cursor:cur,query:{filter:{date_time_filter:{created_at:{start_at:start}},state_filter:{states:['OPEN','COMPLETED']}},sort:{sort_field:'CREATED_AT',sort_order:'ASC'}}})});
+   orders=orders.concat(d.orders||[]);cur=d.cursor;pages++}while(cur&&pages<6);
+  orders=orders.filter(o=>!/giftcard/i.test((o.source&&o.source.name)||'')&&cupsOf(o)>0).sort((a,b)=>Date.parse(a.created_at)-Date.parse(b.created_at));
+  const cnt={},cum={};let tot=0;
+  for(const o of orders){const c=cupsOf(o);cum[o.id]=[tot+1,tot+c];tot+=c;
+   for(const l of (o.line_items||[])){const q=parseInt(l.quantity)||0;if(!q||/ギフト|gift|袋|bag/i.test(l.name||''))continue;const k=String(l.name||'').trim();cnt[k]=(cnt[k]||0)+q}}
+  const top3=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([n,q])=>{const d=VT.drink(n)||{};return {ja:d.ja||n,zh:d.zh||n,en:d.en||'',q}});
+  stats={day,top3,cum,total:tot,at:Date.now()};
+ }catch(e){console.error('fun stats',e.message)}
+}
+if(TOK){setTimeout(statsRefresh,20000);setInterval(statsRefresh,3*60e3)}
+// milestone: the called order's cup range [a,b] contains a multiple of 100 (today), or of 1000 (lifetime, if base set)
+function cupFx(o,items){
+ const fx={};const c=o?cupsOf(o):(items||[]).reduce((a,b)=>a+(b.q||0),0);if(!c)return fx;
+ st.fun=st.fun||{};const day=tokyoDay();
+ if(st.fun.day!==day){st.fun.day=day;st.fun.counted=[];st.fun.extra=0}
+ const id=o&&o.id;if(id&&st.fun.counted.includes(id))return fx;if(id){st.fun.counted.push(id);st.fun.counted=st.fun.counted.slice(-800)}
+ let r=id&&stats.day===day&&stats.cum[id];
+ if(!r){const base=(stats.day===day?stats.total:0)+st.fun.extra;r=[base+1,base+c];st.fun.extra+=c}
+ const m=Math.floor(r[1]/100)*100;if(m>=100&&m>=r[0])fx.ms=m;
+ if(!isNaN(LIFE_BASE)){const a=(st.fun.life||LIFE_BASE)+1,b=a+c-1;st.fun.life=b;const L=Math.floor(b/1000)*1000;if(L>=1000&&L>=a)fx.life=L}
+ return fx;
+}
+const custC=new Map(); // id -> {day,bday,visits}; personal data stays in memory, never logged
+async function custFx(o){
+ const id=o.customer_id,day=tokyoDay();let c=custC.get(id);
+ if(!c||c.day!==day){
+  c={day,bday:false,visits:0};
+  try{const cu=(await sq('/customers/'+encodeURIComponent(id))).customer||{};const b=String(cu.birthday||'');c.bday=b.length>=10&&b.slice(5,10)===day.slice(5,10)}catch(e){}
+  try{let n=0,cur,p=0;do{const d=await sq('/orders/search',{method:'POST',body:JSON.stringify({location_ids:[LOC],limit:500,cursor:cur,return_entries:true,query:{filter:{customer_filter:{customer_ids:[id]},state_filter:{states:['OPEN','COMPLETED']}}}})});n+=(d.order_entries||[]).length;cur=d.cursor;p++}while(cur&&p<4);c.visits=n}catch(e){}
+  custC.set(id,c);if(custC.size>300)custC.delete(custC.keys().next().value);
+ }
+ const fx={};if(c.bday)fx.bday=1;if(c.visits>=10&&c.visits%10===0)fx.reg=c.visits;return fx;
+}
+// Ikebukuro weather via Open-Meteo (free, no key), cached 20 min
+let wx={at:0,data:null};
+async function weather(){
+ if(Date.now()-wx.at<20*60e3)return;wx.at=Date.now();
+ try{const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),5000);
+  const x=await fetch('https://api.open-meteo.com/v1/forecast?latitude=35.7295&longitude=139.7109&current=temperature_2m,weather_code&timezone=Asia%2FTokyo',{signal:ctl.signal});clearTimeout(to);
+  if(!x.ok)throw new Error('wx '+x.status);const j=await x.json();const t=j.current&&j.current.temperature_2m;if(typeof t!=='number')throw new Error('wx data');
+  wx.data={t:Math.round(t),code:j.current.weather_code,rec:t>=25?'ice':t<=15?'hot':'mild'};
+ }catch(e){console.error('weather',e.message)}
+}
+weather();setInterval(weather,20*60e3);
+function funState(){return {top3:stats.day===tokyoDay()?stats.top3:[],weather:wx.data,reward:FUN_REWARD,day:tokyoDay()}}

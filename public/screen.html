@@ -29,17 +29,48 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-c
 #prep span,#hist span{display:inline-block;max-width:96%;margin:0 .4vw;font-weight:bold;word-wrap:break-word;overflow-wrap:break-word}
 .brand{position:absolute;left:0;width:100%;bottom:2%;font-size:.9vw;font-weight:bold}
 #off{position:absolute;right:.5vw;top:.5vh;width:.8vw;height:.8vw;border-radius:50%;background:#f33;display:none}
+
+/* --- fun: info panel (fills the empty gap between the call area and 制作中, never over the menu) --- */
+#fun{position:absolute;left:4%;width:92%;top:35%;height:16%;overflow:hidden;font-size:.72vw;line-height:1.3;text-align:left}
+#fun .fb{background-color:rgba(255,255,255,.12);border-radius:.6vw;padding:.3vw .5vw;margin-bottom:.4vw}
+#fun b{color:#FFE600}
+#fun .r{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#fun .k{display:inline-block;width:1.2vw;font-weight:bold;color:#FFE600}
+/* celebration banner + confetti (CSS transforms only, max 36 pieces) */
+#cel{position:absolute;left:4%;width:92%;top:31%;height:20.5%;overflow:hidden;display:none;z-index:5;text-align:center;-webkit-box-sizing:border-box;box-sizing:border-box;padding:.4vw;border-radius:1vw;background-color:rgba(255,255,255,.95);color:#C0007A;font-weight:bold;-webkit-animation:pop .6s ease-out 1;animation:pop .6s ease-out 1}
+#cel .e{font-size:2.6vw;line-height:1.1}
+#cel .a{font-size:1vw;line-height:1.25}
+#cel .b{font-size:.75vw;line-height:1.25;color:#6a0090}
+#cel .w{font-size:.9vw;color:#fff;background-color:#E6007E;border-radius:.4vw;margin-top:.3vw}
+#cf{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden;pointer-events:none;z-index:4;display:none}
+#cf i{position:absolute;top:-6%;display:block;width:.9vw;height:1.4vw;font-style:normal;font-size:1.8vw;-webkit-animation:fall 4.5s linear 1 forwards;animation:fall 4.5s linear 1 forwards}
+@-webkit-keyframes fall{0%{-webkit-transform:translate3d(0,0,0) rotate(0)}100%{-webkit-transform:translate3d(3vw,112vh,0) rotate(720deg)}}
+@keyframes fall{0%{transform:translate3d(0,0,0) rotate(0)}100%{transform:translate3d(3vw,112vh,0) rotate(720deg)}}
+/* seasonal themes */
+.th-halloween #q{background-color:#2a0f3d;background-image:-webkit-linear-gradient(top,#3b1458,#140620);background-image:linear-gradient(to bottom,#3b1458,#140620)}
+.th-halloween #nt{color:#FF8A00;text-shadow:0 0 1.2vw rgba(255,138,0,.7)}
+.th-halloween #glow{background-color:rgba(255,120,0,.35)}
+.th-christmas #q{background-color:#0d5c2e;background-image:-webkit-linear-gradient(top,#127a3c,#0a3d1f);background-image:linear-gradient(to bottom,#127a3c,#0a3d1f)}
+.th-christmas #nt{color:#fff;text-shadow:0 0 1.2vw rgba(255,60,60,.9)}
+.th-christmas #glow{background-color:rgba(255,40,40,.30)}
+#deco{position:absolute;left:0;width:100%;top:9.2%;font-size:1.1vw;text-align:center;display:none}
+.th-halloween #deco,.th-christmas #deco{display:block}
+.call #deco{-webkit-animation:bob .6s ease-in-out 6;animation:bob .6s ease-in-out 6}
+@-webkit-keyframes bob{50%{-webkit-transform:translateY(-.6vw) scale(1.25)}}@keyframes bob{50%{transform:translateY(-.6vw) scale(1.25)}}
 </style></head><body>
 <img id="menu" src="/menu.jpg?v=6" alt="menu">
 <div id="q">
  <div class="t">お呼び出し番号<span>请取餐</span></div>
+ <div id="deco"></div>
  <div id="nw"><div id="glow"></div><div id="n"><span id="nt">-</span></div></div>
  <div class="sub">お待たせしました</div>
+ <div id="cel"></div>
+ <div id="fun"></div>
  <div class="box" id="prepb"><h2>制作中 / Preparing</h2><div id="prep"></div></div>
  <div class="box" id="histb"><h2>最近の番号 / 最近叫号</h2><div id="hist"></div></div>
  <div class="brand">M Stand 池袋</div>
 </div>
-<div id="off"></div><div id="dbg" style="display:none;position:absolute;left:0;bottom:0;background:#000;color:#fff;font-size:14px;padding:2px 6px"></div>
+<div id="cf"></div><div id="off"></div><div id="dbg" style="display:none;position:absolute;left:0;bottom:0;background:#000;color:#fff;font-size:14px;padding:2px 6px"></div>
 <audio id="chime" src="/chime_marimba.mp3" preload="auto"></audio><audio id="vo" preload="none"></audio>
 <script>
 (function(){
@@ -60,9 +91,9 @@ function chime(){if(!SOUND)return;try{var a=$('chime');a.currentTime=0;var p=a.p
 function hasJa(){try{if(!window.speechSynthesis||!window.SpeechSynthesisUtterance)return null;var vs=speechSynthesis.getVoices()||[];for(var i=0;i<vs.length;i++){if(vs[i].lang&&vs[i].lang.indexOf('ja')===0)return vs[i]}}catch(e){}return null}
 var LANGS=(function(){var m=/[?&]lang=([^&]*)/.exec(location.search);return m?decodeURIComponent(m[1]):'ja,zh,en'})();
 function localSpeak(num){var v=hasJa();if(!v)return;try{var u=new SpeechSynthesisUtterance((/^[0-9]+$/.test(String(num))?num+'番':num+'さま')+'、お待たせしました');u.lang='ja-JP';u.rate=0.9;u.voice=v;speechSynthesis.speak(u)}catch(e){}}
-function speak(num,items){var iq='';try{iq=(items||[]).map(function(x){return String(x.n).replace(/[|*]/g,'')+'*'+x.q}).join('|')}catch(e){}if(!SOUND)return;
+function speak(num,items,fxq){var iq='';try{iq=(items||[]).map(function(x){return String(x.n).replace(/[|*]/g,'')+'*'+x.q}).join('|')}catch(e){}if(!SOUND)return;
  setTimeout(function(){
-  try{var a=$('vo');a.onerror=function(){a.onerror=null;localSpeak(num)};a.src='/voice?v=2&n='+encodeURIComponent(String(num))+'&lang='+encodeURIComponent(LANGS)+(iq?'&i='+encodeURIComponent(iq):'');a.volume=1;if(a.load)a.load();var p=a.play();if(p&&p['catch'])p['catch'](function(){})}catch(e){localSpeak(num)}
+  try{var a=$('vo');a.onerror=function(){a.onerror=null;localSpeak(num)};a.src='/voice?v=2&n='+encodeURIComponent(String(num))+'&lang='+encodeURIComponent(LANGS)+(iq?'&i='+encodeURIComponent(iq):'')+(fxq?'&fx='+encodeURIComponent(fxq):'');a.volume=1;if(a.load)a.load();var p=a.play();if(p&&p['catch'])p['catch'](function(){})}catch(e){localSpeak(num)}
  },1800)}
 function unlock(){var ids=['chime','vo'];for(var k=0;k<ids.length;k++){try{var a=$(ids[k]);if(ids[k]==='vo'&&!a.src)a.src='/voice_fallback.mp3';a.volume=0;var p=a.play();if(p&&p['catch'])p['catch'](function(){});(function(b){setTimeout(function(){b.pause();b.volume=1},80)})(a)}catch(e){}}}
 if(document.addEventListener){document.addEventListener('click',unlock,false);document.addEventListener('touchstart',unlock,false)}
@@ -98,13 +129,48 @@ function handle(s){
  var hs=s.history||[];h='';for(var j=1;j<hs.length&&j<7;j++)h+='<span>'+esc(hs[j])+'</span>';$('hist').innerHTML=h;
  var txt=cur+'|'+$('prep').innerHTML+'|'+h;if(txt!==lastTxt){lastTxt=txt;fitAll()}
  if(isCall){nw.className='';void nw.offsetWidth;setTimeout(function(){nw.className='call'},20);
-  if(nw._t)clearTimeout(nw._t);nw._t=setTimeout(function(){nw.className=''},5000);chime();speak(s.current,s.callItems)}
+  if(nw._t)clearTimeout(nw._t);nw._t=setTimeout(function(){nw.className=''},5000);chime();var fx=(s.callFx&&typeof s.callFx==='object')?s.callFx:null;speak(s.current,s.callItems,fxParam(fx));celebrate(fx);if(!fx&&TH)confetti(TH)}
  var pp=s.preparing||[],fresh=[];
  if(seenPrep===null){seenPrep={};for(var k=0;k<pp.length;k++)seenPrep[pp[k].id]=1}
  else{for(var k=0;k<pp.length;k++)if(!seenPrep[pp[k].id]){seenPrep[pp[k].id]=1;fresh.push(pp[k])}}
  if(fresh.length){var f=fresh[fresh.length-1];setTimeout(function(){thank(fresh.length>1?'':f.num)},isCall?9000:300)}
  lastCallAt=s.callAt||0;
 }
+
+// ---------- fun features (all wrapped in try/catch: failures never stop the call screen) ----------
+var DEMO=(function(){var m=/[?&]demo=([a-z,]+)/.exec(location.search);return m?m[1]:''})();
+function demoHas(k){return (','+DEMO+',').indexOf(','+k+',')>=0}
+var FUN={reward:''};
+function theme(){var d=new Date(),M=d.getMonth()+1,D=d.getDate(),t='';
+ if(M===10&&D>=20)t='halloween';else if(M===12&&D<=25)t='christmas';
+ if(demoHas('halloween'))t='halloween';if(demoHas('christmas'))t='christmas';if(demoHas('notheme'))t='';
+ try{document.body.className=t?'th-'+t:'';$('deco').innerHTML=t==='halloween'?'\uD83C\uDF83 \uD83D\uDC7B \uD83E\uDD87 \uD83C\uDF6C':t==='christmas'?'\uD83C\uDF84 \u2B50 \uD83C\uDF85 \uD83C\uDF81':''}catch(e){}return t}
+var TH=theme();setInterval(function(){TH=theme()},10*60*1000);
+function confetti(kind){try{var c=$('cf'),h='',E=kind==='halloween'?['\uD83C\uDF83','\uD83D\uDC7B','\uD83C\uDF6C']:kind==='christmas'?['\u2744','\u2B50','\uD83C\uDF84']:null,C=['#FFE600','#FF1F9E','#00E0C6','#FF7A00','#7CFF4D','#ffffff'];
+ for(var i=0;i<(E?18:36);i++){var l=Math.floor(Math.random()*100),dl=(Math.random()*1.6).toFixed(2);
+  h+=E?'<i style="left:'+l+'%;-webkit-animation-delay:'+dl+'s;animation-delay:'+dl+'s;background:none">'+E[i%E.length]+'</i>':'<i style="left:'+l+'%;background-color:'+C[i%C.length]+';-webkit-animation-delay:'+dl+'s;animation-delay:'+dl+'s"></i>'}
+ c.innerHTML=h;c.style.display='block';if(c._t)clearTimeout(c._t);c._t=setTimeout(function(){c.style.display='none';c.innerHTML=''},7000)}catch(e){}}
+function celebrate(fx){try{if(!fx)return;var h='',big=false;
+ if(fx.bday){h+='<div class="e">\uD83C\uDF82\uD83C\uDF89</div><div class="a">お誕生日おめでとうございます！</div><div class="b">生日快乐 \u00B7 Happy Birthday!</div>';big=true}
+ if(fx.life||fx.ms){var n=fx.life||fx.ms;h+='<div class="e">\uD83C\uDFC6</div><div class="a">'+(fx.life?'通算':'本日')+n+'杯目</div><div class="a">おめでとうございます！</div><div class="b">'+(fx.life?'本店第':'今天第')+n+'杯 \u00B7 Cup #'+n+'!</div>';big=true}
+ if(fx.reg&&!big){h+='<div class="e">\uD83D\uDC9C</div><div class="a">いつもありがとうございます</div><div class="b">谢谢你一直以来的支持<br>Thank you for always coming!</div>'}
+ else if(fx.reg){h+='<div class="b">いつもありがとうございます \u00B7 '+fx.reg+'回目</div>'}
+ if(!h)return;
+ if(FUN.reward&&(fx.ms||fx.life||fx.bday))h+='<div class="w">'+esc(FUN.reward)+'</div>';
+ var el=$('cel');el.innerHTML=h;el.style.display='block';if(el._t)clearTimeout(el._t);el._t=setTimeout(function(){el.style.display='none'},9000);
+ if(big)confetti(TH||'');else if(TH)confetti(TH)}catch(e){}}
+function fxParam(fx){if(!fx)return '';var a=[];if(fx.bday)a.push('bday');if(fx.ms)a.push('ms'+fx.ms);if(fx.life)a.push('life'+fx.life);if(fx.reg)a.push('reg'+fx.reg);return a.join(',')}
+function renderFun(d){try{var h='',w=d.weather;
+ if(w){var ic=w.code>=95?'\u26C8':w.code>=71&&w.code<=86?'\u2744':w.code>=51?'\u2614':w.code>=2?'\u2601':'\u2600';
+  h+='<div class="fb"><div class="r">'+ic+' 池袋 <b>'+esc(w.t)+'\u2103</b></div><div class="r">'+(w.rec==='ice'?'\uD83E\uDDCA 暑い日はアイス・スムージー！':w.rec==='hot'?'\u2615 寒い日はHOTドリンク！':'\uD83E\uDD64 今日はどれもおすすめ！')+'</div><div class="r">'+(w.rec==='ice'?'热天来杯冰沙 / Iced!':w.rec==='hot'?'冷天来杯热饮 / Hot drinks!':'今天都推荐 / Enjoy!')+'</div></div>'}
+ var t=d.top3||[];if(t.length){h+='<div class="fb"><div class="r">\uD83D\uDD25 <b>本日の人気 / 今日人气</b></div>';
+  for(var i=0;i<t.length;i++)h+='<div class="r"><span class="k">'+(i+1)+'</span>'+esc(t[i].ja)+'</div>';h+='</div>'}
+ $('fun').innerHTML=h}catch(e){}}
+function pollFun(){try{if(DEMO){FUN.reward=/[?&]reward=([^&]*)/.test(location.search)?decodeURIComponent(RegExp.$1):'';
+  renderFun({weather:{t:demoHas('hot')?32:demoHas('mild')?20:9,code:demoHas('hot')?0:3,rec:demoHas('hot')?'ice':demoHas('mild')?'mild':'hot'},top3:[{ja:'アボカドスムージー'},{ja:'ロイヤルタピオカミルクティー'},{ja:'満杯いちごスムージー'}]});return}
+ var x=new XMLHttpRequest();x.open('GET','/api/fun?t='+(new Date().getTime()),true);
+ x.onreadystatechange=function(){if(x.readyState!==4)return;if(x.status===200){try{var d=JSON.parse(x.responseText);FUN.reward=d.reward||'';renderFun(d)}catch(e){}}};x.send(null)}catch(e){}}
+pollFun();setInterval(pollFun,3*60*1000);
 function poll(){
  try{var x=new XMLHttpRequest();x.open('GET','/api/state?t='+(new Date().getTime()),true);
  x.onreadystatechange=function(){if(x.readyState!==4)return;
@@ -113,7 +179,9 @@ function poll(){
   setTimeout(poll,1500)};
  x.send(null)}catch(e){setTimeout(poll,5000)}
 }
-poll();
+if(DEMO&&/birthday|milestone|regular|halloween|christmas|call/.test(DEMO)){setTimeout(function(){try{var fx={};if(demoHas('birthday'))fx.bday=1;if(demoHas('milestone'))fx.ms=100;if(demoHas('regular'))fx.reg=20;
+ handle({current:'陳美玲',callAt:2,callItems:[{n:'アボカドスムージー',q:1}],callFx:fx,preparing:[{id:'a',num:'田中'},{id:'b',num:'Emma'},{id:'c',num:'25'}],history:['陳美玲','佐藤','12','Lee']})}catch(e){}},1500)}
+if(DEMO)handle({current:'佐藤',callAt:1,preparing:[{id:'a',num:'田中'},{id:'b',num:'Emma'},{id:'c',num:'25'}],history:['佐藤','12','Lee']});else poll();
 setTimeout(function(){location.reload()},30*60*1000);
 }catch(e){}
 })();
