@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "msedge-tts": "^2.1.0",
-    "opencc-js": "^1.4.2"
+    "opencc-js": "^1.4.2",
+    "pinyin-pro": "^3.29.5",
+    "wanakana": "^5.3.1"
   }
 }

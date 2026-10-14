@@ -15,7 +15,7 @@ http.createServer((q,r)=>{
  const u=new URL(q.url,'http://x');
  if(u.pathname.length>1&&u.pathname.endsWith('/'))u.pathname=u.pathname.replace(/\/+$/,'')||'/'; // /order/ -> /order
  if(u.pathname==='/events'){r.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive','X-Accel-Buffering':'no'});r.write(`data: ${JSON.stringify({...pub(),event:'init'})}\n\n`);clients.add(r);const k=setInterval(()=>r.write(':k\n\n'),20000);q.on('close',()=>{clients.delete(r);clearInterval(k)});return;}
-if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r,u.searchParams.get('lang'));return;}
+if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r,u.searchParams.get('lang'),u.searchParams.get('i'));return;}
  if(u.pathname==='/api/menu'){menu().then(m=>{r.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-cache'});r.end(JSON.stringify(m))}).catch(e=>{console.error('menu',e.message);r.writeHead(502);r.end('{"error":"menu"}')});return;}
  if(u.pathname==='/square/webhook'&&q.method==='POST'){webhook(q,r);return;}
  if(u.pathname==='/api/checkout'&&q.method==='POST'){let b='';q.on('data',c=>{b+=c;if(b.length>2e4)q.destroy()});q.on('end',()=>checkout(b,q,r));return;}
@@ -26,11 +26,12 @@ if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r,u.searchParams.get
   if(String(j.pin)!==PIN){r.writeHead(403);return r.end('{"error":"PIN"}')}
   if(j.action==='check')return r.end('{"ok":true}');
   let ev='call';
+  if(j.action==='next'||j.action==='set')st.callItems=[];
   if(j.action==='next')st.current=st.current+1;
   else if(j.action==='set'){const n=parseInt(j.number);if(!(n>0&&n<10000)){r.writeHead(400);return r.end('{}')}st.current=n}
   else if(j.action==='recall'){if(!st.current){return r.end('{}')}ev='recall'}
   else if(j.action==='reset'){st={current:0,history:[],seq:st.seq,preparing:[],seenPay:st.seenPay,sqSince:st.sqSince};ev='reset'}
-  else if(j.action==='callid'){const x=st.preparing.find(y=>y.id===j.id);if(!x)return r.end('{}');callNum(/^[0-9]+$/.test(String(x.num))?parseInt(x.num):x.num);return r.end(JSON.stringify({ok:true,...pub()}))}
+  else if(j.action==='callid'){const x=st.preparing.find(y=>y.id===j.id);if(!x)return r.end('{}');{const k=kds.get(x.order);callNum(/^[0-9]+$/.test(String(x.num))?parseInt(x.num):x.num,k?itemsOf(k.raw):[])}return r.end(JSON.stringify({ok:true,...pub()}))}
   else if(j.action==='paid'){const x=st.preparing.find(y=>y.id===j.id);if(x)x.unpaid=false;ev='prep'}
   else if(j.action==='done'){st.preparing=st.preparing.filter(x=>x.id!==j.id);ev='prep'}
   else {r.writeHead(400);return r.end('{}')}
@@ -79,7 +80,8 @@ function tickPoll(){poll().finally(()=>setTimeout(tickPoll,pollMs))}
 if(TOK){kdsSeed().finally(tickPoll);console.log('square polling on (3s, backoff 10s on 429)')}
 
 // auto-call when Square marks a tracked order ready/completed
-function callNum(num){st.current=num;st.preparing=st.preparing.filter(x=>String(x.num)!==String(num));st.history=[num,...st.history.filter(x=>String(x)!==String(num))].slice(0,8);st.seq++;st.at=Date.now();st.callAt=st.at;save();push('call')}
+const itemsOf=o=>((o&&o.line_items)||[]).map(l=>({n:l.name,q:parseInt(l.quantity)||1}));
+function callNum(num,items){st.current=num;st.callItems=(items||[]).slice(0,10);st.preparing=st.preparing.filter(x=>String(x.num)!==String(num));st.history=[num,...st.history.filter(x=>String(x)!==String(num))].slice(0,8);st.seq++;st.at=Date.now();st.callAt=st.at;save();push('call')}
 async function labelOf(o){
  const rec=((o.fulfillments||[]).map(f=>((f.delivery_details||f.pickup_details||{}).recipient||{}).display_name).find(Boolean)||'').trim();
  let label=(o.ticket_name||'').trim()||rec||o.id.slice(-4);
@@ -102,7 +104,7 @@ async function tryCall(o){
  const x=st.preparing.find(y=>y.order===o.id||y.paidOrder===o.id);
  const lab=x?x.num:await labelOf(o);
  st.preparing=st.preparing.filter(y=>y.order!==o.id&&y.paidOrder!==o.id);
- console.log('auto-call order');callNum(/^[0-9]+$/.test(String(lab))?parseInt(lab):lab);save();
+ console.log('auto-call order');callNum(/^[0-9]+$/.test(String(lab))?parseInt(lab):lab,itemsOf(o));save();
  return true;
 }
 // --- Square webhook: instant call on order.updated / order.fulfillment.updated ---
@@ -157,17 +159,12 @@ let GAP=null;try{GAP=fs.readFileSync(path.join(__dirname,'public','gap.mp3'))}ca
 const vcache=new Map(),acache=new Map();
 function cput(m,k,v){m.set(k,v);if(m.size>300)m.delete(m.keys().next().value)}
 function parseLangs(q){const out=[];String(q||DEFAULT_LANGS).split(',').forEach(x=>{x=x.trim().toLowerCase();if(VOICES[x]&&!out.includes(x))out.push(x)});return out.length?out:['ja']}
-function phrase(n,lang){
- n=String(n).replace(/[<>&"'`\\]/g,'').trim().slice(0,24);const num=/^[0-9]+$/.test(n);
- if(lang==='zh'){if(num)return n+'号宝宝，你的饮品做好啦，请取餐';if(/[\u3040-\u30ff]/.test(n))return '宝宝，你的饮品做好啦，请取餐';return t2s(n).replace(/\s+/g,'')+'宝宝，你的饮品做好啦，请取餐'}
- if(lang==='en'){if(num)return 'Number '+n+', your order is ready';if(/^[A-Za-z][A-Za-z .'-]*$/.test(n))return 'Order for '+n+' is ready';return 'Your order is ready'}
- return num?n+'番、お待たせしました':n+'様、お待たせしました';
-}
+const VT=require('./voicetext');const phrase=(n,lang,items)=>VT.phrase(n,lang,items);
 function withTimeout(p,ms){return Promise.race([p,new Promise((_,j)=>setTimeout(()=>j(new Error('timeout')),ms))])}
 async function edgeTTS(text,lang){
  const t=new MsEdgeTTS();
  try{await t.setMetadata(VOICES[lang],OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
-  const b=await new Promise((res,rej)=>{const {audioStream}=t.toStream(text);const c=[];audioStream.on('data',d=>c.push(d));audioStream.on('error',rej);audioStream.on('close',()=>res(Buffer.concat(c)))});
+  const b=await new Promise((res,rej)=>{const {audioStream}=t.toStream(text,{rate:VT.rateFor(text,lang)});const c=[];audioStream.on('data',d=>c.push(d));audioStream.on('error',rej);audioStream.on('close',()=>res(Buffer.concat(c)))});
   if(b.length<1000)throw new Error('edge short');return b;
  }finally{try{t.close()}catch(e){}}
 }
@@ -176,22 +173,23 @@ async function googleTTS(text,lang){
  try{const x=await fetch('https://translate.google.com/translate_tts?ie=UTF-8&tl='+GTL[lang]+'&client=tw-ob&q='+encodeURIComponent(text),{headers:{'User-Agent':'Mozilla/5.0'},signal:ctl.signal});
   if(!x.ok)throw new Error('tts '+x.status);const b=Buffer.from(await x.arrayBuffer());if(b.length<1000)throw new Error('tts short');return b}finally{clearTimeout(to)}
 }
-async function segment(n,lang){
- const text=phrase(n,lang),k=lang+'|'+text;
+async function segment(n,lang,items){
+ const text=phrase(n,lang,items),k=lang+'|'+text;
  if(vcache.has(k))return vcache.get(k);
  let b=null;
  try{b=await withTimeout(edgeTTS(text,lang),7000)}catch(e){console.error('voice edge',lang,e.message)}
  if(!b){try{b=await googleTTS(text,lang)}catch(e){console.error('voice google',lang,e.message)}}
  if(b)cput(vcache,k,b);return b;
 }
-async function voice(n,r,langQ){
+async function voice(n,r,langQ,itemsQ){
+ const items=VT.parseItems(itemsQ);
  const send=(b)=>{r.writeHead(200,{'Content-Type':'audio/mpeg','Content-Length':b.length,'Cache-Control':'public, max-age=86400'});r.end(b)};
  const fb=()=>fs.readFile(path.join(__dirname,'public','voice_fallback.mp3'),(e,d)=>{if(e){r.writeHead(404);return r.end()}send(d)});
  if(!n)return fb();
- const langs=parseLangs(langQ),key=langs.join(',')+'|'+String(n).trim().slice(0,24);
+ const langs=parseLangs(langQ),key=langs.join(',')+'|'+String(n).trim().slice(0,24)+'|'+String(itemsQ||'').slice(0,300);
  if(acache.has(key))return send(acache.get(key));
  try{
-  const parts=(await Promise.all(langs.map(l=>segment(n,l)))).filter(Boolean);
+  const parts=(await Promise.all(langs.map(l=>segment(n,l,items)))).filter(Boolean);
   if(!parts.length)return fb();
   const out=[];parts.forEach((p,i)=>{if(i&&GAP)out.push(GAP);out.push(p)});
   const b=Buffer.concat(out);cput(acache,key,b);send(b);
@@ -312,7 +310,7 @@ function kdsApi(u,q,r){
     catch(e){console.error('kds done square update failed',e.message);warn='Square 状态没改到（收银机建的单 API 不能改），只在 KDS 和叫号屏上标完成';kdsLoc()[x.id]='done';await kdsUpsert(x.raw)}
     st.calledOrders=st.calledOrders||[];if(!st.calledOrders.includes(x.id))st.calledOrders.push(x.id);st.calledOrders=st.calledOrders.slice(-500);
     st.preparing=st.preparing.filter(y=>y.order!==x.id&&y.paidOrder!==x.id);
-    callNum(/^[0-9]+$/.test(String(x.name))?parseInt(x.name):x.name);
+    callNum(/^[0-9]+$/.test(String(x.name))?parseInt(x.name):x.name,itemsOf(x.raw));
    }else{
     // Square cannot move PREPARED back to RESERVED, so recall is a KDS/screen-side reopen
     kdsLoc()[x.id]='open';await kdsUpsert(x.raw);

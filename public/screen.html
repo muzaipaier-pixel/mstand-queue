@@ -60,9 +60,9 @@ function chime(){if(!SOUND)return;try{var a=$('chime');a.currentTime=0;var p=a.p
 function hasJa(){try{if(!window.speechSynthesis||!window.SpeechSynthesisUtterance)return null;var vs=speechSynthesis.getVoices()||[];for(var i=0;i<vs.length;i++){if(vs[i].lang&&vs[i].lang.indexOf('ja')===0)return vs[i]}}catch(e){}return null}
 var LANGS=(function(){var m=/[?&]lang=([^&]*)/.exec(location.search);return m?decodeURIComponent(m[1]):'ja,zh,en'})();
 function localSpeak(num){var v=hasJa();if(!v)return;try{var u=new SpeechSynthesisUtterance((/^[0-9]+$/.test(String(num))?num+'番':num+'様')+'、お待たせしました');u.lang='ja-JP';u.rate=0.9;u.voice=v;speechSynthesis.speak(u)}catch(e){}}
-function speak(num){if(!SOUND)return;
+function speak(num,items){var iq='';try{iq=(items||[]).map(function(x){return String(x.n).replace(/[|*]/g,'')+'*'+x.q}).join('|')}catch(e){}if(!SOUND)return;
  setTimeout(function(){
-  try{var a=$('vo');a.onerror=function(){a.onerror=null;localSpeak(num)};a.src='/voice?n='+encodeURIComponent(String(num))+'&lang='+encodeURIComponent(LANGS);a.volume=1;if(a.load)a.load();var p=a.play();if(p&&p['catch'])p['catch'](function(){})}catch(e){localSpeak(num)}
+  try{var a=$('vo');a.onerror=function(){a.onerror=null;localSpeak(num)};a.src='/voice?n='+encodeURIComponent(String(num))+'&lang='+encodeURIComponent(LANGS)+(iq?'&i='+encodeURIComponent(iq):'');a.volume=1;if(a.load)a.load();var p=a.play();if(p&&p['catch'])p['catch'](function(){})}catch(e){localSpeak(num)}
  },1800)}
 function unlock(){var ids=['chime','vo'];for(var k=0;k<ids.length;k++){try{var a=$(ids[k]);if(ids[k]==='vo'&&!a.src)a.src='/voice_fallback.mp3';a.volume=0;var p=a.play();if(p&&p['catch'])p['catch'](function(){});(function(b){setTimeout(function(){b.pause();b.volume=1},80)})(a)}catch(e){}}}
 if(document.addEventListener){document.addEventListener('click',unlock,false);document.addEventListener('touchstart',unlock,false)}
@@ -93,7 +93,7 @@ function handle(s){
  var hs=s.history||[];h='';for(var j=1;j<hs.length&&j<7;j++)h+='<span>'+esc(hs[j])+'</span>';$('hist').innerHTML=h;
  var txt=cur+'|'+$('prep').innerHTML+'|'+h;if(txt!==lastTxt){lastTxt=txt;fitAll()}
  if(isCall){nw.className='';void nw.offsetWidth;setTimeout(function(){nw.className='call'},20);
-  if(nw._t)clearTimeout(nw._t);nw._t=setTimeout(function(){nw.className=''},5000);chime();speak(s.current)}
+  if(nw._t)clearTimeout(nw._t);nw._t=setTimeout(function(){nw.className=''},5000);chime();speak(s.current,s.callItems)}
  lastCallAt=s.callAt||0;
 }
 function poll(){
