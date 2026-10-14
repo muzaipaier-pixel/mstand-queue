@@ -224,10 +224,10 @@ async function menu(){
  const items=[];
  for(const o of objs){if(o.type!=='ITEM'||o.is_deleted||!at(o))continue;const d=o.item_data;
   if(d.product_type==='GIFT_CARD'||/ギフト|gift/i.test(d.name))continue;
-  const vars=(d.variations||[]).filter(v=>at(v)&&v.item_variation_data.price_money).map(v=>({id:v.id,name:v.item_variation_data.name||'',price:Number(v.item_variation_data.price_money.amount)}));
+  const vars=(d.variations||[]).filter(v=>at(v)&&v.item_variation_data.price_money).map(v=>({id:v.id,name:v.item_variation_data.name||'',price:Number(v.item_variation_data.price_money.amount),so:(v.item_variation_data.location_overrides||[]).some(l=>l.location_id===LOC&&l.sold_out)}));
   if(!vars.length)continue;
   const c=(d.categories||[]).map(x=>cat[x.id]).find(Boolean)||cat[d.category_id]||'その他';
-  items.push({id:o.id,name:d.name,cat:c,desc:(d.description_plaintext||'').split('\n')[0].slice(0,40),img:img[(d.image_ids||[])[0]]||'',vars});}
+  items.push({id:o.id,name:d.name,cat:c,desc:(d.description_plaintext||'').split('\n')[0].slice(0,40),img:img[(d.image_ids||[])[0]]||'',vars,so:vars.every(v=>v.so)});}
  menuC={at:Date.now(),data:items};return items;
 }
 const cleanName=s=>String(s||'').replace(/[<>&"'`\\\u0000-\u001f]/g,'').trim().slice(0,12);
@@ -238,7 +238,7 @@ async function checkout(b,q,r){
  try{
   let j;try{j=JSON.parse(b)}catch(e){return bad(400,'json')}
   const name=cleanName(j.name);if(!name)return bad(400,'name');
-  const m=await menu();const vm={};m.forEach(i=>i.vars.forEach(v=>vm[v.id]=v));
+  const m=await menu();const vm={};m.forEach(i=>i.vars.forEach(v=>{if(!v.so)vm[v.id]=v}));
   const lines=(Array.isArray(j.items)?j.items:[]).filter(x=>vm[x.v]).map(x=>({catalog_object_id:x.v,quantity:String(Math.min(20,Math.max(1,parseInt(x.q)||1)))})).slice(0,30);
   if(!lines.length)return bad(400,'items');
   const ip=String(q.headers['x-forwarded-for']||q.socket.remoteAddress||'').split(',')[0].trim();
