@@ -233,21 +233,40 @@ async function menu(){
 const cleanName=s=>String(s||'').replace(/[<>&"'`\\\u0000-\u001f]/g,'').trim().slice(0,12);
 const rl=new Map(); // ip -> [timestamps]
 function limited(ip){const now=Date.now(),a=(rl.get(ip)||[]).filter(t=>now-t<10*60e3);if(a.length>=3){rl.set(ip,a);return true}a.push(now);rl.set(ip,a);if(rl.size>5000)rl.delete(rl.keys().next().value);return false}
+// --- Anti-prank limits (env-configurable) ---
+const envInt=(k,d)=>{const v=parseInt(process.env[k]);return v>0?v:d};
+const AP={cups:envInt('ORDER_MAX_CUPS',10),yen:envInt('ORDER_MAX_YEN',20000),devMin:envInt('ORDER_DEVICE_WINDOW_MIN',3),devMax:envInt('ORDER_DEVICE_MAX_OPEN',1),
+ burstN:envInt('ORDER_BURST_MAX',8),burstMin:envInt('ORDER_BURST_WINDOW_MIN',5),burstBlockMin:envInt('ORDER_BURST_BLOCK_MIN',10),nameMax:envInt('ORDER_NAME_MAX',20)};
+const webRecent=[]; // {id,ip,dev,at}
+let burstUntil=0;
+const BADW=/(https?:|www\.|\.(com|net|jp|org|io|xyz)\b|@|うんこ|ちんこ|まんこ|死ね|しね|殺す|ころす|fuck|shit|bitch|cunt|dick|penis|sex|porn|nigg|傻逼|操你|妈的|他妈|草泥马|sb\b)/i;
+function nameCheck(raw){const n=String(raw||'').replace(/[<>&"'`\\\u0000-\u001f]/g,'').trim();
+ if(!n||n.length>AP.nameMax)return {err:'name'};if(BADW.test(n.replace(/\s+/g,'')))return {err:'badname'};if(/^[\d\W_]+$/.test(n)&&!/^[0-9]{1,4}$/.test(n))return {err:'badname'};return {n}}
+function webOpen(id){const p=st.preparing.find(x=>x.order===id);return !!(p&&p.unpaid)}
 async function checkout(b,q,r){
  const bad=(c,m)=>{r.writeHead(c,{'Content-Type':'application/json'});r.end(JSON.stringify({error:m}))};
  try{
   let j;try{j=JSON.parse(b)}catch(e){return bad(400,'json')}
-  const name=cleanName(j.name);if(!name)return bad(400,'name');
+  const nc=nameCheck(j.name);if(nc.err)return bad(400,nc.err);const name=nc.n;
   const m=await menu();const vm={};m.forEach(i=>i.vars.forEach(v=>{if(!v.so)vm[v.id]=v}));
   const lines=(Array.isArray(j.items)?j.items:[]).filter(x=>vm[x.v]).map(x=>({catalog_object_id:x.v,quantity:String(Math.min(20,Math.max(1,parseInt(x.q)||1)))})).slice(0,30);
   if(!lines.length)return bad(400,'items');
   const ip=String(q.headers['x-forwarded-for']||q.socket.remoteAddress||'').split(',')[0].trim();
   if(limited(ip))return bad(429,'rate');
+  const now=Date.now();while(webRecent.length&&now-webRecent[0].at>Math.max(AP.devMin,AP.burstMin)*60e3)webRecent.shift();
+  const cups=lines.reduce((a,l)=>a+parseInt(l.quantity),0),yen=lines.reduce((a,l)=>a+vm[l.catalog_object_id].price*parseInt(l.quantity),0);
+  if(cups>AP.cups||yen>AP.yen)return bad(400,'cap');
+  const dev=String(j.dev||'').replace(/[^a-z0-9-]/gi,'').slice(0,40);
+  const mine=webRecent.filter(w=>now-w.at<AP.devMin*60e3&&(w.ip===ip||dev&&w.dev===dev));
+  if(mine.length>=AP.devMax)return bad(429,'device');
+  if(now<burstUntil)return bad(503,'busy');
+  if(webRecent.filter(w=>now-w.at<AP.burstMin*60e3).length>=AP.burstN){burstUntil=now+AP.burstBlockMin*60e3;console.warn('phone order burst guard on');return bad(503,'busy')}
+  if(process.env.ORDER_DRY_RUN==='1'){const id='DRY'+now.toString(36).toUpperCase();webRecent.push({id,ip,dev,at:now});st.preparing.push({id:'web-'+id,order:id,num:name,no:shortNo(id),unpaid:true,web:true,items:'(dry-run)',total:yen,at:now});return jres(r,200,{order_id:id,no:shortNo(id),dry:true})}
   const body={idempotency_key:require('crypto').randomUUID(),
    order:{location_id:LOC,state:'OPEN',source:{name:'M Stand スマホ注文'},ticket_name:name,reference_id:'mstand-web',line_items:lines,
     fulfillments:[{type:'PICKUP',state:'PROPOSED',pickup_details:{recipient:{display_name:name},schedule_type:'ASAP',prep_time_duration:'PT10M',note:'スマホ注文（レジで支払い）'}}]}};
   const o=(await sq('/orders',{method:'POST',body:JSON.stringify(body)})).order||{};
-  const no=shortNo(o.id);
+  const no=shortNo(o.id);webRecent.push({id:o.id,ip,dev,at:Date.now()});
   // Unpaid API orders are NOT visible in Square POS, so list it on the queue right away (marked unpaid)
   if(!st.preparing.some(x=>x.order===o.id)){st.preparing.push({id:'web-'+o.id,order:o.id,num:name,no,unpaid:true,web:true,items:(o.line_items||[]).map(l=>l.name+(l.variation_name?'('+l.variation_name+')':'')+(l.quantity!=='1'?'×'+l.quantity:'')).join('、'),total:Number((o.total_money||{}).amount||0),at:Date.now()});st.seq++;save();push('prep')}
   r.writeHead(200,{'Content-Type':'application/json'});r.end(JSON.stringify({order_id:o.id,no}));
@@ -291,8 +310,10 @@ async function kdsSeed(){try{
  for(const o of (od.orders||[]))await kdsUpsert(o);console.log('kds seeded',kds.size);
 }catch(e){console.error('kds seed',e.message)}}
 function kdsList(){const d=new Date(Date.now()+9*3600e3);d.setUTCHours(0,0,0,0);const start=d-9*3600e3;
- return [...kds.values()].map(({raw,...x})=>x).filter(x=>Date.parse(x.created_at)>=start&&(x.state==='OPEN'||Date.now()-Date.parse(x.updated_at)<3*3600e3)).sort((a,b)=>Date.parse(a.created_at)-Date.parse(b.created_at))}
+ return [...kds.values()].map(({raw,...x})=>({...x,unpaid:isUnpaidWeb(raw)})).filter(x=>Date.parse(x.created_at)>=start&&(x.state==='OPEN'||Date.now()-Date.parse(x.updated_at)<3*3600e3)).sort((a,b)=>Date.parse(a.created_at)-Date.parse(b.created_at))}
 function jres(r,c,o){r.writeHead(c,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});r.end(JSON.stringify(o))}
+function isUnpaidWeb(o){if(!o||o.reference_id!=='mstand-web'||o.state!=='OPEN')return false;if((o.tenders||[]).length)return false;
+ const p=st.preparing.find(y=>y.order===o.id||y.paidOrder===o.id);if(p&&(!p.unpaid||p.paidOrder))return false;return true}
 async function kdsSetState(id,to){
  const g=await sq('/orders/'+encodeURIComponent(id));const o=g.order;const f=pickupF(o);
  if(!f)throw Object.assign(new Error('no fulfillment'),{code:409});
@@ -304,11 +325,22 @@ function kdsApi(u,q,r){
  const key=q.headers['x-kds-key']||u.searchParams.get('key')||'';
  if(!KDS_KEY||key!==KDS_KEY)return jres(r,403,{error:'key'});
  if(u.pathname==='/api/kds'&&q.method==='GET')return jres(r,200,{orders:kdsList(),now:Date.now()});
- if(q.method!=='POST'||!/^\/api\/kds\/(done|recall)$/.test(u.pathname))return jres(r,404,{});
+ if(q.method!=='POST'||!/^\/api\/kds\/(done|recall|cancel)$/.test(u.pathname))return jres(r,404,{});
  let b='';q.on('data',c=>{b+=c;if(b.length>2000)q.destroy()});q.on('end',async()=>{
   let j={};try{j=JSON.parse(b)}catch(e){}
   const x=kds.get(String(j.id||''));if(!x)return jres(r,404,{error:'unknown order'});
   if(x.readonly)return jres(r,403,{error:'Uber 订单不能在 KDS 改状态'});
+  if(u.pathname.endsWith('/cancel')){
+   if(!isUnpaidWeb(x.raw))return jres(r,409,{error:'只能取消未付款的手机单'});
+   let warn='';
+   try{const g=(await sq('/orders/'+encodeURIComponent(x.id))).order;
+    if((g.tenders||[]).length||g.state!=='OPEN')return jres(r,409,{error:'这张单已付款或已结束，不能取消'});
+    await sq('/orders/'+encodeURIComponent(x.id),{method:'PUT',body:JSON.stringify({idempotency_key:crypto.randomUUID(),order:{location_id:LOC,version:g.version,state:'CANCELED'}})})}
+   catch(e){console.error('kds cancel square failed',e.message);warn='Square 没取消成功，只从 KDS 和叫号屏移除'}
+   kds.delete(x.id);delete kdsLoc()[x.id];
+   st.preparing=st.preparing.filter(y=>y.order!==x.id&&y.paidOrder!==x.id);st.seq++;save();push('prep');
+   return jres(r,200,{ok:true,warn,cancelled:x.id});
+  }
   if(u.pathname.endsWith('/recall')&&x.state!=='PREPARED')return jres(r,409,{error:'只能召回刚完成的单'});
   if(u.pathname.endsWith('/done')&&x.state!=='OPEN')return jres(r,409,{error:'这张单已经完成了'});
   try{

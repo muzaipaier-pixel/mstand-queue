@@ -45,7 +45,7 @@ var nw=!d&&fresh[o.id]&&t<fresh[o.id];h+='<div class="t '+cl+(d?' done':'')+(nw?
 o.items.forEach(function(it){h+='<div class="it"><span class="q">'+(it.qty||1)+'</span><div><div class="in">'+esc(it.name)+'</div>'+(it.variation?'<div class="md v">'+esc(it.variation)+'</div>':'')+
 it.mods.map(function(x){return'<div class="md">· '+esc(x)+'</div>'}).join('')+(it.note?'<div class="md">📝 '+esc(it.note)+'</div>':'')+'</div></div>'});
 h+=(o.note?'<div class="nt">📝 '+esc(o.note)+'</div>':'')+'<div class="sp"></div>'+
-(o.readonly?'<button class="rc" disabled>Uber 单 · 仅显示</button>':busy[o.id]?'<button class="rc" disabled>处理中…</button>':d?(o.state==='PREPARED'?'<button class="rc" onclick="act('+i+',1)">召回</button>':'<button class="rc" disabled>已取餐</button>'):'<button onclick="act('+i+')">完成</button>')+'</div>'});
+(o.readonly?'<button class="rc" disabled>Uber 单 · 仅显示</button>':busy[o.id]?'<button class="rc" disabled>处理中…</button>':d?(o.state==='PREPARED'?'<button class="rc" onclick="act('+i+',1)">召回</button>':'<button class="rc" disabled>已取餐</button>'):'<button onclick="act('+i+')">完成</button>')+(!d&&o.unpaid&&!busy[o.id]?'<button class="rc" style="background:#e0242f;color:#fff;font-size:20px;padding:10px" onclick="cancelO('+i+')">取消（恶作剧单）</button>':'')+'</div>'});
 document.getElementById('grid').innerHTML=h||'<p style="color:#aaa;font-size:24px;padding:20px">没有订单</p>';
 document.getElementById('nO').textContent=nO;document.getElementById('nD').textContent=nD;
 var c=new Date(t);document.getElementById('clock').textContent=('0'+c.getHours()).slice(-2)+':'+('0'+c.getMinutes()).slice(-2);
@@ -54,6 +54,8 @@ function api(m,p,b,cb){var x=new XMLHttpRequest();x.open(m,p);x.setRequestHeader
 x.onload=function(){var j={};try{j=JSON.parse(x.responseText)}catch(e){}cb(x.status,j)};x.onerror=function(){cb(0,{})};x.send(b?JSON.stringify(b):null)}
 function act(i,rc){var o=data[i];if(!o||busy[o.id])return;busy[o.id]=1;render();
 api('POST','/api/kds/'+(rc?'recall':'done'),{id:o.id},function(s,j){delete busy[o.id];if(s===200&&j.order){data[i]=j.order;toast(j.warn?j.warn:rc?'已召回：'+o.name:'已完成，正在叫号：'+o.name)}else toast('失败：'+(j.error||s));render();load()})}
+function cancelO(i){var o=data[i];if(!o||busy[o.id])return;if(!confirm('确定取消这张未付款手机单？\n'+o.name))return;busy[o.id]=1;render();
+api('POST','/api/kds/cancel',{id:o.id},function(s,j){delete busy[o.id];if(s===200){data.splice(i,1);toast(j.warn||('已取消：'+o.name))}else toast('失败：'+(j.error||s));render();load()})}
 function load(){api('GET','/api/kds',null,function(s,j){if(s===403){document.getElementById('grid').innerHTML='<p style="color:#fff;font-size:24px;padding:20px">网址里的 key 不对，请用正确的 KDS 链接打开。</p>';return}
 if(s===200){skew=j.now-Date.now();data=j.orders||[];detectNew();render()}})}
 [].forEach.call(document.querySelectorAll('.tab'),function(e){e.onclick=function(){view=e.getAttribute('data-v');render()}});
