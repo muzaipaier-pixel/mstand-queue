@@ -79,7 +79,7 @@ function phrase(n,lang,items){
   const what=ds.length===list.length&&ds.length?'your '+ds.join(' and ')+(ds.length>1?' are':' is')+' ready':cups>2?'your '+cups+' drinks are ready':'your order is ready';
   return who?who+', '+what:what.charAt(0).toUpperCase()+what.slice(1);
  }
- const who=nm.num?nm.num+'番のお客様':nm.ja+'様';
+ const who=nm.num?nm.num+'番のお客さま':nm.ja+(/[A-Za-z]$/.test(nm.ja)?' さま':'さま');
  const what=list.length?list.map(d=>d.ja).join('と')+'、':cups>2?'ドリンク'+cups+'点、':'';
  return who+'、'+what+'お待たせしました';
 }
@@ -88,7 +88,7 @@ function thanks(n,lang){
  const nm=names(n);const has=!nm.num&&nm.ja;
  if(lang==='zh')return has&&nm.zh?'谢谢'+nm.zh+'宝宝下单～':'谢谢宝宝下单～';
  if(lang==='en')return has&&nm.en?'Thank you for your order, '+nm.en:'Thank you for your order';
- return has?nm.ja+'様、ご注文ありがとうございます':'ご注文ありがとうございます';
+ return has?nm.ja+(/[A-Za-z]$/.test(nm.ja)?' さま':'さま')+'、ご注文ありがとうございます':'ご注文ありがとうございます';
 }
 // long lines (drink names) are spoken a bit faster to keep 3 languages within ~15s
 function rateFor(t,lang){const L=lang==='en'?t.length/2.2:t.length;return L>26?'+15%':L>18?'+8%':'+0%'}

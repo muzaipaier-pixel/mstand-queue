@@ -59,10 +59,10 @@ fit();if(window.addEventListener)window.addEventListener('resize',fit,false);
 function chime(){if(!SOUND)return;try{var a=$('chime');a.currentTime=0;var p=a.play();if(p&&p['catch'])p['catch'](function(){})}catch(e){}}
 function hasJa(){try{if(!window.speechSynthesis||!window.SpeechSynthesisUtterance)return null;var vs=speechSynthesis.getVoices()||[];for(var i=0;i<vs.length;i++){if(vs[i].lang&&vs[i].lang.indexOf('ja')===0)return vs[i]}}catch(e){}return null}
 var LANGS=(function(){var m=/[?&]lang=([^&]*)/.exec(location.search);return m?decodeURIComponent(m[1]):'ja,zh,en'})();
-function localSpeak(num){var v=hasJa();if(!v)return;try{var u=new SpeechSynthesisUtterance((/^[0-9]+$/.test(String(num))?num+'番':num+'様')+'、お待たせしました');u.lang='ja-JP';u.rate=0.9;u.voice=v;speechSynthesis.speak(u)}catch(e){}}
+function localSpeak(num){var v=hasJa();if(!v)return;try{var u=new SpeechSynthesisUtterance((/^[0-9]+$/.test(String(num))?num+'番':num+'さま')+'、お待たせしました');u.lang='ja-JP';u.rate=0.9;u.voice=v;speechSynthesis.speak(u)}catch(e){}}
 function speak(num,items){var iq='';try{iq=(items||[]).map(function(x){return String(x.n).replace(/[|*]/g,'')+'*'+x.q}).join('|')}catch(e){}if(!SOUND)return;
  setTimeout(function(){
-  try{var a=$('vo');a.onerror=function(){a.onerror=null;localSpeak(num)};a.src='/voice?n='+encodeURIComponent(String(num))+'&lang='+encodeURIComponent(LANGS)+(iq?'&i='+encodeURIComponent(iq):'');a.volume=1;if(a.load)a.load();var p=a.play();if(p&&p['catch'])p['catch'](function(){})}catch(e){localSpeak(num)}
+  try{var a=$('vo');a.onerror=function(){a.onerror=null;localSpeak(num)};a.src='/voice?v=2&n='+encodeURIComponent(String(num))+'&lang='+encodeURIComponent(LANGS)+(iq?'&i='+encodeURIComponent(iq):'');a.volume=1;if(a.load)a.load();var p=a.play();if(p&&p['catch'])p['catch'](function(){})}catch(e){localSpeak(num)}
  },1800)}
 function unlock(){var ids=['chime','vo'];for(var k=0;k<ids.length;k++){try{var a=$(ids[k]);if(ids[k]==='vo'&&!a.src)a.src='/voice_fallback.mp3';a.volume=0;var p=a.play();if(p&&p['catch'])p['catch'](function(){});(function(b){setTimeout(function(){b.pause();b.volume=1},80)})(a)}catch(e){}}}
 if(document.addEventListener){document.addEventListener('click',unlock,false);document.addEventListener('touchstart',unlock,false)}
@@ -88,7 +88,7 @@ var lastTxt=null,curTxt='-',seenPrep=null;
 function thank(name,tries){if(!SOUND)return;tries=tries||0;try{var a=$('vo');
  if(!a.paused&&!a.ended&&tries<8){setTimeout(function(){thank(name,tries+1)},2000);return}
  var n=/^[0-9]+$/.test(String(name))?'':String(name);
- a.onerror=null;a.src='/voice?t=thanks&n='+encodeURIComponent(n)+'&lang='+encodeURIComponent(LANGS);a.volume=1;if(a.load)a.load();var p=a.play();if(p&&p['catch'])p['catch'](function(){})}catch(e){}}
+ a.onerror=null;a.src='/voice?v=2&t=thanks&n='+encodeURIComponent(n)+'&lang='+encodeURIComponent(LANGS);a.volume=1;if(a.load)a.load();var p=a.play();if(p&&p['catch'])p['catch'](function(){})}catch(e){}}
 function handle(s){
  // new call = callAt changed
  var isCall=lastCallAt!==null&&s.callAt&&s.callAt!==lastCallAt&&s.current;
