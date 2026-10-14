@@ -83,6 +83,13 @@ function phrase(n,lang,items){
  const what=list.length?list.map(d=>d.ja).join('と')+'、':cups>2?'ドリンク'+cups+'点、':'';
  return who+'、'+what+'お待たせしました';
 }
+// new-order thank-you (screen only). Numeric/empty label -> no-name version
+function thanks(n,lang){
+ const nm=names(n);const has=!nm.num&&nm.ja;
+ if(lang==='zh')return has&&nm.zh?'谢谢'+nm.zh+'宝宝下单～':'谢谢宝宝下单～';
+ if(lang==='en')return has&&nm.en?'Thank you for your order, '+nm.en:'Thank you for your order';
+ return has?nm.ja+'様、ご注文ありがとうございます':'ご注文ありがとうございます';
+}
 // long lines (drink names) are spoken a bit faster to keep 3 languages within ~15s
 function rateFor(t,lang){const L=lang==='en'?t.length/2.2:t.length;return L>26?'+15%':L>18?'+8%':'+0%'}
-module.exports={rateFor,phrase,parseItems,names,drink,MENU};
+module.exports={thanks,rateFor,phrase,parseItems,names,drink,MENU};

@@ -83,7 +83,12 @@ function fitList(el,box,max,min){var f=Math.floor(max);el.style.fontSize=f+'px';
  while(f>min&&(el.offsetHeight>avail||el.scrollWidth>el.clientWidth+1)){f-=1;el.style.fontSize=f+'px'}}
 function fitAll(){try{var W=window.innerWidth;fitText($('nt'),$('n'),W*0.08,10,true,curTxt);fitList($('prep'),$('prepb'),W*0.016,8);fitList($('hist'),$('histb'),W*0.022,8)}catch(e){}}
 if(window.addEventListener)window.addEventListener('resize',fitAll,false);
-var lastTxt=null,curTxt='-';
+var lastTxt=null,curTxt='-',seenPrep=null;
+// new order (not completion): short trilingual thank-you, waits if a call is playing
+function thank(name,tries){if(!SOUND)return;tries=tries||0;try{var a=$('vo');
+ if(!a.paused&&!a.ended&&tries<8){setTimeout(function(){thank(name,tries+1)},2000);return}
+ var n=/^[0-9]+$/.test(String(name))?'':String(name);
+ a.onerror=null;a.src='/voice?t=thanks&n='+encodeURIComponent(n)+'&lang='+encodeURIComponent(LANGS);a.volume=1;if(a.load)a.load();var p=a.play();if(p&&p['catch'])p['catch'](function(){})}catch(e){}}
 function handle(s){
  // new call = callAt changed
  var isCall=lastCallAt!==null&&s.callAt&&s.callAt!==lastCallAt&&s.current;
@@ -94,6 +99,10 @@ function handle(s){
  var txt=cur+'|'+$('prep').innerHTML+'|'+h;if(txt!==lastTxt){lastTxt=txt;fitAll()}
  if(isCall){nw.className='';void nw.offsetWidth;setTimeout(function(){nw.className='call'},20);
   if(nw._t)clearTimeout(nw._t);nw._t=setTimeout(function(){nw.className=''},5000);chime();speak(s.current,s.callItems)}
+ var pp=s.preparing||[],fresh=[];
+ if(seenPrep===null){seenPrep={};for(var k=0;k<pp.length;k++)seenPrep[pp[k].id]=1}
+ else{for(var k=0;k<pp.length;k++)if(!seenPrep[pp[k].id]){seenPrep[pp[k].id]=1;fresh.push(pp[k])}}
+ if(fresh.length){var f=fresh[fresh.length-1];setTimeout(function(){thank(fresh.length>1?'':f.num)},isCall?9000:300)}
  lastCallAt=s.callAt||0;
 }
 function poll(){

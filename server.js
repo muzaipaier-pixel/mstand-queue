@@ -15,7 +15,7 @@ http.createServer((q,r)=>{
  const u=new URL(q.url,'http://x');
  if(u.pathname.length>1&&u.pathname.endsWith('/'))u.pathname=u.pathname.replace(/\/+$/,'')||'/'; // /order/ -> /order
  if(u.pathname==='/events'){r.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive','X-Accel-Buffering':'no'});r.write(`data: ${JSON.stringify({...pub(),event:'init'})}\n\n`);clients.add(r);const k=setInterval(()=>r.write(':k\n\n'),20000);q.on('close',()=>{clients.delete(r);clearInterval(k)});return;}
-if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r,u.searchParams.get('lang'),u.searchParams.get('i'));return;}
+if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r,u.searchParams.get('lang'),u.searchParams.get('i'),u.searchParams.get('t'));return;}
  if(u.pathname==='/api/menu'){menu().then(m=>{r.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-cache'});r.end(JSON.stringify(m))}).catch(e=>{console.error('menu',e.message);r.writeHead(502);r.end('{"error":"menu"}')});return;}
  if(u.pathname==='/square/webhook'&&q.method==='POST'){webhook(q,r);return;}
  if(u.pathname==='/api/checkout'&&q.method==='POST'){let b='';q.on('data',c=>{b+=c;if(b.length>2e4)q.destroy()});q.on('end',()=>checkout(b,q,r));return;}
@@ -173,23 +173,24 @@ async function googleTTS(text,lang){
  try{const x=await fetch('https://translate.google.com/translate_tts?ie=UTF-8&tl='+GTL[lang]+'&client=tw-ob&q='+encodeURIComponent(text),{headers:{'User-Agent':'Mozilla/5.0'},signal:ctl.signal});
   if(!x.ok)throw new Error('tts '+x.status);const b=Buffer.from(await x.arrayBuffer());if(b.length<1000)throw new Error('tts short');return b}finally{clearTimeout(to)}
 }
-async function segment(n,lang,items){
- const text=phrase(n,lang,items),k=lang+'|'+text;
+async function segment(n,lang,items,kind){
+ const text=kind==='thanks'?VT.thanks(n,lang):phrase(n,lang,items),k=lang+'|'+text;
  if(vcache.has(k))return vcache.get(k);
  let b=null;
  try{b=await withTimeout(edgeTTS(text,lang),7000)}catch(e){console.error('voice edge',lang,e.message)}
  if(!b){try{b=await googleTTS(text,lang)}catch(e){console.error('voice google',lang,e.message)}}
  if(b)cput(vcache,k,b);return b;
 }
-async function voice(n,r,langQ,itemsQ){
+async function voice(n,r,langQ,itemsQ,kind){
+ kind=kind==='thanks'?'thanks':'call';
  const items=VT.parseItems(itemsQ);
  const send=(b)=>{r.writeHead(200,{'Content-Type':'audio/mpeg','Content-Length':b.length,'Cache-Control':'public, max-age=86400'});r.end(b)};
  const fb=()=>fs.readFile(path.join(__dirname,'public','voice_fallback.mp3'),(e,d)=>{if(e){r.writeHead(404);return r.end()}send(d)});
- if(!n)return fb();
- const langs=parseLangs(langQ),key=langs.join(',')+'|'+String(n).trim().slice(0,24)+'|'+String(itemsQ||'').slice(0,300);
+ if(!n&&kind!=='thanks')return fb();
+ const langs=parseLangs(langQ),key=langs.join(',')+'|'+String(n).trim().slice(0,24)+'|'+String(itemsQ||'').slice(0,300)+'|'+kind;
  if(acache.has(key))return send(acache.get(key));
  try{
-  const parts=(await Promise.all(langs.map(l=>segment(n,l,items)))).filter(Boolean);
+  const parts=(await Promise.all(langs.map(l=>segment(n,l,items,kind)))).filter(Boolean);
   if(!parts.length)return fb();
   const out=[];parts.forEach((p,i)=>{if(i&&GAP)out.push(GAP);out.push(p)});
   const b=Buffer.concat(out);cput(acache,key,b);send(b);
