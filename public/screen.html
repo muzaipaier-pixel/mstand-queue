@@ -190,18 +190,36 @@ setTimeout(function(){location.reload()},30*60*1000);
 
 /* sold-out overlay on the baked menu image: card boxes in % of menu.jpg (1612x1080), matched by Square item name */
 var SOMAP=[
- {re:/チェリー|车厘子|cherry/i,x:50.6,y:72.5,w:23.3,h:9.2},
- {re:/ドラゴンフルーツ|火龙果冻|dragon ?fruit ?frozen/i,x:50.6,y:52.9,w:23.3,h:9.2},
- {re:/イチゴゴゴ|芝芝莓莓/i,x:50.6,y:62.7,w:23.3,h:9.2},
- {re:/アボカド|牛油果|avocado/i,x:1.8,y:29.6,w:23.4,h:11.2},
- {re:/Mixベリースムージー|综合莓果冰沙|mix ?berry ?smoothie/i,x:74.8,y:13.4,w:23.4,h:9.8},
- {re:/ブルーベリー|蓝莓|blueberry/i,x:74.8,y:23.9,w:23.4,h:9.8},
- {re:/パイナップル|菠萝|pineapple/i,x:74.8,y:34.5,w:23.4,h:9.8},
- {re:/パッション|百香果|passion/i,x:74.8,y:49.6,w:23.4,h:9.8},
- {re:/タロ芋|芋头|taro/i,x:74.8,y:60.2,w:23.4,h:9.8}
+ {re:/^ロイヤルタピオカミルクティー/i,x:1.8,y:13.4,w:23.4,h:7.0},
+ {re:/アボカドスムージー/i,x:1.8,y:29.6,w:23.4,h:11.2},
+ {re:/^上品四季春/i,x:1.8,y:45.6,w:23.4,h:10.9},
+ {re:/朝露ジャスミン/i,x:1.8,y:57.3,w:23.4,h:9.8},
+ {re:/ハイビスカス/i,x:1.8,y:69.0,w:23.4,h:9.5},
+ {re:/トウガン/i,x:1.8,y:79.4,w:23.4,h:10.6},
+ {re:/マンゴーミルク/i,x:26.2,y:13.4,w:23.4,h:12.8},
+ {re:/ドラゴンミルク/i,x:26.2,y:26.8,w:23.4,h:12.2},
+ {re:/いちごミルク|イチゴミルク/i,x:26.2,y:39.9,w:23.4,h:12.2},
+ {re:/黒糖/i,x:26.2,y:52.9,w:23.4,h:12.4},
+ {re:/抹茶ミルク/i,x:26.2,y:66.0,w:23.4,h:12.4},
+ {re:/Mixベリーミルク|ミックスベリーミルク/i,x:26.2,y:79.4,w:23.4,h:11.8},
+ {re:/チーズクリーム四季春/i,x:50.6,y:13.4,w:23.3,h:9.2},
+ {re:/チーズクリームジャスミン/i,x:50.6,y:23.3,w:23.3,h:9.2},
+ {re:/チーズクリーム宇治抹茶/i,x:50.6,y:33.1,w:23.3,h:9.2},
+ {re:/ココナッツ/i,x:50.6,y:43.1,w:23.3,h:9.2},
+ {re:/満杯ドラゴンフルーツ/i,x:50.6,y:52.9,w:23.3,h:9.2},
+ {re:/満杯いちごスムージー|イチゴゴゴ/i,x:50.6,y:62.7,w:23.3,h:9.2},
+ {re:/チェリー/i,x:50.6,y:72.5,w:23.3,h:9.2},
+ {re:/ヤンジー|楊枝甘露|杨枝甘露/i,x:50.6,y:82.4,w:23.3,h:9.2},
+ {re:/Mixベリースムージー/i,x:74.8,y:13.4,w:23.4,h:9.8},
+ {re:/ブルーベリー/i,x:74.8,y:23.9,w:23.4,h:9.8},
+ {re:/パイナップル/i,x:74.8,y:34.5,w:23.4,h:9.8},
+ {re:/パッション/i,x:74.8,y:49.6,w:23.4,h:9.8},
+ {re:/タロ芋/i,x:74.8,y:60.2,w:23.4,h:9.8},
+ {re:/爆ライム/i,x:74.8,y:71.0,w:23.4,h:9.8},
+ {re:/柚子|ゆず/i,x:74.8,y:81.5,w:23.4,h:9.8}
 ];
 function soRender(names){try{var k=$('somask'),h='',used={};for(var i=0;i<names.length;i++){for(var j=0;j<SOMAP.length;j++){var b=SOMAP[j];if(!used[j]&&b.re.test(names[i])){used[j]=1;h+='<div class="so" style="left:'+b.x+'%;top:'+b.y+'%;width:'+b.w+'%;height:'+b.h+'%"><b>売り切れ / 售罄</b></div>';break}}}k.innerHTML=h;fit()}catch(e){}}
-function soPoll(){try{if(/[?&]demo=soldout/.test(location.search)){soRender(['満杯チェリースムージー']);return}
+function soPoll(){try{if(/[?&]demo=soldoutall/.test(location.search)){soRender(["ロイヤルタピオカミルクティー", "たっぷりマンゴーミルク", "上品四季春", "朝露ジャスミン", "ハイビスカスティー", "台湾トウガン茶", "黒糖BOBOミルク", "もちもち抹茶ミルク", "満杯チェリースムージー", "アボカドスムージー", "たっぷりいちごミルク", "柚子ハニーオレンジ", "爆ライム四季春", "満杯パッションフルーツ", "チーズクリームジャスミン", "チーズクリーム四季春", "チーズクリーム宇治抹茶", "満杯ドラゴンフルーツ", "ココナッツミルクスムージー", "満杯いちごスムージー", "たっぷりドラゴンミルク", "Mixベリーミルク", "ブルーベリースムージー", "Mixベリースムージー", "海塩パイナップルスムージー", "タロ芋ミルクスムージー", "ヤンジーカンルー"]);return}if(/[?&]demo=soldout/.test(location.search)){soRender(['満杯チェリースムージー']);return}
  var x=new XMLHttpRequest();x.open('GET','/api/menu?_='+Date.now(),true);x.timeout=15000;
  x.onreadystatechange=function(){if(x.readyState!==4)return;if(x.status!==200)return;/* on error keep last state */
   try{var a=JSON.parse(x.responseText),n=[];if(!a||!a.length)return;for(var i=0;i<a.length;i++)if(a[i]&&a[i].so)n.push(String(a[i].name||''));soRender(n)}catch(e){}};
