@@ -235,6 +235,7 @@ async function menu(){
  if(menuP)return menuP;
  menuP=menuBuild().finally(()=>{menuP=null});return menuP;
 }
+const MODORD=n=>{const i=['トッピング','甘さ','氷の量'].indexOf(n);return i<0?9:i};
 async function menuBuild(){
  let objs=[],cur;do{const d=await sq('/catalog/list?types=ITEM,CATEGORY,IMAGE,MODIFIER_LIST'+(cur?'&cursor='+encodeURIComponent(cur):''));objs=objs.concat(d.objects||[]);cur=d.cursor}while(cur);
  const img={},cat={};objs.forEach(o=>{if(o.type==='IMAGE')img[o.id]=o.image_data.url;if(o.type==='CATEGORY')cat[o.id]=o.category_data.name});
@@ -248,7 +249,7 @@ async function menuBuild(){
   const vars=(d.variations||[]).filter(v=>at(v)&&v.item_variation_data.price_money).map(v=>({id:v.id,name:v.item_variation_data.name||'',price:Number(v.item_variation_data.price_money.amount),so:(v.item_variation_data.location_overrides||[]).some(l=>l.location_id===LOC&&l.sold_out)}));
   if(!vars.length)continue;
   const c=(d.categories||[]).map(x=>cat[x.id]).find(Boolean)||cat[d.category_id]||'その他';
-  items.push({id:o.id,name:d.name,cat:c,desc:(d.description_plaintext||'').split('\n')[0].slice(0,40),img:img[(d.image_ids||[])[0]]||'',vars,mods:(d.modifier_list_info||[]).filter(x=>x.enabled!==false&&ml[x.modifier_list_id]&&ml[x.modifier_list_id].opts.length).map(x=>{const L=ml[x.modifier_list_id];return {...L,min:Math.max(0,x.min_selected_modifiers>0?x.min_selected_modifiers:0),max:x.max_selected_modifiers>0?x.max_selected_modifiers:(L.multi?L.opts.length:1)}}),so:vars.every(v=>v.so)});}
+  items.push({id:o.id,name:d.name,cat:c,desc:(d.description_plaintext||'').split('\n')[0].slice(0,40),img:img[(d.image_ids||[])[0]]||'',vars,mods:(d.modifier_list_info||[]).filter(x=>x.enabled!==false&&ml[x.modifier_list_id]&&ml[x.modifier_list_id].opts.length).map(x=>{const L=ml[x.modifier_list_id];return {...L,min:Math.max(0,x.min_selected_modifiers>0?x.min_selected_modifiers:0),max:x.max_selected_modifiers>0?x.max_selected_modifiers:(L.multi?L.opts.length:1)}}).sort((a,b)=>MODORD(a.name)-MODORD(b.name)),so:vars.every(v=>v.so)});}
  menuC={at:Date.now(),data:items};return items;
 }
 const cleanName=s=>String(s||'').replace(/[<>&"'`\\\u0000-\u001f]/g,'').trim().slice(0,12);
