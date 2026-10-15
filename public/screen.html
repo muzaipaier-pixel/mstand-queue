@@ -60,6 +60,11 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-c
 .th-halloween #deco,.th-christmas #deco{display:block}
 .call #deco{-webkit-animation:bob .6s ease-in-out 6;animation:bob .6s ease-in-out 6}
 @-webkit-keyframes bob{50%{-webkit-transform:translateY(-.6vw) scale(1.25)}}@keyframes bob{50%{transform:translateY(-.6vw) scale(1.25)}}
+/* daily falling decorations (non-holiday days, 12 pieces, CSS-only infinite animation) */
+#dly{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden;pointer-events:none;z-index:3}
+#dly i{position:absolute;top:-5%;display:block;font-style:normal;line-height:1;opacity:.5;-webkit-animation:dfall 16s linear infinite;animation:dfall 16s linear infinite}
+@-webkit-keyframes dfall{0%{-webkit-transform:translate3d(0,0,0) rotate(0)}50%{-webkit-transform:translate3d(1.5vw,55vh,0) rotate(160deg)}100%{-webkit-transform:translate3d(-1vw,112vh,0) rotate(320deg)}}
+@keyframes dfall{0%{transform:translate3d(0,0,0) rotate(0)}50%{transform:translate3d(1.5vw,55vh,0) rotate(160deg)}100%{transform:translate3d(-1vw,112vh,0) rotate(320deg)}}
 </style></head><body>
 <img id="menu" src="/menu.jpg?v=6" alt="menu"><div id="somask"></div>
 <div id="q">
@@ -73,7 +78,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-c
  <div class="box" id="histb"><h2>最近の番号 / 最近叫号</h2><div id="hist"></div></div>
  <div class="brand">M Stand 池袋</div>
 </div>
-<div id="cf"></div><div id="off"></div><div id="dbg" style="display:none;position:absolute;left:0;bottom:0;background:#000;color:#fff;font-size:14px;padding:2px 6px"></div>
+<div id="dly"></div><div id="cf"></div><div id="off"></div><div id="dbg" style="display:none;position:absolute;left:0;bottom:0;background:#000;color:#fff;font-size:14px;padding:2px 6px"></div>
 <audio id="chime" src="/chime_marimba.mp3" preload="auto"></audio><audio id="vo" preload="none"></audio>
 <script>
 (function(){
@@ -150,6 +155,32 @@ function theme(){var d=new Date(),M=d.getMonth()+1,D=d.getDate(),t='';
  if(demoHas('halloween'))t='halloween';if(demoHas('christmas'))t='christmas';if(demoHas('notheme'))t='';
  try{document.body.className=t?'th-'+t:'';$('deco').innerHTML=t==='halloween'?'\uD83C\uDF83 \uD83D\uDC7B \uD83E\uDD87 \uD83C\uDF6C':t==='christmas'?'\uD83C\uDF84 \u2B50 \uD83C\uDF85 \uD83C\uDF81':''}catch(e){}return t}
 var TH=theme();setInterval(function(){TH=theme()},10*60*1000);
+
+// ---------- daily falling decorations (holiday themes take priority) ----------
+var DSETS=[
+ ['fruits',['\uD83C\uDF53','\uD83E\uDD6D','\uD83C\uDF52','\uD83E\uDD51','\uD83C\uDF4B']],
+ ['hearts',['\uD83D\uDC96','\uD83D\uDC97','\uD83D\uDC95','\u2764\uFE0F']],
+ ['stars',['\u2B50','\uD83C\uDF1F','\u2728','\uD83D\uDCAB']],
+ ['flowers',['\uD83C\uDF38','\uD83C\uDF3C','\uD83C\uDF37','\uD83C\uDF3A']],
+ ['bubbletea',['\uD83E\uDDCB','\uD83E\uDD64','\u26AA']],
+ ['sky',['\u2601\uFE0F','\uD83C\uDF08','\u2600\uFE0F']],
+ ['tropical',['\uD83C\uDF4D','\uD83E\uDD65','\uD83C\uDF49','\uD83C\uDF51']],
+ ['berries',['\uD83E\uDED0','\uD83C\uDF53','\uD83C\uDF47']],
+ ['sweets',['\uD83C\uDF6C','\uD83C\uDF6D','\uD83C\uDF69','\uD83E\uDDC1']],
+ ['cute',['\uD83D\uDC31','\uD83D\uDC3B','\uD83D\uDC30','\uD83D\uDC3C']]];
+var DSEASON={autumn:['autumn',['\uD83C\uDF41','\uD83C\uDF42','\uD83C\uDF30']],winter:['winter',['\u2744\uFE0F','\u2603\uFE0F','\u2744\uFE0F']]};
+function jstDay(){var t=new Date().getTime()+9*3600000;return Math.floor(t/86400000)}
+function dailySet(){var m=/[?&]day=(\d+)/.exec(location.search),n=m?parseInt(m[1],10):jstDay();
+ var M=new Date(n*86400000).getUTCMonth()+1,L=DSETS.slice(0);
+ if(M>=9&&M<=11)L.push(DSEASON.autumn,DSEASON.autumn);if(M===12||M<=2)L.push(DSEASON.winter,DSEASON.winter);
+ return L[n%L.length]}
+var DLY_KEY='';
+function daily(){try{var c=$('dly');if(TH&&!demoHas('daily')){c.innerHTML='';DLY_KEY='';return}
+ var st=dailySet();if(st[0]===DLY_KEY)return;DLY_KEY=st[0];var E=st[1],h='';
+ for(var i=0;i<12;i++){var l=(i*8.3+Math.random()*6).toFixed(1),du=(13+Math.random()*9).toFixed(1),dl=(-Math.random()*20).toFixed(1),fs=(1.1+Math.random()*.8).toFixed(2);
+  h+='<i style="left:'+l+'%;font-size:'+fs+'vw;-webkit-animation-duration:'+du+'s;animation-duration:'+du+'s;-webkit-animation-delay:'+dl+'s;animation-delay:'+dl+'s">'+E[i%E.length]+'</i>'}
+ c.innerHTML=h}catch(e){}}
+daily();setInterval(daily,10*60*1000);
 function confetti(kind){try{var c=$('cf'),h='',E=kind==='halloween'?['\uD83C\uDF83','\uD83D\uDC7B','\uD83C\uDF6C']:kind==='christmas'?['\u2744','\u2B50','\uD83C\uDF84']:null,C=['#FFE600','#FF1F9E','#00E0C6','#FF7A00','#7CFF4D','#ffffff'];
  for(var i=0;i<(E?18:36);i++){var l=Math.floor(Math.random()*100),dl=(Math.random()*1.6).toFixed(2);
   h+=E?'<i style="left:'+l+'%;-webkit-animation-delay:'+dl+'s;animation-delay:'+dl+'s;background:none">'+E[i%E.length]+'</i>':'<i style="left:'+l+'%;background-color:'+C[i%C.length]+';-webkit-animation-delay:'+dl+'s;animation-delay:'+dl+'s"></i>'}
