@@ -171,17 +171,24 @@ var TH=theme();setInterval(function(){TH=theme()},10*60*1000);
 
 // ---------- daily falling decorations (holiday themes take priority) ----------
 var DSETS=[
- ['fruits',['\uD83C\uDF53','\uD83E\uDD6D','\uD83C\uDF52','\uD83E\uDD51','\uD83C\uDF4B']],
- ['hearts',['\uD83D\uDC96','\uD83D\uDC97','\uD83D\uDC95','\u2764\uFE0F']],
- ['stars',['\u2B50','\uD83C\uDF1F','\u2728','\uD83D\uDCAB']],
- ['flowers',['\uD83C\uDF38','\uD83C\uDF3C','\uD83C\uDF37','\uD83C\uDF3A']],
- ['bubbletea',['\uD83E\uDDCB','\uD83E\uDD64','\u26AA']],
- ['sky',['\u2601\uFE0F','\uD83C\uDF08','\u2600\uFE0F']],
- ['tropical',['\uD83C\uDF4D','\uD83E\uDD65','\uD83C\uDF49','\uD83C\uDF51']],
- ['berries',['\uD83E\uDED0','\uD83C\uDF53','\uD83C\uDF47']],
- ['sweets',['\uD83C\uDF6C','\uD83C\uDF6D','\uD83C\uDF69','\uD83E\uDDC1']],
- ['cute',['\uD83D\uDC31','\uD83D\uDC3B','\uD83D\uDC30','\uD83D\uDC3C']]];
-var DSEASON={autumn:['autumn',['\uD83C\uDF41','\uD83C\uDF42','\uD83C\uDF30']],winter:['winter',['\u2744\uFE0F','\u2603\uFE0F','\u2744\uFE0F']]};
+ ["fruits",["\ud83c\udf53", "\ud83e\udd6d", "\ud83c\udf52", "\ud83e\udd51", "\ud83c\udf4b", "\ud83c\udf51", "\ud83c\udf4a", "\ud83c\udf47"]],
+ ["hearts",["\ud83d\udc96", "\ud83d\udc97", "\ud83d\udc95", "\ud83d\udc93", "\ud83d\udc9e", "\ud83d\udc9d", "\u2764\ufe0f", "\ud83d\udc9c"]],
+ ["stars",["\u2b50", "\ud83c\udf1f", "\u2728", "\ud83d\udcab", "\ud83c\udf20", "\u2b50", "\u2728"]],
+ ["flowers",["\ud83c\udf38", "\ud83c\udf3c", "\ud83c\udf37", "\ud83c\udf3a", "\ud83c\udf39", "\ud83d\udc90", "\ud83c\udf3b"]],
+ ["drinks",["\ud83e\udd64", "\ud83c\udf79", "\ud83c\udf75", "\ud83e\udd5b", "\u2615", "\ud83c\udf67"]],
+ ["sky",["\u2601\ufe0f", "\ud83c\udf08", "\u2600\ufe0f", "\u26c5", "\ud83c\udf24\ufe0f", "\ud83c\udf88"]],
+ ["tropical",["\ud83c\udf4d", "\ud83e\udd65", "\ud83c\udf49", "\ud83c\udf51", "\ud83c\udf34", "\ud83c\udf48", "\ud83e\udd6d"]],
+ ["berries",["\ud83c\udf53", "\ud83c\udf47", "\ud83c\udf52", "\ud83c\udf53", "\ud83c\udf52", "\ud83c\udf47", "\ud83c\udf38"]],
+ ["sweets",["\ud83c\udf6c", "\ud83c\udf6d", "\ud83c\udf69", "\ud83e\uddc1", "\ud83c\udf6a", "\ud83c\udf6b", "\ud83c\udf6e"]],
+ ["animals",["\ud83d\udc31", "\ud83d\udc3b", "\ud83d\udc30", "\ud83d\udc3c", "\ud83d\udc28", "\ud83e\udd8a", "\ud83d\udc39", "\ud83d\udc36"]],
+ ["desserts",["\ud83c\udf68", "\ud83c\udf70", "\ud83c\udf66", "\ud83e\uddc1", "\ud83c\udf82", "\ud83c\udf6e", "\ud83c\udf67", "\ud83c\udf61"]],
+ ["ocean",["\ud83d\udc1a", "\ud83d\udc20", "\ud83d\udc33", "\ud83d\udc2c", "\ud83d\udc19", "\ud83e\udd80", "\ud83d\udc1f", "\ud83d\udca7"]],
+ ["gems",["\ud83d\udc8e", "\u2728", "\ud83d\udc8d", "\ud83d\udd2e", "\ud83c\udf1f", "\ud83d\udca0", "\ud83d\udcab"]],
+ ["garden",["\ud83c\udf3b", "\ud83c\udf40", "\ud83e\udd8b", "\ud83d\udc1e", "\ud83c\udf31", "\ud83c\udf37", "\ud83d\udc1d", "\ud83c\udf43"]],
+ ["faces",["\ud83e\udd70", "\ud83d\ude0b", "\ud83d\ude0a", "\ud83d\ude0d", "\ud83e\udd17", "\ud83d\ude18", "\ud83d\ude06", "\ud83e\udd73"]],
+ ["fruitmix",["\ud83c\udf4e", "\ud83c\udf50", "\ud83c\udf4a", "\ud83c\udf4b", "\ud83c\udf4c", "\ud83c\udf49", "\ud83c\udf47", "\ud83c\udf53", "\ud83c\udf52", "\ud83c\udf51", "\ud83e\udd5d", "\ud83e\udd65"]],
+ ["music",["\ud83c\udfb5", "\ud83c\udfb6", "\ud83c\udfa4", "\ud83c\udfa7", "\ud83c\udfb9", "\ud83c\udfb8", "\ud83c\udfb7"]]];
+var DSEASON={autumn:['autumn',['🍁','🍂','🌰','🍄','🍠','🌾','🍁','🍂']],winter:['winter',['❄️','☃️','⛄','🧣','🧤','❄️','✨','🎿']]};
 function jstDay(){var t=new Date().getTime()+9*3600000;return Math.floor(t/86400000)}
 function dailySet(){var m=/[?&]day=(\d+)/.exec(location.search),n=m?parseInt(m[1],10):jstDay();
  var M=new Date(n*86400000).getUTCMonth()+1,L=DSETS.slice(0);
