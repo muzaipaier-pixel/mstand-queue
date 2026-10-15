@@ -215,9 +215,27 @@ async function familyName(id){
 }
 
 // --- Mobile order: live menu (cached) + Square Checkout payment links ---
-let menuC={at:0,data:null};
+let menuC={at:0,data:null},menuP=null;
+// Fast change check: every 15s ask Square only for catalog objects changed since the last seen
+// updated_at (1 tiny request, limit 1). If anything changed (e.g. sold-out toggled), drop the cache
+// and rebuild in the background so the next /api/menu is fresh. Full rebuild still at most every 5 min otherwise.
+let catSince=new Date(Date.now()-60e3).toISOString(),menuLastReq=0;
+async function catCheck(){
+ if(!TOK||Date.now()-menuLastReq>30*60e3)return; // nobody looking at menus -> skip
+ try{const d=await sq('/catalog/search',{method:'POST',body:JSON.stringify({object_types:['ITEM','ITEM_VARIATION'],begin_time:catSince,include_deleted_objects:true,limit:100})});
+  const o=d.objects||[];if(!o.length)return;
+  o.forEach(x=>{if(x.updated_at&&x.updated_at>catSince)catSince=x.updated_at});
+  console.log('catalog changed ('+o.length+'), refreshing menu');menuC.at=0;menu().catch(()=>{});
+ }catch(e){console.error('catCheck',e.message)}
+}
+setInterval(catCheck,15e3);
 async function menu(){
+ menuLastReq=Date.now();
  if(menuC.data&&Date.now()-menuC.at<5*60e3)return menuC.data;
+ if(menuP)return menuP;
+ menuP=menuBuild().finally(()=>{menuP=null});return menuP;
+}
+async function menuBuild(){
  let objs=[],cur;do{const d=await sq('/catalog/list?types=ITEM,CATEGORY,IMAGE'+(cur?'&cursor='+encodeURIComponent(cur):''));objs=objs.concat(d.objects||[]);cur=d.cursor}while(cur);
  const img={},cat={};objs.forEach(o=>{if(o.type==='IMAGE')img[o.id]=o.image_data.url;if(o.type==='CATEGORY')cat[o.id]=o.category_data.name});
  const at=o=>(o.present_at_all_locations||(o.present_at_location_ids||[]).includes(LOC))&&!(o.absent_at_location_ids||[]).includes(LOC);

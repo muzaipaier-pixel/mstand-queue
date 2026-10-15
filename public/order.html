@@ -34,7 +34,10 @@ input{width:100%;padding:12px;border:2px solid #e5d8fa;border-radius:10px;font-s
 var DEV=(function(){try{var d=localStorage.getItem('ms_dev');if(!d){d='d'+Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('ms_dev',d)}return d}catch(e){return ''}})();
 var MAXC=10,MAXY=20000,MSG={rate:'短時間に注文が多すぎます。しばらくしてからお試しください / 下单太频繁，请稍后再试 / Too many orders, please try later',device:'ご注文は3分に1回までです。少しお待ちいただくか、レジでご注文ください / 每台手机3分钟内只能下一单，请稍后再试或到收银台点单 / One order per 3 minutes per phone. Please wait or order at the counter.',cap:'1回のご注文は10杯・¥20,000までです。それ以上はレジでご注文ください / 每单最多10杯、¥20,000，超过请到收银台点单 / Max 10 cups or ¥20,000 per order. Please order at the counter.',busy:'ただいま混み合っています。レジでご注文ください / 现在订单太多，请到收银台点单 / We are busy right now, please order at the counter.',name:'お名前を入力してください（20文字まで）/ 请输入名字（20字以内）/ Please enter your name (max 20)',badname:'そのお名前は使えません / 该名字不可用 / This name cannot be used'};
 var M=[],cart=[],cur=null,sel=0,qty=1,y=function(n){return '¥'+n.toLocaleString()};
+function soSig(d){return d.map(function(i){return i.id+(i.so?1:0)+i.vars.map(function(v){return v.so?1:0}).join('')}).join(',')}
 fetch('/api/menu').then(function(r){return r.json()}).then(function(d){M=d;render()});
+setInterval(function(){if(document.hidden)return;fetch('/api/menu').then(function(r){return r.json()}).then(function(d){if(!d||!d.length||soSig(d)===soSig(M))return;var y0=window.pageYOffset;M=d;render();window.scrollTo(0,y0);
+ if(cur){for(var k=0;k<M.length;k++)if(M[k].id===cur.id){cur=M[k];if(cur.vars[sel]&&cur.vars[sel].so)sel=Math.max(0,cur.vars.findIndex(function(v){return !v.so}));if(m1.classList.contains('on'))draw()}}}).catch(function(){})},15000);
 function cats(){var c=[];M.forEach(function(i){if(c.indexOf(i.cat)<0)c.push(i.cat)});return c}
 function render(){var c=cats();tabs.innerHTML=c.map(function(x,k){return '<div class="tab'+(k?'':' on')+'" onclick="go('+k+')">'+x+'</div>'}).join('');
 list.innerHTML=c.map(function(x,k){return '<div class="sec" id="s'+k+'"><h2>'+x+'</h2>'+M.map(function(i,j){if(i.cat!=x)return'';var lo=Math.min.apply(0,i.vars.map(function(v){return v.price}));

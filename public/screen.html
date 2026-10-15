@@ -255,7 +255,7 @@ function soPoll(){try{if(/[?&]demo=soldoutall/.test(location.search)){soRender([
  x.onreadystatechange=function(){if(x.readyState!==4)return;if(x.status!==200)return;/* on error keep last state */
   try{var a=JSON.parse(x.responseText),n=[];if(!a||!a.length)return;for(var i=0;i<a.length;i++)if(a[i]&&a[i].so)n.push(String(a[i].name||''));soRender(n)}catch(e){}};
  x.send()}catch(e){}}
-soPoll();setInterval(soPoll,60000);
+soPoll();setInterval(soPoll,15000);
 }catch(e){}
 })();
 </script>
