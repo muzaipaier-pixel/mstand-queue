@@ -222,7 +222,7 @@ let menuC={at:0,data:null},menuP=null;
 let catSince=new Date(Date.now()-60e3).toISOString(),menuLastReq=0;
 async function catCheck(){
  if(!TOK||Date.now()-menuLastReq>30*60e3)return; // nobody looking at menus -> skip
- try{const d=await sq('/catalog/search',{method:'POST',body:JSON.stringify({object_types:['ITEM','ITEM_VARIATION'],begin_time:catSince,include_deleted_objects:true,limit:100})});
+ try{const d=await sq('/catalog/search',{method:'POST',body:JSON.stringify({object_types:['ITEM','ITEM_VARIATION','MODIFIER_LIST','MODIFIER'],begin_time:catSince,include_deleted_objects:true,limit:100})});
   const o=d.objects||[];if(!o.length)return;
   o.forEach(x=>{if(x.updated_at&&x.updated_at>catSince)catSince=x.updated_at});
   console.log('catalog changed ('+o.length+'), refreshing menu');menuC.at=0;menu().catch(()=>{});
@@ -236,8 +236,11 @@ async function menu(){
  menuP=menuBuild().finally(()=>{menuP=null});return menuP;
 }
 async function menuBuild(){
- let objs=[],cur;do{const d=await sq('/catalog/list?types=ITEM,CATEGORY,IMAGE'+(cur?'&cursor='+encodeURIComponent(cur):''));objs=objs.concat(d.objects||[]);cur=d.cursor}while(cur);
+ let objs=[],cur;do{const d=await sq('/catalog/list?types=ITEM,CATEGORY,IMAGE,MODIFIER_LIST'+(cur?'&cursor='+encodeURIComponent(cur):''));objs=objs.concat(d.objects||[]);cur=d.cursor}while(cur);
  const img={},cat={};objs.forEach(o=>{if(o.type==='IMAGE')img[o.id]=o.image_data.url;if(o.type==='CATEGORY')cat[o.id]=o.category_data.name});
+ const at0=o=>(o.present_at_all_locations||(o.present_at_location_ids||[]).includes(LOC))&&!(o.absent_at_location_ids||[]).includes(LOC);
+ const ml={};objs.forEach(o=>{if(o.type!=='MODIFIER_LIST'||o.is_deleted||!at0(o))return;const d=o.modifier_list_data;
+  ml[o.id]={id:o.id,name:d.name||'',multi:d.selection_type!=='SINGLE',opts:(d.modifiers||[]).filter(m=>!m.is_deleted&&at0(m)).map(m=>({id:m.id,name:m.modifier_data.name||'',price:Number((m.modifier_data.price_money||{}).amount||0),so:(m.modifier_data.location_overrides||[]).some(l=>l.location_id===LOC&&l.sold_out)}))}});
  const at=o=>(o.present_at_all_locations||(o.present_at_location_ids||[]).includes(LOC))&&!(o.absent_at_location_ids||[]).includes(LOC);
  const items=[];
  for(const o of objs){if(o.type!=='ITEM'||o.is_deleted||!at(o))continue;const d=o.item_data;
@@ -245,7 +248,7 @@ async function menuBuild(){
   const vars=(d.variations||[]).filter(v=>at(v)&&v.item_variation_data.price_money).map(v=>({id:v.id,name:v.item_variation_data.name||'',price:Number(v.item_variation_data.price_money.amount),so:(v.item_variation_data.location_overrides||[]).some(l=>l.location_id===LOC&&l.sold_out)}));
   if(!vars.length)continue;
   const c=(d.categories||[]).map(x=>cat[x.id]).find(Boolean)||cat[d.category_id]||'その他';
-  items.push({id:o.id,name:d.name,cat:c,desc:(d.description_plaintext||'').split('\n')[0].slice(0,40),img:img[(d.image_ids||[])[0]]||'',vars,so:vars.every(v=>v.so)});}
+  items.push({id:o.id,name:d.name,cat:c,desc:(d.description_plaintext||'').split('\n')[0].slice(0,40),img:img[(d.image_ids||[])[0]]||'',vars,mods:(d.modifier_list_info||[]).filter(x=>x.enabled!==false&&ml[x.modifier_list_id]&&ml[x.modifier_list_id].opts.length).map(x=>{const L=ml[x.modifier_list_id];return {...L,min:Math.max(0,x.min_selected_modifiers>0?x.min_selected_modifiers:0),max:x.max_selected_modifiers>0?x.max_selected_modifiers:(L.multi?L.opts.length:1)}}),so:vars.every(v=>v.so)});}
  menuC={at:Date.now(),data:items};return items;
 }
 const cleanName=s=>String(s||'').replace(/[<>&"'`\\\u0000-\u001f]/g,'').trim().slice(0,12);
@@ -266,13 +269,20 @@ async function checkout(b,q,r){
  try{
   let j;try{j=JSON.parse(b)}catch(e){return bad(400,'json')}
   const nc=nameCheck(j.name);if(nc.err)return bad(400,nc.err);const name=nc.n;
-  const m=await menu();const vm={};m.forEach(i=>i.vars.forEach(v=>{if(!v.so)vm[v.id]=v}));
-  const lines=(Array.isArray(j.items)?j.items:[]).filter(x=>vm[x.v]).map(x=>({catalog_object_id:x.v,quantity:String(Math.min(20,Math.max(1,parseInt(x.q)||1)))})).slice(0,30);
+  const m=await menu();const vm={};m.forEach(i=>i.vars.forEach(v=>{vm[v.id]={...v,mods:i.mods||[]}}));
+  const raw=(Array.isArray(j.items)?j.items:[]).filter(x=>vm[x.v]).slice(0,30);
+  if(raw.some(x=>vm[x.v].so))return bad(409,'soldout');
+  const lines=[];for(const x of raw){const v=vm[x.v],om={};v.mods.forEach(L=>L.opts.forEach(o=>{om[o.id]={o,L}}));
+   const ids=[...new Set((Array.isArray(x.m)?x.m:[]).map(String))].slice(0,10);
+   if(ids.some(id=>!om[id]))return bad(400,'items');if(ids.some(id=>om[id].o.so))return bad(409,'soldout');
+   for(const L of v.mods){const n=ids.filter(id=>om[id].L.id===L.id).length;if(n>L.max)return bad(400,'items')}
+   const qn=Math.min(20,Math.max(1,parseInt(x.q)||1)),l={catalog_object_id:x.v,quantity:String(qn)};
+   if(ids.length)l.modifiers=ids.map(id=>({catalog_object_id:id,quantity:'1'}));l._yen=(v.price+ids.reduce((a,id)=>a+om[id].o.price,0))*qn;lines.push(l)}
   if(!lines.length)return bad(400,'items');
   const ip=String(q.headers['x-forwarded-for']||q.socket.remoteAddress||'').split(',')[0].trim();
   if(limited(ip))return bad(429,'rate');
   const now=Date.now();while(webRecent.length&&now-webRecent[0].at>Math.max(AP.devMin,AP.burstMin)*60e3)webRecent.shift();
-  const cups=lines.reduce((a,l)=>a+parseInt(l.quantity),0),yen=lines.reduce((a,l)=>a+vm[l.catalog_object_id].price*parseInt(l.quantity),0);
+  const cups=lines.reduce((a,l)=>a+parseInt(l.quantity),0),yen=lines.reduce((a,l)=>a+l._yen,0);lines.forEach(l=>delete l._yen);
   if(cups>AP.cups||yen>AP.yen)return bad(400,'cap');
   const dev=String(j.dev||'').replace(/[^a-z0-9-]/gi,'').slice(0,40);
   const mine=webRecent.filter(w=>now-w.at<AP.devMin*60e3&&(w.ip===ip||dev&&w.dev===dev));
