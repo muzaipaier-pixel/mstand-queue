@@ -72,7 +72,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-c
 #qrc img{display:block;width:9.6vw;height:9.6vw;margin:.25vw auto}
 #qrc .st{font-size:.72vw;font-weight:bold;line-height:1.25;color:#fff;background-color:#8A00E6;border-radius:.4vw;padding:.15vw 0;margin:0 .2vw}
 #qrc .st b{color:#FFE600}
-.qrA #fun{top:34%;height:29%;font-size:1vw;line-height:1.45;background-color:rgba(255,255,255,.14);border-radius:.9vw;-webkit-box-sizing:border-box;box-sizing:border-box;padding:.6vw .5vw;opacity:0;visibility:hidden}
+.qrA #fun{display:none!important;top:34%;height:29%;font-size:1vw;line-height:1.45;background-color:rgba(255,255,255,.14);border-radius:.9vw;-webkit-box-sizing:border-box;box-sizing:border-box;padding:.6vw .5vw;opacity:0;visibility:hidden}
 .qrA #fun .k{width:1.5vw}.qrA #fun .fb{margin-bottom:.8vw}
 #qrc,.qrA #fun{-webkit-transition:opacity .8s,visibility .8s;transition:opacity .8s,visibility .8s}
 .qrA.info #fun{opacity:1;visibility:visible}.qrA.info #qrc{opacity:0;visibility:hidden}.qrA #prepb{top:65%;height:16%}.qrA #histb{top:83%;height:11%}.qrA .brand{bottom:1%;font-size:.75vw}
@@ -80,8 +80,17 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-c
 #cf.mini i{width:.5vw;height:1.1vw;border-radius:.15vw;-webkit-animation:mfall 2.8s ease-in 1 forwards;animation:mfall 2.8s ease-in 1 forwards}
 @-webkit-keyframes mfall{0%{-webkit-transform:translate3d(0,0,0) rotate(0);opacity:1}100%{-webkit-transform:translate3d(-2vw,80vh,0) rotate(540deg);opacity:0}}
 @keyframes mfall{0%{transform:translate3d(0,0,0) rotate(0);opacity:1}100%{transform:translate3d(-2vw,80vh,0) rotate(540deg);opacity:0}}
+/* header info strip overlaid on menu image (scales with it) */
+#hdr{position:absolute;left:0;top:0;width:0;height:0;pointer-events:none;z-index:2}
+#hs{position:absolute;left:21.9%;top:.7%;width:45%;height:7.7%}
+#hs .c{position:absolute;top:0;height:100%;-webkit-box-sizing:border-box;box-sizing:border-box;padding:.25em .5em;border-radius:.6em;background-color:rgba(60,0,140,.55);border:1px solid rgba(255,255,255,.35);color:#fff;overflow:hidden;white-space:nowrap;line-height:1.2}
+#hs .c .h{color:#FFE600;font-weight:900;font-size:.82em}
+#hs .c .l{font-weight:bold;overflow:hidden;text-overflow:ellipsis}
+#hs .c .s{font-size:.8em;overflow:hidden;text-overflow:ellipsis}
+#hs .sw{display:inline-block;width:1em;height:1em;border-radius:50%;border:2px solid #fff;vertical-align:-.15em;margin-right:.3em}
+#hs .k{display:inline-block;width:1em;color:#FFE600;font-weight:900}
 </style></head><body>
-<img id="menu" src="/menu.jpg?v=6" alt="menu"><div id="somask"></div>
+<img id="menu" src="/menu.jpg?v=6" alt="menu"><div id="somask"></div><div id="hdr"><div id="hs"></div></div>
 <div id="q" class="qrA">
  <div class="t">お呼び出し番号<span>请取餐</span></div>
  <div id="deco"></div>
@@ -107,6 +116,7 @@ function fit(){try{var m=$('menu'),W=Math.floor(window.innerWidth*0.84),H=window
  if(h>H){h=H;w=Math.round(H*a)}
  m.style.width=w+'px';m.style.height=h+'px';m.style.left=Math.floor((W-w)/2)+'px';m.style.top=Math.floor((H-h)/2)+'px';
  var dpr=window.devicePixelRatio||1,want=(w*dpr>1700)?'/menu@2x.jpg?v=6':'/menu.jpg?v=6';
+ try{var hd=$('hdr');hd.style.left=m.style.left;hd.style.top=m.style.top;hd.style.width=w+'px';hd.style.height=h+'px';hd.style.fontSize=Math.max(11,Math.round(w/96))+'px'}catch(e){}
  try{var k=$('somask');k.style.left=m.style.left;k.style.top=m.style.top;k.style.width=w+'px';k.style.height=h+'px';var bs=k.getElementsByTagName('b');for(var i=0;i<bs.length;i++)bs[i].style.fontSize=Math.max(12,Math.round(w/60))+'px'}catch(e){}
  if(m.getAttribute('src')!==want)m.setAttribute('src',want);
  if(location.search.indexOf('debug=1')>=0){var d=$('dbg');d.style.display='block';d.innerHTML=window.innerWidth+'x'+window.innerHeight+' dpr '+dpr+' img '+w+'x'+h+' '+want}
@@ -228,15 +238,21 @@ function renderFun(d){try{var h='',w=d.weather;
   h+='<div class="fb"><div class="r">'+ic+' 池袋 <b>'+esc(w.t)+'\u2103</b></div><div class="r">'+(w.rec==='ice'?'\uD83E\uDDCA 暑い日はアイス・スムージー！':w.rec==='hot'?'\u2615 寒い日はHOTドリンク！':'\uD83E\uDD64 今日はどれもおすすめ！')+'</div><div class="r">'+(w.rec==='ice'?'热天来杯冰沙 / Iced!':w.rec==='hot'?'冷天来杯热饮 / Hot drinks!':'今天都推荐 / Enjoy!')+'</div></div>'}
  var t=d.top3||[];if(t.length){h+='<div class="fb"><div class="r">\uD83D\uDD25 <b>本日の人気 / 今日人气</b></div>';
   for(var i=0;i<t.length;i++)h+='<div class="r"><span class="k">'+(i+1)+'</span>'+esc(t[i].ja)+'</div>';h+='</div>'}
- $('fun').innerHTML=h}catch(e){}}
+ $('fun').innerHTML=h}catch(e){}renderHdr(d)}
 
-// QR / info carousel in layout A: QR 20s, weather+top3 10s (only if info exists)
-(function(){var q=$('q'),ph=0,fixed=/[?&]qrphase=(qr|info)/.exec(location.search);
- function has(){var f=$('fun');return f&&f.innerHTML.replace(/\s/g,'').length>0}
- function set(info){if(q.className.indexOf('qrA')<0)return;q.className=info?'qrA info':'qrA'}
- if(fixed){setInterval(function(){set(fixed[1]==='info'&&has())},500);return}
- function step(){var info=!ph&&has();ph=info?1:0;set(info);setTimeout(step,info?10000:20000)}
- setTimeout(step,20000)})();
+
+// header strip: weather / lucky color / zodiac drink / top3
+var LCOL=[['#FF8FC8','樱花粉','さくらピンク'],['#FFE24D','柠檬黄','レモンイエロー'],['#7FE3C2','薄荷绿','ミント'],['#7CC8FF','天空蓝','スカイブルー'],['#B98CFF','薰衣草紫','ラベンダー'],['#FFB38A','蜜桃橙','ピーチ'],['#FF6B6B','珊瑚红','コーラル'],['#8BC34A','抹茶绿','抹茶グリーン'],['#C79A6B','奶茶棕','ミルクティー'],['#9C4DCC','葡萄紫','グレープ']];
+var ZOD=[['\u2648','白羊座'],['\u2649','金牛座'],['\u264A','双子座'],['\u264B','巨蟹座'],['\u264C','狮子座'],['\u264D','处女座'],['\u264E','天秤座'],['\u264F','天蝎座'],['\u2650','射手座'],['\u2651','摩羯座'],['\u2652','水瓶座'],['\u2653','双鱼座']];
+var ZDR=['アボカドスムージー','いちごミルク','マンゴーミルク','楊枝甘露','黒糖タピオカミルク','抹茶ミルク','パッションフルーツ','チーズクリーム四季春','ドラゴンフルーツ','ゆずハニーオレンジ','タロ芋スムージー','ココナッツミルク'];
+function renderHdr(d){try{d=d||{};var n=jstDay(),w=d.weather,t=d.top3||[],h='',L=LCOL[(n*3)%LCOL.length],Z=ZOD[n%12],dr=ZDR[(n*5+3)%ZDR.length];
+ var ic=!w?'\u2601':w.code>=95?'\u26C8':w.code>=71&&w.code<=86?'\u2744':w.code>=51?'\u2614':w.code>=2?'\u2601':'\u2600';
+ h+='<div class="c" style="left:0;width:24%"><div class="h">今日天气 / 天気</div><div class="l">'+ic+' 池袋 '+(w?esc(w.t)+'\u2103':'')+'</div><div class="s">'+(!w?'今天也来一杯吧':w.rec==='ice'?'热天来杯冰沙 / アイス':w.rec==='hot'?'冷天来杯热饮 / HOT':'今天都推荐 / どれも◎')+'</div></div>';
+ h+='<div class="c" style="left:25.5%;width:20.5%"><div class="h">今日幸运色</div><div class="l"><span class="sw" style="background-color:'+L[0]+'"></span>'+L[1]+'</div><div class="s">'+L[2]+'</div></div>';
+ h+='<div class="c" style="left:47.5%;width:23%"><div class="h">今日星座幸运饮品</div><div class="l">'+Z[0]+' '+Z[1]+'</div><div class="s">\u2192 '+dr+'</div></div>';
+ if(t.length){h+='<div class="c" style="left:72%;width:28%"><div class="h">\uD83D\uDD25 本日人气 Top3</div>';for(var i=0;i<t.length&&i<3;i++)h+='<div class="s"><span class="k">'+(i+1)+'</span>'+esc(String(t[i].ja).slice(0,11))+'</div>';h+='</div>'}
+ $('hs').innerHTML=h}catch(e){}}
+renderHdr();
 function pollFun(){try{if(DEMO){FUN.reward=/[?&]reward=([^&]*)/.test(location.search)?decodeURIComponent(RegExp.$1):'';
   renderFun({weather:{t:demoHas('hot')?32:demoHas('mild')?20:9,code:demoHas('hot')?0:3,rec:demoHas('hot')?'ice':demoHas('mild')?'mild':'hot'},top3:[{ja:'アボカドスムージー'},{ja:'ロイヤルタピオカミルクティー'},{ja:'満杯いちごスムージー'}]});return}
  var x=new XMLHttpRequest();x.open('GET','/api/fun?t='+(new Date().getTime()),true);
