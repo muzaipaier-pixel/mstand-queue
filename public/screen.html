@@ -65,15 +65,25 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-c
 #dly i{position:absolute;top:-5%;display:block;font-style:normal;line-height:1;opacity:.85;text-shadow:0 .15vw .4vw rgba(0,0,0,.35);-webkit-animation:dfall 16s linear infinite;animation:dfall 16s linear infinite}
 @-webkit-keyframes dfall{0%{-webkit-transform:translate3d(0,0,0) rotate(0)}50%{-webkit-transform:translate3d(1.5vw,55vh,0) rotate(160deg)}100%{-webkit-transform:translate3d(-1vw,112vh,0) rotate(320deg)}}
 @keyframes dfall{0%{transform:translate3d(0,0,0) rotate(0)}50%{transform:translate3d(1.5vw,55vh,0) rotate(160deg)}100%{transform:translate3d(-1vw,112vh,0) rotate(320deg)}}
+/* scan-to-order card (layout A default: middle of right column; B via ?qr=B: bottom) */
+#q{z-index:4}#qrc{position:absolute;left:4%;width:92%;top:34%;height:29%;background-color:#fff;border-radius:.9vw;color:#4B00B5;text-align:center;-webkit-box-sizing:border-box;box-sizing:border-box;padding:.4vw .3vw;box-shadow:0 0 1vw rgba(255,31,158,.6)}
+#qrc .h1{font-size:1.25vw;font-weight:900;line-height:1.15;color:#E6007E}
+#qrc .h2{font-size:.8vw;font-weight:bold;line-height:1.2}
+#qrc img{display:block;width:9.6vw;height:9.6vw;margin:.25vw auto}
+#qrc .st{font-size:.72vw;font-weight:bold;line-height:1.25;color:#fff;background-color:#8A00E6;border-radius:.4vw;padding:.15vw 0;margin:0 .2vw}
+#qrc .st b{color:#FFE600}
+.qrA #fun{display:none}.qrA #prepb{top:65%;height:16%}.qrA #histb{top:83%;height:11%}.qrA .brand{bottom:1%;font-size:.75vw}
+.qrB #fun{display:none}.qrB #prepb{top:35%;height:15%}.qrB #histb{top:52%;height:12%}.qrB #qrc{top:66%;height:32%}.qrB .brand{display:none}
 </style></head><body>
 <img id="menu" src="/menu.jpg?v=6" alt="menu"><div id="somask"></div>
-<div id="q">
+<div id="q" class="qrA">
  <div class="t">お呼び出し番号<span>请取餐</span></div>
  <div id="deco"></div>
  <div id="nw"><div id="glow"></div><div id="n"><span id="nt">-</span></div></div>
  <div class="sub">お待たせしました</div>
  <div id="cel"></div>
  <div id="fun"></div>
+<div id="qrc"><div class="h1">扫码手机点单</div><div class="h2">スマホで注文 / Scan to order</div><img src="/qr_order.svg" alt="QR"><div class="st">📱扫码 → 🥤选饮品 → 💴收银台付款<br><b>🔔叫号取饮</b> / レジでお支払い</div></div>
  <div class="box" id="prepb"><h2>制作中 / Preparing</h2><div id="prep"></div></div>
  <div class="box" id="histb"><h2>最近の番号 / 最近叫号</h2><div id="hist"></div></div>
  <div class="brand">M Stand 池袋</div>
@@ -82,7 +92,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-c
 <audio id="chime" src="/chime_marimba.mp3" preload="auto"></audio><audio id="vo" preload="none"></audio>
 <script>
 (function(){
-try{
+try{if(/[?&]qr=B/.test(location.search))document.getElementById('q').className='qrB';
 var SOUND=location.search.indexOf('sound=0')<0;
 var lastSeq=null,ctx=null,fails=0;
 function $(id){return document.getElementById(id)}
