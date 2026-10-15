@@ -72,7 +72,10 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-c
 #qrc img{display:block;width:9.6vw;height:9.6vw;margin:.25vw auto}
 #qrc .st{font-size:.72vw;font-weight:bold;line-height:1.25;color:#fff;background-color:#8A00E6;border-radius:.4vw;padding:.15vw 0;margin:0 .2vw}
 #qrc .st b{color:#FFE600}
-.qrA #fun{display:none}.qrA #prepb{top:65%;height:16%}.qrA #histb{top:83%;height:11%}.qrA .brand{bottom:1%;font-size:.75vw}
+.qrA #fun{top:34%;height:29%;font-size:1vw;line-height:1.45;background-color:rgba(255,255,255,.14);border-radius:.9vw;-webkit-box-sizing:border-box;box-sizing:border-box;padding:.6vw .5vw;opacity:0;visibility:hidden}
+.qrA #fun .k{width:1.5vw}.qrA #fun .fb{margin-bottom:.8vw}
+#qrc,.qrA #fun{-webkit-transition:opacity .8s,visibility .8s;transition:opacity .8s,visibility .8s}
+.qrA.info #fun{opacity:1;visibility:visible}.qrA.info #qrc{opacity:0;visibility:hidden}.qrA #prepb{top:65%;height:16%}.qrA #histb{top:83%;height:11%}.qrA .brand{bottom:1%;font-size:.75vw}
 .qrB #fun{display:none}.qrB #prepb{top:35%;height:15%}.qrB #histb{top:52%;height:12%}.qrB #qrc{top:66%;height:32%}.qrB .brand{display:none}
 </style></head><body>
 <img id="menu" src="/menu.jpg?v=6" alt="menu"><div id="somask"></div>
@@ -211,6 +214,14 @@ function renderFun(d){try{var h='',w=d.weather;
  var t=d.top3||[];if(t.length){h+='<div class="fb"><div class="r">\uD83D\uDD25 <b>本日の人気 / 今日人气</b></div>';
   for(var i=0;i<t.length;i++)h+='<div class="r"><span class="k">'+(i+1)+'</span>'+esc(t[i].ja)+'</div>';h+='</div>'}
  $('fun').innerHTML=h}catch(e){}}
+
+// QR / info carousel in layout A: QR 20s, weather+top3 10s (only if info exists)
+(function(){var q=$('q'),ph=0,fixed=/[?&]qrphase=(qr|info)/.exec(location.search);
+ function has(){var f=$('fun');return f&&f.innerHTML.replace(/\s/g,'').length>0}
+ function set(info){if(q.className.indexOf('qrA')<0)return;q.className=info?'qrA info':'qrA'}
+ if(fixed){setInterval(function(){set(fixed[1]==='info'&&has())},500);return}
+ function step(){var info=!ph&&has();ph=info?1:0;set(info);setTimeout(step,info?10000:20000)}
+ setTimeout(step,20000)})();
 function pollFun(){try{if(DEMO){FUN.reward=/[?&]reward=([^&]*)/.test(location.search)?decodeURIComponent(RegExp.$1):'';
   renderFun({weather:{t:demoHas('hot')?32:demoHas('mild')?20:9,code:demoHas('hot')?0:3,rec:demoHas('hot')?'ice':demoHas('mild')?'mild':'hot'},top3:[{ja:'アボカドスムージー'},{ja:'ロイヤルタピオカミルクティー'},{ja:'満杯いちごスムージー'}]});return}
  var x=new XMLHttpRequest();x.open('GET','/api/fun?t='+(new Date().getTime()),true);
