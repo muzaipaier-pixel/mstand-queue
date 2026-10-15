@@ -9,7 +9,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-c
 .so{position:absolute;background:rgba(60,60,60,.55);border-radius:8px;overflow:hidden}
 .sop{position:absolute;overflow:visible}
 .sop i{position:absolute;right:3%;top:6%;font-style:normal;background:#e0182d;color:#fff;font-weight:900;font-family:sans-serif;border:2px solid #fff;border-radius:6px;padding:.1em .45em;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.4)}
-.so.tp{border-radius:4px}.so.tp b{border-width:2px;padding:0 .35em;-webkit-transform:translate(-50%,-50%) rotate(-6deg);transform:translate(-50%,-50%) rotate(-6deg)}
+.so.tp{border-radius:4px;overflow:visible;background:rgba(40,40,40,.62)}.so.tp b{border-width:2px;padding:0 .4em;line-height:1.25;-webkit-transform:translate(-50%,-50%);transform:translate(-50%,-50%)}
 .so b{position:absolute;left:50%;top:50%;-webkit-transform:translate(-50%,-50%) rotate(-12deg);transform:translate(-50%,-50%) rotate(-12deg);border:3px solid #fff;background:#e0182d;color:#fff;font-weight:900;white-space:nowrap;padding:.15em .6em;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.4);font-family:sans-serif}
 #menu{position:absolute;left:0;top:0;width:84%;height:100%;display:block;border:0}
 #q{position:absolute;right:0;top:0;width:16%;height:100%;background-color:#5A00C0;background-image:-webkit-linear-gradient(top,#8A00E6,#3A0096);background-image:linear-gradient(to bottom,#8A00E6,#3A0096);text-align:center}
@@ -276,6 +276,8 @@ if(DEMO&&/birthday|milestone|regular|halloween|christmas|call/.test(DEMO)){setTi
  handle({current:'陳美玲',callAt:2,callItems:[{n:'アボカドスムージー',q:1}],callFx:fx,preparing:[{id:'a',num:'田中'},{id:'b',num:'Emma'},{id:'c',num:'25'}],history:['陳美玲','佐藤','12','Lee']})}catch(e){}},1500)}
 if(DEMO)handle({current:'佐藤',callAt:1,preparing:[{id:'a',num:'田中'},{id:'b',num:'Emma'},{id:'c',num:'25'}],history:['佐藤','12','Lee']});else poll();
 setTimeout(function(){location.reload()},30*60*1000);
+/* reload when a new deploy goes live */
+(function(){var cur=null;function chk(){try{var x=new XMLHttpRequest();x.open('GET','/api/version?_='+Date.now(),true);x.timeout=10000;x.onreadystatechange=function(){if(x.readyState!==4||x.status!==200)return;try{var v=JSON.parse(x.responseText).v;if(cur===null)cur=v;else if(v&&v!==cur){location.replace(location.pathname+location.search+(location.search?'&':'?')+'_r='+Date.now())}}catch(e){}};x.send()}catch(e){}}chk();setInterval(chk,60000)})();
 
 /* sold-out overlay on the baked menu image: card boxes in % of menu.jpg (1612x1080), matched by Square item name */
 var SOMAP=[
