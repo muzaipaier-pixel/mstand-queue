@@ -7,6 +7,8 @@
 html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-color:#8A00E6;background-image:-webkit-linear-gradient(-45deg,#FF1F9E,#B000E8,#4B00B5);background-image:linear-gradient(135deg,#FF1F9E,#B000E8,#4B00B5);font-family:"Hiragino Sans","Noto Sans CJK JP","Noto Sans JP","Droid Sans Fallback",sans-serif;color:#fff}
 #somask{position:absolute;left:0;top:0;width:0;height:0;pointer-events:none;overflow:hidden;z-index:2}
 .so{position:absolute;background:rgba(60,60,60,.55);border-radius:8px;overflow:hidden}
+.sop{position:absolute;overflow:visible}
+.sop i{position:absolute;right:3%;top:6%;font-style:normal;background:#e0182d;color:#fff;font-weight:900;font-family:sans-serif;border:2px solid #fff;border-radius:6px;padding:.1em .45em;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.4)}
 .so b{position:absolute;left:50%;top:50%;-webkit-transform:translate(-50%,-50%) rotate(-12deg);transform:translate(-50%,-50%) rotate(-12deg);border:3px solid #fff;background:#e0182d;color:#fff;font-weight:900;white-space:nowrap;padding:.15em .6em;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.4);font-family:sans-serif}
 #menu{position:absolute;left:0;top:0;width:84%;height:100%;display:block;border:0}
 #q{position:absolute;right:0;top:0;width:16%;height:100%;background-color:#5A00C0;background-image:-webkit-linear-gradient(top,#8A00E6,#3A0096);background-image:linear-gradient(to bottom,#8A00E6,#3A0096);text-align:center}
@@ -304,11 +306,12 @@ var SOMAP=[
  {re:/爆ライム/i,x:74.8,y:71.0,w:23.4,h:9.8},
  {re:/柚子|ゆず/i,x:74.8,y:81.5,w:23.4,h:9.8}
 ];
-function soRender(names){try{var k=$('somask'),h='',used={};for(var i=0;i<names.length;i++){for(var j=0;j<SOMAP.length;j++){var b=SOMAP[j];if(!used[j]&&b.re.test(names[i])){used[j]=1;h+='<div class="so" style="left:'+b.x+'%;top:'+b.y+'%;width:'+b.w+'%;height:'+b.h+'%"><b>売り切れ / 售罄</b></div>';break}}}k.innerHTML=h;fit()}catch(e){}}
-function soPoll(){try{if(/[?&]demo=soldoutall/.test(location.search)){soRender(["ロイヤルタピオカミルクティー", "たっぷりマンゴーミルク", "上品四季春", "朝露ジャスミン", "ハイビスカスティー", "台湾トウガン茶", "黒糖BOBOミルク", "もちもち抹茶ミルク", "満杯チェリースムージー", "アボカドスムージー", "たっぷりいちごミルク", "柚子ハニーオレンジ", "爆ライム四季春", "満杯パッションフルーツ", "チーズクリームジャスミン", "チーズクリーム四季春", "チーズクリーム宇治抹茶", "満杯ドラゴンフルーツ", "ココナッツミルクスムージー", "満杯いちごスムージー", "たっぷりドラゴンミルク", "Mixベリーミルク", "ブルーベリースムージー", "Mixベリースムージー", "海塩パイナップルスムージー", "タロ芋ミルクスムージー", "ヤンジーカンルー"]);return}if(/[?&]demo=soldout/.test(location.search)){soRender(['満杯チェリースムージー']);return}
+function szl(v){v=String(v||'');var m=v.match(/^\s*([SMLＭＬＳ])\b|([SML])\s*サイズ/i);if(m){v=(m[1]||m[2]).toUpperCase();return v==='Ｍ'?'M':v==='Ｌ'?'L':v==='Ｓ'?'S':v}return v.replace(/[<>&"']/g,'').slice(0,6)}
+function soRender(names){try{var k=$('somask'),h='',used={};for(var i=0;i<names.length;i++){for(var j=0;j<SOMAP.length;j++){var b=SOMAP[j];if(!used[j]){var nm=names[i],pt='';if(typeof nm==='object'){pt=nm.p||'';nm=nm.n}if(!b.re.test(nm))continue;used[j]=1;var st='left:'+b.x+'%;top:'+b.y+'%;width:'+b.w+'%;height:'+b.h+'%';h+=pt?'<div class="sop" style="'+st+'"><i>'+pt+'</i></div>':'<div class="so" style="'+st+'"><b>売り切れ / 售罄</b></div>';break}}}k.innerHTML=h;fit()}catch(e){}}
+function soPoll(){try{if(/[?&]demo=soldoutall/.test(location.search)){soRender(["ロイヤルタピオカミルクティー", "たっぷりマンゴーミルク", "上品四季春", "朝露ジャスミン", "ハイビスカスティー", "台湾トウガン茶", "黒糖BOBOミルク", "もちもち抹茶ミルク", "満杯チェリースムージー", "アボカドスムージー", "たっぷりいちごミルク", "柚子ハニーオレンジ", "爆ライム四季春", "満杯パッションフルーツ", "チーズクリームジャスミン", "チーズクリーム四季春", "チーズクリーム宇治抹茶", "満杯ドラゴンフルーツ", "ココナッツミルクスムージー", "満杯いちごスムージー", "たっぷりドラゴンミルク", "Mixベリーミルク", "ブルーベリースムージー", "Mixベリースムージー", "海塩パイナップルスムージー", "タロ芋ミルクスムージー", "ヤンジーカンルー"]);return}if(/[?&]demo=soldoutsize/.test(location.search)){soRender(['満杯チェリースムージー',{n:'アボカドスムージー',p:'L 售罄'},{n:'上品四季春',p:'M 售罄'}]);return}if(/[?&]demo=soldout/.test(location.search)){soRender(['満杯チェリースムージー']);return}
  var x=new XMLHttpRequest();x.open('GET','/api/menu?_='+Date.now(),true);x.timeout=15000;
  x.onreadystatechange=function(){if(x.readyState!==4)return;if(x.status!==200)return;/* on error keep last state */
-  try{var a=JSON.parse(x.responseText),n=[];if(!a||!a.length)return;for(var i=0;i<a.length;i++)if(a[i]&&a[i].so)n.push(String(a[i].name||''));soRender(n)}catch(e){}};
+  try{var a=JSON.parse(x.responseText),n=[];if(!a||!a.length)return;for(var i=0;i<a.length;i++){var it=a[i];if(!it)continue;if(it.so){n.push(String(it.name||''));continue}var vs=it.vars||[],ps=[];if(vs.length>1){var sz={},q,k;for(q=0;q<vs.length;q++){if(!vs[q])continue;k=szl(vs[q].name);if(!sz[k])sz[k]={a:0,o:0};sz[k].a++;if(vs[q].so)sz[k].o++}for(q=0;q<vs.length;q++){if(!vs[q]||!vs[q].so)continue;k=szl(vs[q].name);if(sz[k].o===sz[k].a){if(sz[k].a>0){ps.push(k);sz[k].a=-1}}else if(sz[k].a>0)ps.push(String(vs[q].name||'').replace(/[<>&"']/g,'').replace(/\s*,\s*/g,' ').slice(0,10))}}if(ps.length)n.push({n:String(it.name||''),p:ps.join('・')+' 售罄'})}soRender(n)}catch(e){}};
  x.send()}catch(e){}}
 soPoll();setInterval(soPoll,15000);
 }catch(e){}
