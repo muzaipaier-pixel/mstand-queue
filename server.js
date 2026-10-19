@@ -7,15 +7,28 @@ const SF=__dirname+'/state.json';
 let st={current:0,history:[],seq:0};
 try{st=JSON.parse(fs.readFileSync(SF))}catch(e){}
 st.preparing=st.preparing||[];st.seenPay=st.seenPay||[];
-const save=()=>fs.writeFileSync(SF,JSON.stringify(st));
+// coalesced async save: at most one write per ~1.5s, never concurrent; atomic via tmp+rename
+let sDirty=false,sTimer=null,sBusy=false;
+const SAVE_MS=1500;
+const save=()=>{sDirty=true;if(!sTimer&&!sBusy)sTimer=setTimeout(doSave,SAVE_MS)};
+async function doSave(){sTimer=null;if(!sDirty)return;sDirty=false;sBusy=true;const tmp=SF+'.tmp';
+ try{await fs.promises.writeFile(tmp,JSON.stringify(st));await fs.promises.rename(tmp,SF)}catch(e){console.error('save failed',e.message);sDirty=true}
+ finally{sBusy=false;if(sDirty&&!sTimer)sTimer=setTimeout(doSave,SAVE_MS)}}
+const saveSync=()=>{if(sTimer){clearTimeout(sTimer);sTimer=null}if(!sDirty)return;sDirty=false;try{fs.writeFileSync(SF+'.tmp2',JSON.stringify(st));fs.renameSync(SF+'.tmp2',SF)}catch(e){console.error('saveSync failed',e.message)}};
+process.on('beforeExit',saveSync);
+['SIGTERM','SIGINT'].forEach(sig=>process.on(sig,()=>{saveSync();process.exit(0)}));
 const clients=new Set();
 const pub=()=>{const{seenPay,sqSince,rdySince,calledOrders,kdsLocal,...o}=st;return o};
-const push=(ev)=>{const d=`data: ${JSON.stringify({...pub(),event:ev})}\n\n`;clients.forEach(c=>c.write(d));};
+const SSE_MAX=1<<20;
+const dropClient=(c)=>{clients.delete(c);try{c.end()}catch(e){}try{c.destroy&&c.destroy()}catch(e){}};
+const sseWrite=(c,d)=>{try{const so=c.socket||c.connection;if(c.destroyed||c.writableEnded||(so&&so.destroyed)){clients.delete(c);return}
+ const ok=c.write(d);if(ok)c._bp=0;else c._bp=(c._bp||0)+1;if(c._bp>=5||c.writableLength>SSE_MAX)dropClient(c)}catch(e){dropClient(c)}};
+const push=(ev)=>{const d=`data: ${JSON.stringify({...pub(),event:ev})}\n\n`;[...clients].forEach(c=>sseWrite(c,d));};
 const types={'.html':'text/html; charset=utf-8','.js':'text/javascript','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.wav':'audio/wav','.mp3':'audio/mpeg','.svg':'image/svg+xml','.webmanifest':'application/manifest+json'};
 http.createServer((q,r)=>{
  const u=new URL(q.url,'http://x');
  if(u.pathname.length>1&&u.pathname.endsWith('/'))u.pathname=u.pathname.replace(/\/+$/,'')||'/'; // /order/ -> /order
- if(u.pathname==='/events'){r.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive','X-Accel-Buffering':'no'});r.write(`data: ${JSON.stringify({...pub(),event:'init'})}\n\n`);clients.add(r);const k=setInterval(()=>r.write(':k\n\n'),20000);q.on('close',()=>{clients.delete(r);clearInterval(k)});return;}
+ if(u.pathname==='/events'){r.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive','X-Accel-Buffering':'no'});r.write(`data: ${JSON.stringify({...pub(),event:'init'})}\n\n`);clients.add(r);const k=setInterval(()=>{if(clients.has(r))sseWrite(r,':k\n\n');else clearInterval(k)},20000);const rm=()=>{clients.delete(r);clearInterval(k)};q.on('close',rm);r.on('close',rm);r.on('error',rm);q.on('error',rm);return;}
 if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r,u.searchParams.get('lang'),u.searchParams.get('i'),u.searchParams.get('t'),u.searchParams.get('fx'));return;}
  if(u.pathname==='/api/version'){r.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});return r.end(JSON.stringify({v:APP_VER}))}
  if(u.pathname==='/api/menu'){menu().then(m=>{r.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-cache'});r.end(JSON.stringify(m))}).catch(e=>{console.error('menu',e.message);r.writeHead(502);r.end('{"error":"menu"}')});return;}
