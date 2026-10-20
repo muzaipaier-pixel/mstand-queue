@@ -73,34 +73,34 @@ window.MSCritter={svg:svg,keys:A.concat(['bat']),pose:function(r,key,f){var o=HI
 
 /* ---- product intro: walk to a menu card and say something ---- */
 var PI=[
-[/^ロイヤルタピオカミルクティー/,'至尊珍奶','人气No.1，珍珠Q弹～'],
-[/アボカドスムージー/,'整颗牛油果','牛油果每天现开的哦～'],
-[/^上品四季春/,'四季春茶','清香回甘，超解腻～'],
-[/朝露ジャスミン/,'茉莉花茶','一口满满茉莉花香～'],
-[/ハイビスカス/,'扶桑花茶','酸酸甜甜，颜色超美～'],
-[/トウガン/,'冬瓜茶','古早味冬瓜茶，消暑～'],
-[/マンゴーミルク/,'芒果多多','满满芒果果肉哦～'],
-[/ドラゴンミルク/,'火龙果多多','粉粉的火龙果超好拍～'],
-[/いちごミルク|イチゴミルク/,'草莓多多','草莓配鲜奶，甜甜的～'],
-[/黒糖/,'黑糖波波','黑糖珍珠，浓浓焦香～'],
-[/抹茶ミルク/,'抹茶牛奶','Q弹球配抹茶，好好嚼～'],
-[/Mixベリーミルク|ミックスベリーミルク/,'莓莓多多','好几种莓果一起喝～'],
-[/チーズクリーム四季春/,'芝士四季春','咸香奶盖配清茶～'],
-[/チーズクリームジャスミン/,'芝士茉莉','奶盖绵绵配茉莉～'],
-[/チーズクリーム宇治抹茶/,'芝士抹茶','宇治抹茶+奶盖，绝配～'],
-[/ココナッツ/,'椰子牛奶冰','椰香满满，冰冰凉凉～'],
-[/満杯ドラゴンフルーツ/,'满杯火龙果','满满一杯火龙果～'],
-[/満杯いちごスムージー|イチゴゴゴ/,'芝芝莓莓','满杯草莓，酸甜刚好～'],
-[/チェリー/,'满杯车厘子','车厘子控必点哦～'],
-[/ヤンジー|楊枝甘露|杨枝甘露/,'杨枝甘露','芒果西柚，港式经典～'],
-[/Mixベリースムージー/,'综合莓果冰沙','新品！莓果冰沙～'],
-[/ブルーベリー/,'蓝莓冰沙','新品！蓝莓酸酸甜甜～'],
-[/パイナップル/,'海盐菠萝冰沙','新品！海盐配菠萝～'],
-[/パッション/,'满杯百香果','百香果香到冒泡～'],
-[/タロ芋/,'芋头牛奶冰沙','芋泥控快来～'],
-[/爆ライム/,'爆青柠四季春','超清爽，解腻必喝～'],
-[/柚子|ゆず/,'满杯蜂蜜柚橙','柚子蜂蜜，冷热都好喝～']];
-var GEN='这杯也超好喝哦～';
+[/^ロイヤルタピオカミルクティー/,'至尊珍奶','店里人气No.1','珍珠Q弹有嚼劲','奶茶香浓不腻'],
+[/アボカドスムージー/,'整颗牛油果','用整颗牛油果做','口感绵密顺滑','喝完超满足～'],
+[/^上品四季春/,'四季春茶','清新的乌龙茶香','入口回甘','配炸鸡超解腻～'],
+[/朝露ジャスミン/,'茉莉花茶','一口满满茉莉香','清爽不苦涩','想清淡就选它～'],
+[/ハイビスカス/,'扶桑花茶','酸酸甜甜的花茶','颜色红红超好看','拍照很出片哦～'],
+[/トウガン/,'冬瓜茶','古早味冬瓜茶','甜甜的很顺口','小时候的味道～'],
+[/マンゴーミルク/,'芒果多多','满满芒果果肉','配上香浓牛奶','芒果控必点～'],
+[/ドラゴンミルク/,'火龙果多多','火龙果配牛奶','粉粉的颜色','超好拍超可爱～'],
+[/いちごミルク|イチゴミルク/,'草莓多多','草莓配牛奶','酸酸甜甜','少女心满满～'],
+[/黒糖/,'黑糖波波','黑糖珍珠','浓浓焦糖香','搅一搅再喝哦～'],
+[/抹茶ミルク/,'抹茶牛奶','抹茶配牛奶','微苦又香甜','抹茶控快来～'],
+[/Mixベリーミルク|ミックスベリーミルク/,'莓莓多多','好几种莓果','配上牛奶','酸甜又顺滑～'],
+[/チーズクリーム四季春/,'芝士四季春','绵密芝士奶盖','配清香四季春','先喝一口奶盖～'],
+[/チーズクリームジャスミン/,'芝士茉莉','绵绵芝士奶盖','配茉莉花香','清爽又浓郁～'],
+[/チーズクリーム宇治抹茶/,'芝士抹茶','宇治抹茶','加咸香芝士奶盖','抹茶控绝配～'],
+[/ココナッツ/,'椰子牛奶冰','椰香满满','冰冰凉凉','一口好清爽～'],
+[/満杯ドラゴンフルーツ/,'满杯火龙果','满满一杯火龙果','颜色超漂亮','清爽解渴～'],
+[/満杯いちごスムージー|イチゴゴゴ/,'芝芝莓莓','满杯草莓','酸甜刚刚好','草莓控必点～'],
+[/チェリー/,'满杯车厘子','车厘子满满','果香浓郁','车厘子控冲～'],
+[/ヤンジー|楊枝甘露|杨枝甘露/,'杨枝甘露','芒果加西柚','港式经典甜品','一口好幸福～'],
+[/Mixベリースムージー/,'综合莓果冰沙','新品上市！','多种莓果打成冰沙','酸甜冰爽～'],
+[/ブルーベリー/,'蓝莓冰沙','新品上市！','蓝莓酸酸甜甜','冰沙口感超爽～'],
+[/パイナップル/,'海盐菠萝冰沙','新品上市！','海盐配菠萝','咸甜好特别～'],
+[/パッション/,'满杯百香果','百香果香到冒泡','酸甜开胃','超级清爽～'],
+[/タロ芋/,'芋头牛奶冰沙','绵绵的芋头','配上牛奶','芋泥控快来～'],
+[/爆ライム/,'爆青柠四季春','满满青柠','配四季春茶','清爽解腻～'],
+[/柚子|ゆず/,'满杯蜂蜜柚橙','柚子加橙子','蜂蜜甜甜的','冷热都能点哦～']];
+var GEN=['这杯也超好喝','欢迎来尝尝哦～'];
 function cards(){var R=[],i,j,mp=window.SOMAP,m=document.getElementById('menu');if(!m)m=document.querySelector('img[src*="menu"]');
  if(!m)return R;var mr=m.getBoundingClientRect();if(mr.width<50)return R;
  if(!mp||!mp.length){mp=[];for(i=0;i<PI.length;i++)mp.push({re:PI[i][0],x:5+(i%6)*15,y:10+Math.floor(i/6)*20,w:12,h:16})}
@@ -109,19 +109,23 @@ function cards(){var R=[],i,j,mp=window.SOMAP,m=document.getElementById('menu');
  for(j=0;j<mp.length;j++){var b=mp[j];if(so.indexOf(b.x+'%|'+b.y+'%')>=0)continue;
   var t=null;for(i=0;i<PI.length;i++)if(b.re&&PI[i][0].source===b.re.source){t=PI[i];break}
   if(!t)for(i=0;i<PI.length;i++)if(b.re&&b.re.test&&b.re.test(PI[i][1])){t=PI[i];break}
-  R.push({x:mr.left+mr.width*b.x/100,y:mr.top+mr.height*b.y/100,w:mr.width*b.w/100,h:mr.height*b.h/100,n:t?t[1]:'',s:t?t[2]:GEN,mw:mr.width})}
+  R.push({x:mr.left+mr.width*b.x/100,y:mr.top+mr.height*b.y/100,w:mr.width*b.w/100,h:mr.height*b.h/100,n:t?t[1]:'',s:t?t.slice(2):GEN,mw:mr.width})}
  return R}
 window.MSCritterCards=cards;
 if(/[?&]critter=off/.test(qs))return;
 var st=document.createElement('style');
 st.textContent='#critter{position:fixed;left:0;top:0;z-index:9000;pointer-events:none;will-change:transform;-webkit-transform:translate3d(-99px,0,0);transform:translate3d(-99px,0,0)}'+
-'#cbub{position:fixed;z-index:9001;pointer-events:none;background:#fff;color:#5b2a86;border:4px solid #ff6fae;border-radius:999px;padding:.12em .55em;font-family:sans-serif;font-weight:700;line-height:1.25;white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,.35);opacity:0;-webkit-transition:opacity .3s;transition:opacity .3s}#cbub b{color:#ff3d8b;margin-right:.3em}#cbub:after{content:"";position:absolute;left:28px;border:10px solid transparent}#cbub.up:after{top:100%;border-top-color:#ff6fae}#cbub.dn:after{bottom:100%;border-bottom-color:#ff6fae}'+
+'#cbub{position:fixed;z-index:9001;pointer-events:none;background:#fff;color:#5b2a86;border:4px solid #ff6fae;border-radius:.8em;padding:.25em .6em .3em;font-family:sans-serif;font-weight:700;line-height:1.3;white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,.35);opacity:0;-webkit-transform-origin:30px 100%;transform-origin:30px 100%;-webkit-transition:opacity .4s;transition:opacity .4s}#cbub.dn{-webkit-transform-origin:30px 0;transform-origin:30px 0}#cbub b{display:block;color:#ff3d8b;font-size:1.08em}#cbub span{display:block;opacity:0}#cbub span.on{opacity:1;-webkit-animation:cln .45s ease-out;animation:cln .45s ease-out}#cbub.pop{-webkit-animation:cpop .5s cubic-bezier(.3,1.6,.5,1);animation:cpop .5s cubic-bezier(.3,1.6,.5,1)}#cbub:after{content:"";position:absolute;left:28px;border:10px solid transparent}#cbub.up:after{top:100%;border-top-color:#ff6fae}#cbub.dn:after{bottom:100%;border-bottom-color:#ff6fae}'+
+'@-webkit-keyframes cpop{0%{-webkit-transform:scale(.2);opacity:0}60%{-webkit-transform:scale(1.12);opacity:1}100%{-webkit-transform:scale(1)}}@keyframes cpop{0%{transform:scale(.2);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}'+
+'@-webkit-keyframes cln{0%{opacity:0;-webkit-transform:translate3d(0,.5em,0)}100%{opacity:1;-webkit-transform:translate3d(0,0,0)}}@keyframes cln{0%{opacity:0;transform:translate3d(0,.5em,0)}100%{opacity:1;transform:translate3d(0,0,0)}}'+
+'#cspk{position:fixed;left:0;top:0;width:1px;height:1px;z-index:9002;pointer-events:none;display:none}#cspk i{position:absolute;display:block;opacity:0;-webkit-animation:cflt 1.8s ease-out infinite;animation:cflt 1.8s ease-out infinite}'+
+'@-webkit-keyframes cflt{0%{opacity:0;-webkit-transform:translate3d(0,0,0) scale(.4)}20%{opacity:1;-webkit-transform:translate3d(0,-10px,0) scale(1.1)}100%{opacity:0;-webkit-transform:translate3d(0,-60px,0) scale(.8)}}@keyframes cflt{0%{opacity:0;transform:translate3d(0,0,0) scale(.4)}20%{opacity:1;transform:translate3d(0,-10px,0) scale(1.1)}100%{opacity:0;transform:translate3d(0,-60px,0) scale(.8)}}'+
 '#critter i{display:block;width:64px;height:64px;-webkit-transform-origin:50% 95%;transform-origin:50% 95%;will-change:transform}#critter svg{display:block;overflow:visible}';
 document.getElementsByTagName('head')[0].appendChild(st);
 var w=document.createElement('div');w.id='critter';w.innerHTML='<i>'+svg(k,hw)+'</i>';
 function start(){document.body.appendChild(w);var ie=w.firstChild,sv=ie.firstChild;
 var S=64,fz=/[?&]critterpos=([\d.]+)/.exec(location.search),seg=0,sp=0,pause=0,last=0,ph=0,
-mode=0,tg=null,ox=0,oy=0,cx=0,cy=0,bx=0,by0=0,stay=0,nextI=(/[?&]critterintro=1/.test(location.search)?1.5:3+Math.random()*2),trip=0,ci=Math.floor(Math.random()*99),bub=document.createElement('div'),
+mode=0,tg=null,ox=0,oy=0,cx=0,cy=0,bx=0,by0=0,stay=0,nextI=(/[?&]critterintro=1/.test(location.search)?1.5:2+Math.random()*2),trip=0,q=[],li=0,talk=0,spk=document.createElement('div'),ci=Math.floor(Math.random()*99),bub=document.createElement('div'),
 raf=window.requestAnimationFrame||window.webkitRequestAnimationFrame||function(f){return setTimeout(function(){f(+new Date())},33)};
 function tick(t){try{var W=window.innerWidth-S,H=window.innerHeight-S,L=[W,H,W,H],now=+new Date(),dt=last?Math.max(0,Math.min(now-last,100))/1000:0;last=now;
  var len=L[seg],v=len>=Math.max(W,H)?90:62;
@@ -129,25 +133,32 @@ function tick(t){try{var W=window.innerWidth-S,H=window.innerHeight-S,L=[W,H,W,H
  if(pause>0){pause-=dt}else{sp+=v*dt;ph+=dt/0.34;if(sp>=len){sp=0;seg=(seg+1)%4;pause=0.3;len=L[seg]}}
  var x,y,r,p=sp,fl=-1; /* art faces left: scaleX(-1) faces travel dir, then rotate so feet touch the edge */
  if(seg===0){x=p;y=H;r=0}else if(seg===1){x=W;y=H-p;r=-90}else if(seg===2){x=W-p;y=0;r=180}else{x=0;y=p;r=90}
- if(mode===0&&!fz){nextI-=dt;if(nextI<=0){var cs=cards();if(cs.length){var c=cs[ci%cs.length];ci+=3+Math.floor(Math.random()*5);tg=c;mode=1;ox=x;oy=y;cx=x;cy=y;bx=c.x+c.w*0.02;by0=c.y+c.h-S-2}else nextI=5}}
- if(mode===1){trip+=dt;if(trip>15){mode=3;trip=0}}else trip=0;
+ if(mode===0&&!fz){nextI-=dt;if(nextI<=0){var cs=cards();if(cs.length){q=[];var nq=Math.min(cs.length,2+Math.floor(Math.random()*2)),u,c;for(u=0;u<nq;u++){c=cs[ci%cs.length];ci+=2+Math.floor(Math.random()*4);if(q.indexOf(c)<0)q.push(c)}c=q.shift();tg=c;mode=1;ox=x;oy=y;cx=x;cy=y;bx=c.x+c.w*0.02;by0=c.y+c.h-S-2}else nextI=5}}
+ if(mode===1){trip+=dt;if(trip>15){mode=3;trip=0;q=[]}}else trip=0;
  if(mode){var gx=mode===3?ox:bx,gy=mode===3?oy:by0,ddx=gx-cx,ddy=gy-cy,dd=Math.sqrt(ddx*ddx+ddy*ddy),st2=170*dt;
-  if(mode===2){stay-=dt;pause=0.01;if(stay<=0){mode=3;bub.style.opacity='0'}}
-  else if(dd<=st2||dd<1){cx=gx;cy=gy;if(mode===1){mode=2;stay=4.2;showBub(tg)}else{mode=0;nextI=25+Math.random()*15}}
+  if(mode===2){stay-=dt;talk+=dt;pause=0;ph+=dt/0.5;var nl=Math.min(tg.s.length,1+Math.floor(talk/1.7)),sps=bub.getElementsByTagName('span');while(li<nl&&li<sps.length){sps[li].className='on';li++}if(stay<=0){bub.style.opacity='0';spk.style.display='none';var nc=null,cs2=cards(),u2,z;while(q.length&&!nc){z=q.shift();for(u2=0;u2<cs2.length;u2++)if(cs2[u2].n===z.n)nc=cs2[u2]}if(nc){tg=nc;mode=1;bx=nc.x+nc.w*0.02;by0=nc.y+nc.h-S-2}else mode=3}}
+  else if(dd<=st2||dd<1){cx=gx;cy=gy;if(mode===1){mode=2;talk=0;li=0;stay=1.7*tg.s.length+1.6;showBub(tg)}else{mode=0;nextI=40+Math.random()*20}}
   else{cx+=ddx/dd*st2;cy+=ddy/dd*st2;fl=ddx<0?1:-1;sp-=v*dt}
   if(mode){x=cx;y=cy;r=0;if(mode===2)fl=1}}
  var tr='translate3d('+x.toFixed(1)+'px,'+y.toFixed(1)+'px,0) rotate('+r+'deg) scaleX('+fl+')';
  w.style.webkitTransform=tr;w.style.transform=tr;
  var f=ph-Math.floor(ph),by=0,sx=1,sy=1,lean=0;
- if(pause>0){var kk=pause/0.3;sx=1+0.05*kk;sy=1-0.05*kk;lean=3*kk}
+ if(mode===2){var hp=Math.abs(Math.sin(Math.PI*talk*1.6));by=-14*hp;sy=1+0.06*hp;sx=1-0.04*hp;lean=8*Math.sin(Math.PI*talk*2.4)}
+ else if(pause>0){var kk=pause/0.3;sx=1+0.05*kk;sy=1-0.05*kk;lean=3*kk}
  else{var h=Math.abs(Math.sin(2*Math.PI*f));by=-4*h;sy=1+0.03*h;sx=1-0.02*h;lean=-4}
- if(k==='bat'){by=-6+3*Math.sin(2*Math.PI*f);lean=0;sx=sy=1}
+ if(k==='bat'&&mode!==2){by=-6+3*Math.sin(2*Math.PI*f);lean=0;sx=sy=1}
  var it='translate3d(0,'+by.toFixed(1)+'px,0) rotate('+lean.toFixed(1)+'deg) scale('+sx.toFixed(3)+','+sy.toFixed(3)+')';
  ie.style.webkitTransform=it;ie.style.transform=it;
  pose(sv,k,f,pause>0)}catch(x){}raf(tick)}
-function showBub(c){var fs=Math.max(22,Math.round(c.mw/58));bub.style.fontSize=fs+'px';
- bub.innerHTML=(c.n?'<b>'+c.n+'</b>':'')+c.s;var bh=bub.offsetHeight,bw=bub.offsetWidth,lx=Math.max(4,Math.min(c.x,window.innerWidth-bw-4)),ty=c.y-bh-6;
- if(ty<4){ty=c.y+c.h+14;bub.className='dn'}else bub.className='up';bub.style.left=lx+'px';bub.style.top=ty+'px';bub.style.opacity='1'}
+function showBub(c){var fs=Math.max(22,Math.round(c.mw/60)),i,h='';bub.style.fontSize=fs+'px';
+ for(i=0;i<c.s.length;i++)h+='<span>'+c.s[i]+'</span>';bub.className='';bub.innerHTML=(c.n?'<b>'+c.n+'</b>':'')+h;var bh=bub.offsetHeight,bw=bub.offsetWidth,lx=Math.max(4,Math.min(c.x,window.innerWidth-bw-4)),ty=c.y-bh-6,cl='up';
+ if(ty<4){ty=c.y+c.h+14;cl='dn'}bub.style.left=lx+'px';bub.style.top=ty+'px';void bub.offsetWidth;bub.className=cl+' pop';bub.style.opacity='1';
+ var sx2=c.x+c.w*0.75,sy2=c.y+c.h*0.6;spk.style.left=sx2+'px';spk.style.top=sy2+'px';spk.style.display='block'}
+var HT='<svg width="26" height="24" viewBox="0 0 26 24"><path d="M13 23 C-6 10 3-4 13 6 C23-4 32 10 13 23Z" fill="#ff5c9a" stroke="#fff" stroke-width="2"/></svg>',
+ SK='<svg width="24" height="24" viewBox="0 0 24 24"><path d="M12 0 L15 9 L24 12 L15 15 L12 24 L9 15 L0 12 L9 9Z" fill="#ffd84a" stroke="#fff" stroke-width="1.5"/></svg>',
+ SP=[[0,0,HT,0],[30,-20,SK,.45],[-26,-30,SK,.9],[14,-44,HT,1.3],[-8,8,SK,1.1]],sh='',si;
+for(si=0;si<SP.length;si++)sh+='<i style="left:'+SP[si][0]+'px;top:'+SP[si][1]+'px;-webkit-animation-delay:'+SP[si][3]+'s;animation-delay:'+SP[si][3]+'s">'+SP[si][2]+'</i>';
+spk.id='cspk';spk.innerHTML=sh;document.body.appendChild(spk);
 bub.id='cbub';document.body.appendChild(bub);raf(tick)}
 if(document.body)start();else document.addEventListener('DOMContentLoaded',start);
 }catch(x){}})();
