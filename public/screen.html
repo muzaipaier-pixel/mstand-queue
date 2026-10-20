@@ -94,7 +94,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-c
 #hs .c .s{font-size:.8em;overflow:hidden;text-overflow:ellipsis}
 #hs .sw{display:inline-block;width:1em;height:1em;border-radius:50%;border:2px solid #fff;vertical-align:-.15em;margin-right:.3em}
 #hs .k{display:inline-block;width:1em;color:#FFE600;font-weight:900}
-</style><script src="/kcal.js?v=2"></script><script src="/critter.js?v=3"></script></head><body>
+</style><script src="/kcal.js?v=2"></script><script src="/critter.js?v=4"></script></head><body>
 <img id="menu" src="/menu.jpg?v=6" alt="menu"><div id="kcmask"></div><div id="somask"></div><div id="hdr"><div id="hs"></div></div>
 <div id="q" class="qrA">
  <div class="t">お呼び出し番号<span>请取餐</span></div>
@@ -317,6 +317,7 @@ var SOMAP=[
  {re:/爆ライム/i,x:74.8,y:71.0,w:23.4,h:9.8},
  {re:/柚子|ゆず/i,x:74.8,y:81.5,w:23.4,h:9.8}
 ];
+try{window.SOMAP=SOMAP}catch(e){}
 function szl(v){v=String(v||'');var m=v.match(/^\s*([SMLＭＬＳ])\b|([SML])\s*サイズ/i);if(m){v=(m[1]||m[2]).toUpperCase();return v==='Ｍ'?'M':v==='Ｌ'?'L':v==='Ｓ'?'S':v}return v.replace(/[<>&"']/g,'').slice(0,6)}
 /* topping strip at bottom of menu.jpg */
 var TPMAP=[{re:/^タピオカ/,x:23.2,y:93.0,w:8.3,h:5.0},{re:/チーズクリーム|芝士/,x:31.6,y:93.0,w:11.7,h:5.0},{re:/ナタデココ|椰果/,x:43.4,y:93.0,w:9.6,h:5.0},{re:/寒天/,x:53.1,y:93.0,w:10.3,h:5.0},{re:/ミニタピオカ|西米/,x:63.5,y:93.0,w:10.5,h:5.0}];
