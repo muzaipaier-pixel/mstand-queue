@@ -29,6 +29,7 @@ http.createServer((q,r)=>{
  const u=new URL(q.url,'http://x');
  if(u.pathname.length>1&&u.pathname.endsWith('/'))u.pathname=u.pathname.replace(/\/+$/,'')||'/'; // /order/ -> /order
  if(u.pathname==='/events'){r.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive','X-Accel-Buffering':'no'});r.write(`data: ${JSON.stringify({...pub(),event:'init'})}\n\n`);clients.add(r);const k=setInterval(()=>{if(clients.has(r))sseWrite(r,':k\n\n');else clearInterval(k)},20000);const rm=()=>{clients.delete(r);clearInterval(k)};q.on('close',rm);r.on('close',rm);r.on('error',rm);q.on('error',rm);return;}
+if(u.pathname==='/alog'){if(q.method==='POST'){let d='';q.on('data',c=>{if(d.length<400)d+=c});q.on('end',()=>{ALOG.push(new Date().toISOString().slice(11,19)+' '+d.slice(0,300));if(ALOG.length>200)ALOG.shift();r.writeHead(204);r.end()})}else{r.writeHead(200,{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store'});r.end(ALOG.join('\n'))}return;}
 if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r,u.searchParams.get('lang'),u.searchParams.get('i'),u.searchParams.get('t'),u.searchParams.get('fx'));return;}
  if(u.pathname==='/api/version'){r.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});return r.end(JSON.stringify({v:APP_VER}))}
  if(u.pathname==='/api/menu'){menu().then(m=>{r.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-cache'});r.end(JSON.stringify(m))}).catch(e=>{console.error('menu',e.message);r.writeHead(502);r.end('{"error":"menu"}')});return;}
@@ -178,7 +179,7 @@ const VOICES={ja:'ja-JP-NanamiNeural',zh:'zh-CN-XiaoxiaoNeural',en:'en-US-JennyN
 const GTL={ja:'ja',zh:'zh-CN',en:'en'};
 const DEFAULT_LANGS=(process.env.VOICE_LANGS||'ja,zh,en');
 let GAP=null;try{GAP=fs.readFileSync(path.join(__dirname,'public','gap.mp3'))}catch(e){}
-const vcache=new Map(),acache=new Map();
+const vcache=new Map(),acache=new Map(),vinf=new Map(),ALOG=[];
 function cput(m,k,v){m.set(k,v);if(m.size>300)m.delete(m.keys().next().value)}
 function parseLangs(q){const out=[];String(q||DEFAULT_LANGS).split(',').forEach(x=>{x=x.trim().toLowerCase();if(VOICES[x]&&!out.includes(x))out.push(x)});return out.length?out:['ja']}
 const VT=require('./voicetext');const phrase=(n,lang,items)=>VT.phrase(n,lang,items);
@@ -198,6 +199,10 @@ async function googleTTS(text,lang){
 async function segment(n,lang,items,kind,fx){
  const text=kind==='thanks'?VT.thanks(n,lang):VT.withFx(phrase(n,lang,items),lang,fx),k=lang+'|'+text;
  if(vcache.has(k))return vcache.get(k);
+ if(vinf.has(k))return vinf.get(k);
+ const pr=segGen(text,lang,k);vinf.set(k,pr);try{return await pr}finally{vinf.delete(k)}
+}
+async function segGen(text,lang,k){
  let b=null;
  try{b=await withTimeout(edgeTTS(text,lang),7000)}catch(e){console.error('voice edge',lang,e.message)}
  if(!b){try{b=await googleTTS(text,lang)}catch(e){console.error('voice google',lang,e.message)}}
