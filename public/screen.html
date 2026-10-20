@@ -194,11 +194,11 @@ if(/[?&]demo=callburst/.test(location.search))setTimeout(function(){try{callBurs
 if(/[?&]demo=orderburst/.test(location.search))setTimeout(function(){try{callBurst(1)}catch(e){}},300);
 var DSETS=[
  ["fruits",["\ud83c\udf53", "\ud83e\udd6d", "\ud83c\udf52", "\ud83e\udd51", "\ud83c\udf4b", "\ud83c\udf51", "\ud83c\udf4a", "\ud83c\udf47"]],
- ["hearts",["\ud83d\udc96", "\ud83d\udc97", "\ud83d\udc95", "\ud83d\udc93", "\ud83d\udc9e", "\ud83d\udc9d", "\u2764\ufe0f", "\ud83d\udc9c"]],
+ ["hearts",["\ud83d\udc96", "\ud83d\udc97", "\ud83d\udc95", "\ud83d\udc93", "\ud83d\udc9e", "\ud83d\udc9d", "\ud83d\udc98", "\ud83d\udc9c"]],
  ["stars",["\u2b50", "\ud83c\udf1f", "\u2728", "\ud83d\udcab", "\ud83c\udf20", "\u2b50", "\u2728"]],
  ["flowers",["\ud83c\udf38", "\ud83c\udf3c", "\ud83c\udf37", "\ud83c\udf3a", "\ud83c\udf39", "\ud83d\udc90", "\ud83c\udf3b"]],
  ["drinks",["\ud83e\udd64", "\ud83c\udf79", "\ud83c\udf75", "\ud83e\udd5b", "\u2615", "\ud83c\udf67"]],
- ["sky",["\u2601\ufe0f", "\ud83c\udf08", "\u2600\ufe0f", "\u26c5", "\ud83c\udf24\ufe0f", "\ud83c\udf88"]],
+ ["sky",["\ud83c\udf19", "\ud83c\udf08", "\ud83c\udf1e", "\u26c5", "\u2b50", "\ud83c\udf88"]],
  ["tropical",["\ud83c\udf4d", "\ud83e\udd65", "\ud83c\udf49", "\ud83c\udf51", "\ud83c\udf34", "\ud83c\udf48", "\ud83e\udd6d"]],
  ["berries",["\ud83c\udf53", "\ud83c\udf47", "\ud83c\udf52", "\ud83c\udf53", "\ud83c\udf52", "\ud83c\udf47", "\ud83c\udf38"]],
  ["sweets",["\ud83c\udf6c", "\ud83c\udf6d", "\ud83c\udf69", "\ud83e\uddc1", "\ud83c\udf6a", "\ud83c\udf6b", "\ud83c\udf6e"]],
@@ -210,14 +210,14 @@ var DSETS=[
  ["faces",["\ud83e\udd70", "\ud83d\ude0b", "\ud83d\ude0a", "\ud83d\ude0d", "\ud83e\udd17", "\ud83d\ude18", "\ud83d\ude06", "\ud83e\udd73"]],
  ["fruitmix",["\ud83c\udf4e", "\ud83c\udf50", "\ud83c\udf4a", "\ud83c\udf4b", "\ud83c\udf4c", "\ud83c\udf49", "\ud83c\udf47", "\ud83c\udf53", "\ud83c\udf52", "\ud83c\udf51", "\ud83e\udd5d", "\ud83e\udd65"]],
  ["music",["\ud83c\udfb5", "\ud83c\udfb6", "\ud83c\udfa4", "\ud83c\udfa7", "\ud83c\udfb9", "\ud83c\udfb8", "\ud83c\udfb7"]]];
-var DSEASON={autumn:['autumn',['🍁','🍂','🌰','🍄','🍠','🌾','🍁','🍂']],winter:['winter',['❄️','☃️','⛄','🧣','🧤','❄️','✨','🎿']]};
+var DSEASON={autumn:['autumn',['🍁','🍂','🌰','🍄','🍠','🌾','🍁','🍂']],winter:['winter',['⛄','🧣','🧤','✨','🎿','⛄','🧣','✨']]};
 function jstDay(){var t=new Date().getTime()+9*3600000;return Math.floor(t/86400000)}
 function dailySet(){var m=/[?&]day=(\d+)/.exec(location.search),n=m?parseInt(m[1],10):jstDay();
  var M=new Date(n*86400000).getUTCMonth()+1,L=DSETS.slice(0);
  if(M>=9&&M<=11)L.push(DSEASON.autumn,DSEASON.autumn);if(M===12||M<=2)L.push(DSEASON.winter,DSEASON.winter);
  return L[n%L.length]}
 var DLY_KEY='';
-var DTHEME={halloween:['halloween',['\uD83C\uDF83','\uD83D\uDC7B','\uD83E\uDD87','\uD83C\uDF6C','\uD83C\uDF6D','\uD83D\uDD78\uFE0F','\uD83C\uDF83','\uD83C\uDF41']],christmas:['christmas',['\uD83C\uDF84','\u2B50','\uD83C\uDF85','\uD83C\uDF81','\u2744\uFE0F','\uD83D\uDD14','\u2728','\u26C4']]};
+var DTHEME={halloween:['halloween',['\uD83C\uDF83','\uD83D\uDC7B','\uD83E\uDD87','\uD83C\uDF6C','\uD83C\uDF6D','\uD83C\uDF42','\uD83C\uDF83','\uD83C\uDF41']],christmas:['christmas',['\uD83C\uDF84','\u2B50','\uD83C\uDF85','\uD83C\uDF81','\uD83C\uDF6A','\uD83D\uDD14','\u2728','\u26C4']]};
 function daily(){try{var c=$('dly');
  var st=(TH&&DTHEME[TH]&&!demoHas('daily'))?DTHEME[TH]:dailySet();if(st[0]===DLY_KEY)return;DLY_KEY=st[0];var E=st[1],h='';
  for(var i=0;i<16;i++){var l=(i*6.2+Math.random()*5).toFixed(1),du=(13+Math.random()*9).toFixed(1),dl=(-Math.random()*20).toFixed(1),fs=(2.8+Math.random()*1.4).toFixed(2);

@@ -4,7 +4,7 @@ var A=['\uD83D\uDC31','\uD83D\uDC36','\uD83D\uDC30','\uD83D\uDC39','\uD83D\uDC3C
 var d=new Date(),M=d.getMonth()+1,D=d.getDate(),doy=Math.floor((d-new Date(d.getFullYear(),0,0))/864e5);
 var qs=location.search,m=/[?&]critter=(\d+)/.exec(qs);
 var e=A[doy%A.length];
-if(M===10&&D>=20)e=(doy%2)?'\uD83D\uDC08\u200D\u2B1B':'\uD83E\uDD87';
+if(M===10&&D>=20)e=(doy%2)?'\uD83D\uDC08':'\uD83E\uDD87';
 if(m)e=A[(+m[1])%A.length];
 var st=document.createElement('style');
 st.textContent='#critter{position:fixed;left:0;top:0;z-index:9000;pointer-events:none;will-change:transform;-webkit-transform:translate3d(-99px,0,0);transform:translate3d(-99px,0,0)}'+
