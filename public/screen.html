@@ -64,7 +64,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-c
 .th-halloween #deco,.th-christmas #deco{display:block}
 .call #deco{-webkit-animation:bob .6s ease-in-out 6;animation:bob .6s ease-in-out 6}
 @-webkit-keyframes bob{50%{-webkit-transform:translateY(-.6vw) scale(1.25)}}@keyframes bob{50%{transform:translateY(-.6vw) scale(1.25)}}
-/* daily falling decorations (non-holiday days, 12 pieces, CSS-only infinite animation) */
+/* daily falling decorations (holiday days use theme emoji, 12 pieces, CSS-only infinite animation) */
 #dly{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden;pointer-events:none;z-index:3}
 #dly i{position:absolute;top:-5%;display:block;font-style:normal;line-height:1;opacity:.85;text-shadow:0 .15vw .4vw rgba(0,0,0,.35);-webkit-animation:dfall 16s linear infinite;animation:dfall 16s linear infinite}
 @-webkit-keyframes dfall{0%{-webkit-transform:translate3d(0,0,0) rotate(0)}50%{-webkit-transform:translate3d(1.5vw,55vh,0) rotate(160deg)}100%{-webkit-transform:translate3d(-1vw,112vh,0) rotate(320deg)}}
@@ -217,8 +217,9 @@ function dailySet(){var m=/[?&]day=(\d+)/.exec(location.search),n=m?parseInt(m[1
  if(M>=9&&M<=11)L.push(DSEASON.autumn,DSEASON.autumn);if(M===12||M<=2)L.push(DSEASON.winter,DSEASON.winter);
  return L[n%L.length]}
 var DLY_KEY='';
-function daily(){try{var c=$('dly');if(TH&&!demoHas('daily')){c.innerHTML='';DLY_KEY='';return}
- var st=dailySet();if(st[0]===DLY_KEY)return;DLY_KEY=st[0];var E=st[1],h='';
+var DTHEME={halloween:['halloween',['\uD83C\uDF83','\uD83D\uDC7B','\uD83E\uDD87','\uD83C\uDF6C','\uD83C\uDF6D','\uD83D\uDD78\uFE0F','\uD83C\uDF83','\uD83C\uDF41']],christmas:['christmas',['\uD83C\uDF84','\u2B50','\uD83C\uDF85','\uD83C\uDF81','\u2744\uFE0F','\uD83D\uDD14','\u2728','\u26C4']]};
+function daily(){try{var c=$('dly');
+ var st=(TH&&DTHEME[TH]&&!demoHas('daily'))?DTHEME[TH]:dailySet();if(st[0]===DLY_KEY)return;DLY_KEY=st[0];var E=st[1],h='';
  for(var i=0;i<16;i++){var l=(i*6.2+Math.random()*5).toFixed(1),du=(13+Math.random()*9).toFixed(1),dl=(-Math.random()*20).toFixed(1),fs=(2.8+Math.random()*1.4).toFixed(2);
   h+='<i style="left:'+l+'%;font-size:'+fs+'vw;-webkit-animation-duration:'+du+'s;animation-duration:'+du+'s;-webkit-animation-delay:'+dl+'s;animation-delay:'+dl+'s">'+E[i%E.length]+'</i>'}
  c.innerHTML=h}catch(e){}}

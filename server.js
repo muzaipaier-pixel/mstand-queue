@@ -267,7 +267,7 @@ async function menuBuild(){
   items.push({id:o.id,name:d.name,cat:c,desc:(d.description_plaintext||'').split('\n')[0].slice(0,40),img:img[(d.image_ids||[])[0]]||'',vars,mods:(d.modifier_list_info||[]).filter(x=>x.enabled!==false&&ml[x.modifier_list_id]&&ml[x.modifier_list_id].opts.length).map(x=>{const L=ml[x.modifier_list_id];return {...L,min:Math.max(0,x.min_selected_modifiers>0?x.min_selected_modifiers:0),max:x.max_selected_modifiers>0?x.max_selected_modifiers:(L.multi?L.opts.length:1)}}).sort((a,b)=>MODORD(a.name)-MODORD(b.name)),so:vars.every(v=>v.so)});}
  menuC={at:Date.now(),data:items};return items;
 }
-const cleanName=s=>String(s||'').replace(/[<>&"'`\\\u0000-\u001f]/g,'').trim().slice(0,12);
+const cleanName=s=>String(s||'').replace(/[<>&"'`\\\u0000-\u001f]/g,'').trim().slice(0,20);
 const rl=new Map(); // ip -> [timestamps]
 function limited(ip){const now=Date.now(),a=(rl.get(ip)||[]).filter(t=>now-t<10*60e3);if(a.length>=3){rl.set(ip,a);return true}a.push(now);rl.set(ip,a);if(rl.size>5000)rl.delete(rl.keys().next().value);return false}
 // --- Anti-prank limits (env-configurable) ---
@@ -276,9 +276,8 @@ const AP={cups:envInt('ORDER_MAX_CUPS',10),yen:envInt('ORDER_MAX_YEN',20000),dev
  burstN:envInt('ORDER_BURST_MAX',8),burstMin:envInt('ORDER_BURST_WINDOW_MIN',5),burstBlockMin:envInt('ORDER_BURST_BLOCK_MIN',10),nameMax:envInt('ORDER_NAME_MAX',20)};
 const webRecent=[]; // {id,ip,dev,at}
 let burstUntil=0;
-const BADW=/(https?:|www\.|\.(com|net|jp|org|io|xyz)\b|@|うんこ|ちんこ|まんこ|死ね|しね|殺す|ころす|fuck|shit|bitch|cunt|dick|penis|sex|porn|nigg|傻逼|操你|妈的|他妈|草泥马|sb\b)/i;
-function nameCheck(raw){const n=String(raw||'').replace(/[<>&"'`\\\u0000-\u001f]/g,'').trim();
- if(!n||n.length>AP.nameMax)return {err:'name'};if(BADW.test(n.replace(/\s+/g,'')))return {err:'badname'};if(/^[\d\W_]+$/.test(n)&&!/^[0-9]{1,4}$/.test(n))return {err:'badname'};return {n}}
+function nameCheck(raw){const n=String(raw||'').replace(/[<>&"'`\\\u0000-\u001f]/g,'').replace(/\s+/g,' ').trim();
+ if(!n)return {err:'name'};return {n:Array.from(n).slice(0,AP.nameMax).join('')}}
 function webOpen(id){const p=st.preparing.find(x=>x.order===id);return !!(p&&p.unpaid)}
 async function checkout(b,q,r){
  const bad=(c,m)=>{r.writeHead(c,{'Content-Type':'application/json'});r.end(JSON.stringify({error:m}))};
