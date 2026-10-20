@@ -101,13 +101,14 @@ var PI=[
 [/爆ライム/,'爆青柠四季春','超清爽，解腻必喝～'],
 [/柚子|ゆず/,'满杯蜂蜜柚橙','柚子蜂蜜，冷热都好喝～']];
 var GEN='这杯也超好喝哦～';
-function cards(){var R=[],i,j,mp=window.SOMAP,m=document.getElementById('menu');if(!mp||!m)return R;
- var mr=m.getBoundingClientRect();if(mr.width<50)return R;
+function cards(){var R=[],i,j,mp=window.SOMAP,m=document.getElementById('menu');if(!m)m=document.querySelector('img[src*="menu"]');
+ if(!m)return R;var mr=m.getBoundingClientRect();if(mr.width<50)return R;
+ if(!mp||!mp.length){mp=[];for(i=0;i<PI.length;i++)mp.push({re:PI[i][0],x:5+(i%6)*15,y:10+Math.floor(i/6)*20,w:12,h:16})}
  var so=[],sk=document.getElementById('somask'),ds=sk?sk.getElementsByTagName('div'):[];
  for(i=0;i<ds.length;i++)if(/(^| )so( |$)/.test(ds[i].className)&&!/tp/.test(ds[i].className))so.push(ds[i].style.left+'|'+ds[i].style.top);
  for(j=0;j<mp.length;j++){var b=mp[j];if(so.indexOf(b.x+'%|'+b.y+'%')>=0)continue;
-  var t=null;for(i=0;i<PI.length;i++)if(PI[i][0].source===b.re.source){t=PI[i];break}
-  if(!t)for(i=0;i<PI.length;i++)if(b.re.test(PI[i][1])){t=PI[i];break}
+  var t=null;for(i=0;i<PI.length;i++)if(b.re&&PI[i][0].source===b.re.source){t=PI[i];break}
+  if(!t)for(i=0;i<PI.length;i++)if(b.re&&b.re.test&&b.re.test(PI[i][1])){t=PI[i];break}
   R.push({x:mr.left+mr.width*b.x/100,y:mr.top+mr.height*b.y/100,w:mr.width*b.w/100,h:mr.height*b.h/100,n:t?t[1]:'',s:t?t[2]:GEN,mw:mr.width})}
  return R}
 window.MSCritterCards=cards;
@@ -120,15 +121,16 @@ document.getElementsByTagName('head')[0].appendChild(st);
 var w=document.createElement('div');w.id='critter';w.innerHTML='<i>'+svg(k,hw)+'</i>';
 function start(){document.body.appendChild(w);var ie=w.firstChild,sv=ie.firstChild;
 var S=64,fz=/[?&]critterpos=([\d.]+)/.exec(location.search),seg=0,sp=0,pause=0,last=0,ph=0,
-mode=0,tg=null,ox=0,oy=0,cx=0,cy=0,bx=0,by0=0,stay=0,nextI=(/[?&]critterintro=1/.test(location.search)?1.5:25+Math.random()*15),ci=Math.floor(Math.random()*99),bub=document.createElement('div'),
+mode=0,tg=null,ox=0,oy=0,cx=0,cy=0,bx=0,by0=0,stay=0,nextI=(/[?&]critterintro=1/.test(location.search)?1.5:3+Math.random()*2),trip=0,ci=Math.floor(Math.random()*99),bub=document.createElement('div'),
 raf=window.requestAnimationFrame||window.webkitRequestAnimationFrame||function(f){return setTimeout(function(){f(+new Date())},33)};
-function tick(t){try{var W=window.innerWidth-S,H=window.innerHeight-S,L=[W,H,W,H],dt=last?Math.min(t-last,100)/1000:0;last=t;
+function tick(t){try{var W=window.innerWidth-S,H=window.innerHeight-S,L=[W,H,W,H],now=+new Date(),dt=last?Math.max(0,Math.min(now-last,100))/1000:0;last=now;
  var len=L[seg],v=len>=Math.max(W,H)?90:62;
  if(fz){var P=2*(W+H),q=(+fz[1])*P;seg=0;while(q>L[seg]&&seg<3){q-=L[seg];seg++}sp=q;pause=0;dt=0;len=L[seg];var fp=/[?&]critterph=([\d.]+)/.exec(location.search);ph=fp?+fp[1]:0}
  if(pause>0){pause-=dt}else{sp+=v*dt;ph+=dt/0.34;if(sp>=len){sp=0;seg=(seg+1)%4;pause=0.3;len=L[seg]}}
  var x,y,r,p=sp,fl=-1; /* art faces left: scaleX(-1) faces travel dir, then rotate so feet touch the edge */
  if(seg===0){x=p;y=H;r=0}else if(seg===1){x=W;y=H-p;r=-90}else if(seg===2){x=W-p;y=0;r=180}else{x=0;y=p;r=90}
- if(mode===0&&!fz){nextI-=dt;if(nextI<=0){var cs=cards();if(cs.length){var c=cs[ci%cs.length];ci+=3+Math.floor(Math.random()*5);tg=c;mode=1;ox=x;oy=y;cx=x;cy=y;bx=c.x+c.w*0.02;by0=c.y+c.h-S-2}else nextI=30}}
+ if(mode===0&&!fz){nextI-=dt;if(nextI<=0){var cs=cards();if(cs.length){var c=cs[ci%cs.length];ci+=3+Math.floor(Math.random()*5);tg=c;mode=1;ox=x;oy=y;cx=x;cy=y;bx=c.x+c.w*0.02;by0=c.y+c.h-S-2}else nextI=5}}
+ if(mode===1){trip+=dt;if(trip>15){mode=3;trip=0}}else trip=0;
  if(mode){var gx=mode===3?ox:bx,gy=mode===3?oy:by0,ddx=gx-cx,ddy=gy-cy,dd=Math.sqrt(ddx*ddx+ddy*ddy),st2=170*dt;
   if(mode===2){stay-=dt;pause=0.01;if(stay<=0){mode=3;bub.style.opacity='0'}}
   else if(dd<=st2||dd<1){cx=gx;cy=gy;if(mode===1){mode=2;stay=4.2;showBub(tg)}else{mode=0;nextI=25+Math.random()*15}}
