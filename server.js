@@ -30,6 +30,7 @@ http.createServer((q,r)=>{
  if(u.pathname.length>1&&u.pathname.endsWith('/'))u.pathname=u.pathname.replace(/\/+$/,'')||'/'; // /order/ -> /order
  if(u.pathname==='/events'){r.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive','X-Accel-Buffering':'no'});r.write(`data: ${JSON.stringify({...pub(),event:'init'})}\n\n`);clients.add(r);const k=setInterval(()=>{if(clients.has(r))sseWrite(r,':k\n\n');else clearInterval(k)},20000);const rm=()=>{clients.delete(r);clearInterval(k)};q.on('close',rm);r.on('close',rm);r.on('error',rm);q.on('error',rm);return;}
 if(u.pathname==='/alog'){if(q.method==='POST'){let d='';q.on('data',c=>{if(d.length<400)d+=c});q.on('end',()=>{ALOG.push(new Date().toISOString().slice(11,19)+' '+d.slice(0,300));if(ALOG.length>200)ALOG.shift();r.writeHead(204);r.end()})}else{r.writeHead(200,{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store'});r.end(ALOG.join('\n'))}return;}
+if(u.pathname.startsWith('/vc/')){vcServe(u.pathname.slice(4).replace(/\.mp3$/,''),r);return;}
 if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r,u.searchParams.get('lang'),u.searchParams.get('i'),u.searchParams.get('t'),u.searchParams.get('fx'));return;}
  if(u.pathname==='/api/version'){r.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});return r.end(JSON.stringify({v:APP_VER}))}
  if(u.pathname==='/api/menu'){menu().then(m=>{r.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-cache'});r.end(JSON.stringify(m))}).catch(e=>{console.error('menu',e.message);r.writeHead(502);r.end('{"error":"menu"}')});return;}
@@ -53,10 +54,11 @@ if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r,u.searchParams.get
   else if(j.action==='done'){st.preparing=st.preparing.filter(x=>x.id!==j.id);ev='prep'}
   else {r.writeHead(400);return r.end('{}')}
   if(ev==='call'){st.preparing=st.preparing.filter(x=>String(x.num)!==String(st.current));st.history=[st.current,...st.history.filter(x=>x!==st.current)].slice(0,8)}
+  if(ev==='call'||ev==='recall'){try{st.callClip=callClip(st.current,st.callItems||[],st.callFx)}catch(e){st.callClip=null}}
   st.seq++;st.at=Date.now();if(ev==='call'||ev==='recall')st.callAt=st.at;save();push(ev);r.end(JSON.stringify({ok:true,...pub()}));});return;}
  let p=u.pathname==='/'?'/display.html':u.pathname==='/staff'?'/staff.html':u.pathname==='/display'?'/display.html':u.pathname==='/screen'?'/screen.html':u.pathname==='/screen-test'?'/screen-test.html':u.pathname==='/kds'?'/kds.html':u.pathname==='/order'?'/order.html':u.pathname==='/order/done'?'/order-done.html':u.pathname;
  const f=path.join(__dirname,'public',path.normalize(p).replace(/^(\.\.[\/\\])+/,''));
- fs.readFile(f,(e,d)=>{if(e){r.writeHead(404);return r.end('404')}r.writeHead(200,{'Content-Type':types[path.extname(f)]||'application/octet-stream','Cache-Control':path.extname(f)==='.html'?'no-cache':'public, max-age=3600'});r.end(d)});
+ fs.readFile(f,(e,d)=>{if(e){r.writeHead(404);return r.end('404')}r.writeHead(200,{'Content-Type':types[path.extname(f)]||'application/octet-stream','Cache-Control':(path.extname(f)==='.html'||p==='/sw.js'||/manifest\.json$/.test(p))?'no-cache':(/^\/voice\/num\/v\d+\//.test(p)||(u.searchParams.has('v')&&/\.(mp3|wav)$/.test(f)))?'public, max-age=31536000, immutable':'public, max-age=3600'});r.end(d)});
 }).listen(PORT,'0.0.0.0',()=>console.log('listening',PORT));
 
 // --- Square: auto-add in-store paid orders to "preparing" ---
@@ -104,7 +106,7 @@ function callNum(num,items,o){
  const go=()=>{try{st.callFx=Object.keys(fx).length?fx:null}catch(e){}callNum0(num,items)};
  if(o&&o.customer_id&&TOK)withTimeout(custFx(o),1500).then(c=>{Object.assign(fx,c||{})}).catch(()=>{}).finally(go);else go();
 }
-function callNum0(num,items){st.current=num;st.callItems=(items||[]).slice(0,10);st.preparing=st.preparing.filter(x=>String(x.num)!==String(num));st.history=[num,...st.history.filter(x=>String(x)!==String(num))].slice(0,8);st.seq++;st.at=Date.now();st.callAt=st.at;save();push('call')}
+function callNum0(num,items){st.current=num;st.callItems=(items||[]).slice(0,10);try{st.callClip=callClip(num,st.callItems,st.callFx)}catch(e){st.callClip=null}st.preparing=st.preparing.filter(x=>String(x.num)!==String(num));st.history=[num,...st.history.filter(x=>String(x)!==String(num))].slice(0,8);st.seq++;st.at=Date.now();st.callAt=st.at;save();push('call')}
 async function labelOf(o){
  const rec=((o.fulfillments||[]).map(f=>((f.delivery_details||f.pickup_details||{}).recipient||{}).display_name).find(Boolean)||'').trim();
  let label=(o.ticket_name||'').trim()||rec||o.id.slice(-4);
@@ -208,6 +210,60 @@ async function segGen(text,lang,k){
  if(!b){try{b=await googleTTS(text,lang)}catch(e){console.error('voice google',lang,e.message)}}
  if(b)cput(vcache,k,b);return b;
 }
+// --- call clip pre-generation: built the moment an order is called, served instantly from /vc/<hash>.mp3 ---
+const os=require('os');const VC_DIR=process.env.VC_DIR||path.join(os.tmpdir(),'mstand-vc');try{fs.mkdirSync(VC_DIR,{recursive:true})}catch(e){}
+const VC_MAX=60*1024*1024;let vcBytes=0;const vcMem=new Map(),vcJob=new Map(),vcMeta=new Map();
+function vcPut(h,b){if(vcMem.has(h)){vcBytes-=vcMem.get(h).length;vcMem.delete(h)}vcMem.set(h,b);vcBytes+=b.length;
+ while(vcBytes>VC_MAX&&vcMem.size>1){const k=vcMem.keys().next().value;vcBytes-=vcMem.get(k).length;vcMem.delete(k)}}
+function vcGet(h){const b=vcMem.get(h);if(b){vcMem.delete(h);vcMem.set(h,b)}return b} // LRU touch
+// disk LRU: cap file count, drop oldest mtime
+function vcDiskTrim(){fs.readdir(VC_DIR,(e,fl)=>{if(e||fl.length<=3000)return;const a=fl.map(f=>{try{return [f,fs.statSync(path.join(VC_DIR,f)).mtimeMs]}catch(e){return [f,0]}}).sort((x,y)=>x[1]-y[1]);a.slice(0,a.length-2500).forEach(x=>fs.unlink(path.join(VC_DIR,x[0]),()=>{}))})}
+const itemsQOf=items=>(items||[]).map(x=>String(x.n).replace(/[|*]/g,'')+'*'+x.q).join('|');
+const fxQOf=fx=>{if(!fx)return '';const a=[];if(fx.bday)a.push('bday');if(fx.ms)a.push('ms'+fx.ms);if(fx.life)a.push('life'+fx.life);if(fx.reg)a.push('reg'+fx.reg);return a.join(',')};
+function vcKey(n,langQ,itemsQ,kind,fxQ){const langs=parseLangs(langQ);return langs.join(',')+'|'+String(n).trim().slice(0,24)+'|'+String(itemsQ||'').slice(0,300)+'|'+(kind==='thanks'?'thanks':'call')+'|'+VT.fxKey(VT.parseFx(fxQ))}
+async function buildClip(n,langQ,itemsQ,kind,fxQ){
+ const fx=VT.parseFx(fxQ);kind=kind==='thanks'?'thanks':'call';const items=VT.parseItems(itemsQ),langs=parseLangs(langQ);
+ const key=vcKey(n,langQ,itemsQ,kind,fxQ);if(acache.has(key))return acache.get(key);
+ const parts=(await Promise.all(langs.map(l=>segment(n,l,items,kind,fx)))).filter(Boolean);
+ if(!parts.length)return null;const out=[];parts.forEach((p,i)=>{if(i&&GAP)out.push(GAP);out.push(p)});
+ const b=Buffer.concat(out);cput(acache,key,b);return b;
+}
+// returns {h, url}; starts generation (memory+disk) immediately, dedupes in-flight
+function pregen(n,items,fx,langQ){
+ const iq=itemsQOf(items),fq=fxQOf(fx),key=vcKey(n,langQ,iq,'call',fq),h=crypto.createHash('sha1').update('v2|'+key).digest('hex').slice(0,20);
+ vcMeta.set(h,{n,iq,fq,langQ});if(vcMeta.size>2000)vcMeta.delete(vcMeta.keys().next().value);
+ if(!vcMem.has(h)&&!vcJob.has(h)){const t0=Date.now();
+  const pr=(async()=>{const f=path.join(VC_DIR,h+'.mp3');
+   try{const d=await fs.promises.readFile(f);vcPut(h,d);fs.utimes(f,new Date(),new Date(),()=>{});return d}catch(e){}
+   const b=await buildClip(n,langQ,iq,'call',fq);
+   if(b){vcPut(h,b);fs.writeFile(f,b,()=>vcDiskTrim());console.log('vc pregen',h,b.length+'B',(Date.now()-t0)+'ms')}
+   return b})().finally(()=>vcJob.delete(h));
+  vcJob.set(h,pr);pr.catch(()=>{});
+ }
+ return {h,url:'/vc/'+h+'.mp3'};
+}
+async function vcServe(h,r){
+ const send=(b,src)=>{ALOG.push(new Date().toISOString().slice(11,19)+' srv vc '+src+' '+h.slice(0,8));if(ALOG.length>200)ALOG.shift();
+  r.writeHead(200,{'Content-Type':'audio/mpeg','Content-Length':b.length,'Cache-Control':'public, max-age=31536000, immutable'});r.end(b)};
+ if(!/^[0-9a-f]{20}$/.test(h)){r.writeHead(404);return r.end()}
+ let b=vcGet(h);if(b)return send(b,'HIT-mem');
+ if(vcJob.has(h)){try{b=await vcJob.get(h)}catch(e){}if(b)return send(b,'HIT-inflight')}
+ try{b=await fs.promises.readFile(path.join(VC_DIR,h+'.mp3'));vcPut(h,b);return send(b,'HIT-disk')}catch(e){}
+ const m=vcMeta.get(h);if(m){pregen(m.n,VT.parseItems(m.iq),VT.parseFx(m.fq),m.langQ);try{b=await vcJob.get(h)}catch(e){}if(b)return send(b,'MISS-gen')}
+ fs.readFile(path.join(__dirname,'public','voice_fallback.mp3'),(e,d)=>{if(e){r.writeHead(404);return r.end()}r.writeHead(200,{'Content-Type':'audio/mpeg','Content-Length':d.length,'Cache-Control':'no-store'});r.end(d)});
+}
+// static pre-recorded number clips (public/voice/num/v1/<n>.mp3) for number-only calls with default langs
+const NUM_V='v1';let NUM_MAX=0;try{NUM_MAX=JSON.parse(fs.readFileSync(path.join(__dirname,'public','voice','num',NUM_V,'manifest.json'))).max||0}catch(e){}
+function callClip(n,items,fx){
+ const plain=(!items||!items.length)&&!fxQOf(fx);
+ if(plain&&/^[0-9]+$/.test(String(n))&&+n>=1&&+n<=NUM_MAX&&String(+n)===String(n)&&DEFAULT_LANGS==='ja,zh,en')return {url:'/voice/num/'+NUM_V+'/'+n+'.mp3',langs:'ja,zh,en',src:'static'};
+ const p=pregen(n,items,fx,DEFAULT_LANGS);return {url:p.url,langs:parseLangs(DEFAULT_LANGS).join(','),src:'pregen'};
+}
+// startup warm: number-only clips just above the highest recent 4-digit ticket number (beyond the static range)
+function warmNums(){try{const nums=(st.history||[]).concat((st.preparing||[]).map(x=>x.num)).filter(x=>/^[0-9]+$/.test(String(x))).map(Number);
+ const hi=Math.max(0,...nums);if(hi<=NUM_MAX)return;const list=[];for(let i=hi-5;i<=hi+40;i++)if(i>NUM_MAX)list.push(i);
+ let k=0;const step=()=>{if(k>=list.length)return;const p=pregen(list[k++],[],null,DEFAULT_LANGS);(vcJob.get(p.h)||Promise.resolve()).finally(()=>setTimeout(step,400))};step();console.log('vc warm',list.length,'numbers from',list[0])}catch(e){console.error('warm',e.message)}}
+setTimeout(warmNums,5000);
 async function voice(n,r,langQ,itemsQ,kind,fxQ){
  const fx=VT.parseFx(fxQ);kind=kind==='thanks'?'thanks':'call';
  const items=VT.parseItems(itemsQ);

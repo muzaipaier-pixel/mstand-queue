@@ -94,7 +94,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-c
 #hs .c .s{font-size:.8em;overflow:hidden;text-overflow:ellipsis}
 #hs .sw{display:inline-block;width:1em;height:1em;border-radius:50%;border:2px solid #fff;vertical-align:-.15em;margin-right:.3em}
 #hs .k{display:inline-block;width:1em;color:#FFE600;font-weight:900}
-.calling #critter *,.calling .crf *,.calling #cbub,.calling #cbub *,.calling #cfx *{-webkit-animation-play-state:paused!important;animation-play-state:paused!important}</style><script src="/kcal.js?v=2"></script><script src="/critter.js?v=11"></script></head><body>
+.calling #critter *,.calling .crf *,.calling #cbub,.calling #cbub *,.calling #cfx *{-webkit-animation-play-state:paused!important;animation-play-state:paused!important}</style><script src="/kcal.js?v=2"></script><script src="/critter.js?v=12"></script></head><body>
 <img id="menu" src="/menu.jpg?v=7" alt="menu"><div id="kcmask"></div><div id="somask"></div><div id="hdr"><div id="hs"></div></div>
 <div id="q" class="qrA">
  <div class="t">お呼び出し番号<span>请取餐</span></div>
@@ -109,7 +109,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-c
  <div class="brand">M Stand 池袋</div>
 </div>
 <div id="dly"></div><div id="cf"></div><div id="off"></div><div id="dbg" style="display:none;position:absolute;left:0;bottom:0;background:#000;color:#fff;font-size:14px;padding:2px 6px"></div>
-<audio id="chime" src="/chime_marimba.mp3" preload="auto"></audio><audio id="vo" preload="none"></audio>
+<audio id="chime" src="/chime_marimba.mp3?v=1" preload="auto"></audio><audio id="vo" preload="none"></audio>
 <script>
 (function(){
 try{if(/[?&]qr=B/.test(location.search))document.getElementById('q').className='qrB';
@@ -138,14 +138,31 @@ function alog(m){var l=new Date().toTimeString().slice(0,8)+' '+m;alines.push(l)
 window.__alog=alog;
 function tryPlay(a,tag){try{var p=a.play();if(p&&p.then)p.then(function(){alog(tag+' play ok')},function(er){alog(tag+' play REJECT '+(er&&er.name))});else alog(tag+' play (no promise)')}catch(e){alog(tag+' play EXC '+e.message)}}
 function busy(ms){window.__callBusy=+new Date()+ms;try{if(!/(^| )calling/.test(document.body.className))document.body.className+=' calling';if(window.__critterStop)window.__critterStop()}catch(e){}setTimeout(function(){if(+new Date()>=window.__callBusy-50)document.body.className=document.body.className.replace(/ ?calling/g,'')},ms)}
-function speak(num,items,fxq){var iq='';try{iq=(items||[]).map(function(x){return String(x.n).replace(/[|*]/g,'')+'*'+x.q}).join('|')}catch(e){}if(!SOUND)return;
- var t0=+new Date(),done=false;busy(20000);
- try{var a=$('vo');a.onerror=function(){a.onerror=null;alog('vo error');done=true;localSpeak(num)};a.preload='auto';a.volume=1;
-  a.src='/voice?v=2&n='+encodeURIComponent(String(num))+'&lang='+encodeURIComponent(LANGS)+(iq?'&i='+encodeURIComponent(iq):'')+(fxq?'&fx='+encodeURIComponent(fxq):'');if(a.load)a.load();
-  var go=function(why){if(done)return;done=true;a.oncanplaythrough=null;var wait=Math.max(0,1800-(+new Date()-t0));alog('vo ready('+why+') '+(+new Date()-t0)+'ms');
+function speak(num,items,fxq,clip){var iq='';try{iq=(items||[]).map(function(x){return String(x.n).replace(/[|*]/g,'')+'*'+x.q}).join('|')}catch(e){}if(!SOUND)return;
+ var t0=+new Date(),done=false,dyn='/voice?v=2&n='+encodeURIComponent(String(num))+'&lang='+encodeURIComponent(LANGS)+(iq?'&i='+encodeURIComponent(iq):'')+(fxq?'&fx='+encodeURIComponent(fxq):'');busy(20000);
+ var useClip=clip&&clip.url&&clip.langs===LANGS,url=useClip?clip.url:dyn,tag=useClip?(clip.src+(pfHas(url)?' pf=HIT':' pf=MISS')+(SWON?' sw':'')):'dyn';
+ try{var a=$('vo');var fellBack=!useClip;a.onerror=function(){if(!fellBack){fellBack=true;alog('vo error '+tag+' -> dyn');a.src=dyn;if(a.load)a.load();return}a.onerror=null;alog('vo error');done=true;localSpeak(num)};a.preload='auto';a.volume=1;
+  a.src=url;if(a.load)a.load();alog('vo src '+tag+' '+url.slice(0,40));
+  var go=function(why){if(done)return;done=true;a.oncanplaythrough=null;var wait=Math.max(0,1800-(+new Date()-t0));alog('vo ready('+why+') '+tag+' '+(+new Date()-t0)+'ms');pfMark(url);
    setTimeout(function(){tryPlay(a,'vo');a.onended=function(){a.onended=null;busy(1500)}},wait)};
   a.oncanplaythrough=function(){go('cpt')};
   setTimeout(function(){go('timeout')},12000)}catch(e){localSpeak(num)}}
+/* ---- local audio cache: SW Cache API if available, else WebView HTTP cache (immutable, 1y). slow idle prefetch ---- */
+var SWON=false,PF={};try{PF=JSON.parse(localStorage.getItem('vpf1')||'{}')||{}}catch(e){PF={}}
+function pfHas(u){return !!PF[u]}
+var pfDirty=0;function pfMark(u){if(PF[u])return;PF[u]=1;if(++pfDirty%10===0)pfSave()}
+function pfSave(){try{localStorage.setItem('vpf1',JSON.stringify(PF))}catch(e){}}
+try{if(navigator.serviceWorker&&window.caches&&location.protocol==='https:'){navigator.serviceWorker.register('/sw.js').then(function(){SWON=true;alog('sw registered')},function(er){alog('sw FAIL '+(er&&er.name))})}else alog('sw unavailable -> http cache')}catch(e){alog('sw EXC')}
+function getJ(u,cb){try{var x=new XMLHttpRequest();x.open('GET',u,true);x.onreadystatechange=function(){if(x.readyState===4){var j=null;if(x.status===200){try{j=JSON.parse(x.responseText)}catch(e){}}cb(j)}};x.send()}catch(e){cb(null)}}
+function prefetchAll(){var q=['/chime_marimba.mp3?v=1','/gap.mp3?v=1'],i=0,hit=0,miss=0,t1=+new Date();
+ getJ('/voice/critter/manifest.json?v=1',function(m){var k,l;if(m)for(l in m){if(l!=='zh'&&l!=='ja')continue;for(k in m[l])if(m[l][k]&&m[l][k].f)q.push('/voice/critter/'+m[l][k].f+'?v=1')}
+  getJ('/voice/num/v1/manifest.json',function(n){if(n&&n.max&&LANGS===n.langs)for(var j=n.min;j<=n.max;j++)q.push('/voice/num/v1/'+j+'.mp3');alog('prefetch start '+q.length+' files');step()})});
+ function step(){if(i>=q.length){pfSave();alog('prefetch done hit='+hit+' miss='+miss+' '+Math.round((+new Date()-t1)/1000)+'s');return}
+  var vo=$('vo');if((window.__callBusy||0)>+new Date()||(vo&&!vo.paused&&!vo.ended)){setTimeout(step,5000);return}
+  var u=q[i++],s0=+new Date();try{var x=new XMLHttpRequest();x.open('GET',u,true);x.onreadystatechange=function(){if(x.readyState!==4)return;var ms=+new Date()-s0;
+   if(x.status===200){if(ms<40)hit++;else miss++;PF[u]=1}if(i%25===0)pfSave();setTimeout(step,ms<40?150:1500)};x.send()}catch(e){setTimeout(step,1500)}}
+}
+setTimeout(prefetchAll,20000);
 function unlock(){var ids=['chime','vo'];for(var k=0;k<ids.length;k++){try{var a=$(ids[k]);if(ids[k]==='vo'&&!a.src)a.src='/voice_fallback.mp3';a.volume=0;var p=a.play();if(p&&p['catch'])p['catch'](function(){});(function(b){setTimeout(function(){b.pause();b.volume=1},80)})(a)}catch(e){}}}
 if(document.addEventListener){document.addEventListener('click',unlock,false);document.addEventListener('touchstart',unlock,false)}
 setTimeout(function(){try{var a=$('chime');a.volume=0;var p=a.play();var r=function(){try{a.pause();a.currentTime=0;a.volume=1}catch(e){}};if(p&&p.then)p.then(function(){r();alog('autoplay probe OK')},function(er){r();alog('autoplay probe REJECT '+(er&&er.name))});else setTimeout(r,80)}catch(e){}},3000);
@@ -181,7 +198,7 @@ function handle(s){
  var hs=s.history||[];h='';for(var j=1;j<hs.length&&j<7;j++)h+='<span>'+esc(hs[j])+'</span>';$('hist').innerHTML=h;
  var txt=cur+'|'+$('prep').innerHTML+'|'+h;if(txt!==lastTxt){lastTxt=txt;fitAll()}
  if(isCall){nw.className='';void nw.offsetWidth;setTimeout(function(){nw.className='call'},20);
-  if(nw._t)clearTimeout(nw._t);nw._t=setTimeout(function(){nw.className=''},5000);chime();var fx=(s.callFx&&typeof s.callFx==='object')?s.callFx:null;speak(s.current,s.callItems,fxParam(fx));if(!celebrate(fx)){if(TH)confetti(TH);else callBurst()}}
+  if(nw._t)clearTimeout(nw._t);nw._t=setTimeout(function(){nw.className=''},5000);chime();var fx=(s.callFx&&typeof s.callFx==='object')?s.callFx:null;speak(s.current,s.callItems,fxParam(fx),s.callClip);if(!celebrate(fx)){if(TH)confetti(TH);else callBurst()}}
  var pp=s.preparing||[],fresh=[];
  if(seenPrep===null){seenPrep={};for(var k=0;k<pp.length;k++)seenPrep[pp[k].id]=1}
  else{for(var k=0;k<pp.length;k++)if(!seenPrep[pp[k].id]){seenPrep[pp[k].id]=1;fresh.push(pp[k])}}
