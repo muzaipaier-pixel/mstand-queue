@@ -98,8 +98,8 @@ var PI=[
 [/パイナップル/,'海盐菠萝冰沙','新品！海盐配菠萝～'],
 [/パッション/,'满杯百香果','百香果香到冒泡～'],
 [/タロ芋/,'芋头牛奶冰沙','芋泥控快来～'],
-[/爆ライム/,'爆青柠四季春','超清爽，夏天必喝～'],
-[/柚子|ゆず/,'满杯蜂蜜柚橙','柚子蜂蜜，暖暖的～']];
+[/爆ライム/,'爆青柠四季春','超清爽，解腻必喝～'],
+[/柚子|ゆず/,'满杯蜂蜜柚橙','柚子蜂蜜，冷热都好喝～']];
 var GEN='这杯也超好喝哦～';
 function cards(){var R=[],i,j,mp=window.SOMAP,m=document.getElementById('menu');if(!mp||!m)return R;
  var mr=m.getBoundingClientRect();if(mr.width<50)return R;
