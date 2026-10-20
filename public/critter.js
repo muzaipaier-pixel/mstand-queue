@@ -14,12 +14,12 @@ st.textContent='#critter{position:fixed;left:0;top:0;z-index:9000;pointer-events
 document.getElementsByTagName('head')[0].appendChild(st);
 var w=document.createElement('div');w.id='critter';w.innerHTML='<i>'+e+'</i>';
 function start(){document.body.appendChild(w);
-var S=56,pos=0,last=0,speed=70,raf=window.requestAnimationFrame||window.webkitRequestAnimationFrame||function(f){return setTimeout(function(){f(+new Date())},33)};
+var S=56,fz=/[?&]critterpos=([\d.]+)/.exec(location.search),pos=0,last=0,speed=70,raf=window.requestAnimationFrame||window.webkitRequestAnimationFrame||function(f){return setTimeout(function(){f(+new Date())},33)};
 function tick(t){var W=window.innerWidth-S,H=window.innerHeight-S,P=2*(W+H);
- if(last){var dt=Math.min(t-last,100);pos=(pos+speed*dt/1000)%P}last=t;
- var x,y,sx=1,p=pos; /* emoji face left by default: sx=-1 faces right */
- if(p<W){x=p;y=H;sx=-1}else if((p-=W)<H){x=W;y=H-p;sx=-1}else if((p-=H)<W){x=W-p;y=0;sx=1}else{p-=W;x=0;y=p;sx=1}
- var tr='translate3d('+x.toFixed(1)+'px,'+y.toFixed(1)+'px,0) scaleX('+sx+')';
+ if(last){var dt=Math.min(t-last,100);pos=(pos+speed*dt/1000)%P}last=t;if(fz)pos=(+fz[1])*P;
+ var x,y,r,p=pos; /* emoji faces left: scaleX(-1) faces travel dir, then rotate so feet touch the edge */
+ if(p<W){x=p;y=H;r=0}else if((p-=W)<H){x=W;y=H-p;r=-90}else if((p-=H)<W){x=W-p;y=0;r=180}else{p-=W;x=0;y=p;r=90}
+ var tr='translate3d('+x.toFixed(1)+'px,'+y.toFixed(1)+'px,0) rotate('+r+'deg) scaleX(-1)';
  w.style.webkitTransform=tr;w.style.transform=tr;raf(tick)}
 raf(tick)}
 if(document.body)start();else document.addEventListener('DOMContentLoaded',start);
