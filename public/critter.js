@@ -73,34 +73,34 @@ window.MSCritter={svg:svg,keys:A.concat(['bat']),pose:function(r,key,f){var o=HI
 
 /* ---- product intro: walk to a menu card and say something ---- */
 var PI=[
-[/^ロイヤルタピオカミルクティー/,'至尊珍奶','店里人气No.1','珍珠Q弹有嚼劲','奶茶香浓不腻'],
-[/アボカドスムージー/,'整颗牛油果','用整颗牛油果做','口感绵密顺滑','喝完超满足～'],
-[/^上品四季春/,'四季春茶','清新的乌龙茶香','入口回甘','配炸鸡超解腻～'],
-[/朝露ジャスミン/,'茉莉花茶','一口满满茉莉香','清爽不苦涩','想清淡就选它～'],
-[/ハイビスカス/,'扶桑花茶','酸酸甜甜的花茶','颜色红红超好看','拍照很出片哦～'],
-[/トウガン/,'冬瓜茶','古早味冬瓜茶','甜甜的很顺口','小时候的味道～'],
-[/マンゴーミルク/,'芒果多多','满满芒果果肉','配上香浓牛奶','芒果控必点～'],
-[/ドラゴンミルク/,'火龙果多多','火龙果配牛奶','粉粉的颜色','超好拍超可爱～'],
-[/いちごミルク|イチゴミルク/,'草莓多多','草莓配牛奶','酸酸甜甜','少女心满满～'],
-[/黒糖/,'黑糖波波','黑糖珍珠','浓浓焦糖香','搅一搅再喝哦～'],
-[/抹茶ミルク/,'抹茶牛奶','抹茶配牛奶','微苦又香甜','抹茶控快来～'],
-[/Mixベリーミルク|ミックスベリーミルク/,'莓莓多多','好几种莓果','配上牛奶','酸甜又顺滑～'],
-[/チーズクリーム四季春/,'芝士四季春','绵密芝士奶盖','配清香四季春','先喝一口奶盖～'],
-[/チーズクリームジャスミン/,'芝士茉莉','绵绵芝士奶盖','配茉莉花香','清爽又浓郁～'],
-[/チーズクリーム宇治抹茶/,'芝士抹茶','宇治抹茶','加咸香芝士奶盖','抹茶控绝配～'],
-[/ココナッツ/,'椰子牛奶冰','椰香满满','冰冰凉凉','一口好清爽～'],
-[/満杯ドラゴンフルーツ/,'满杯火龙果','满满一杯火龙果','颜色超漂亮','清爽解渴～'],
-[/満杯いちごスムージー|イチゴゴゴ/,'芝芝莓莓','满杯草莓','酸甜刚刚好','草莓控必点～'],
-[/チェリー/,'满杯车厘子','车厘子满满','果香浓郁','车厘子控冲～'],
-[/ヤンジー|楊枝甘露|杨枝甘露/,'杨枝甘露','芒果加西柚','港式经典甜品','一口好幸福～'],
-[/Mixベリースムージー/,'综合莓果冰沙','新品上市！','多种莓果打成冰沙','酸甜冰爽～'],
-[/ブルーベリー/,'蓝莓冰沙','新品上市！','蓝莓酸酸甜甜','冰沙口感超爽～'],
-[/パイナップル/,'海盐菠萝冰沙','新品上市！','海盐配菠萝','咸甜好特别～'],
-[/パッション/,'满杯百香果','百香果香到冒泡','酸甜开胃','超级清爽～'],
-[/タロ芋/,'芋头牛奶冰沙','绵绵的芋头','配上牛奶','芋泥控快来～'],
-[/爆ライム/,'爆青柠四季春','满满青柠','配四季春茶','清爽解腻～'],
-[/柚子|ゆず/,'满杯蜂蜜柚橙','柚子加橙子','蜂蜜甜甜的','冷热都能点哦～']];
-var GEN=['这杯也超好喝','欢迎来尝尝哦～'];
+[/^ロイヤルタピオカミルクティー/,'至尊珍奶','店里人气No.1','珍珠Q弹有嚼劲','奶茶香浓不腻','ロイヤルタピオカミルクティー','お店の人気No.1','タピオカもちもち','ミルクティー濃厚'],
+[/アボカドスムージー/,'整颗牛油果','用整颗牛油果做','口感绵密顺滑','喝完超满足～','丸ごとアボカドスムージー','アボカド丸ごと','とろ～りなめらか','飲みごたえ満点～'],
+[/^上品四季春/,'四季春茶','清新的乌龙茶香','入口回甘','配炸鸡超解腻～','上品四季春','さわやか烏龍茶','後味ほんのり甘い','唐揚げにも合うよ～'],
+[/朝露ジャスミン/,'茉莉花茶','一口满满茉莉香','清爽不苦涩','想清淡就选它～','朝露ジャスミン','ジャスミンの香り','すっきり渋くない','あっさり派にどうぞ'],
+[/ハイビスカス/,'扶桑花茶','酸酸甜甜的花茶','颜色红红超好看','拍照很出片哦～','ハイビスカスティー','甘酸っぱい花茶','きれいな赤色','写真映えするよ～'],
+[/トウガン/,'冬瓜茶','古早味冬瓜茶','甜甜的很顺口','小时候的味道～','トウガン茶','昔ながらの冬瓜茶','やさしい甘さ','懐かしい味だよ～'],
+[/マンゴーミルク/,'芒果多多','满满芒果果肉','配上香浓牛奶','芒果控必点～','たっぷりマンゴーミルク','果肉たっぷり','濃厚ミルクと一緒','マンゴー好き必見～'],
+[/ドラゴンミルク/,'火龙果多多','火龙果配牛奶','粉粉的颜色','超好拍超可爱～','たっぷりドラゴンミルク','ドラゴンフルーツ','ミルクと合わせて','ピンクがかわいい～'],
+[/いちごミルク|イチゴミルク/,'草莓多多','草莓配牛奶','酸酸甜甜','少女心满满～','たっぷりイチゴミルク','いちご×ミルク','甘酸っぱい','乙女心くすぐる～'],
+[/黒糖/,'黑糖波波','黑糖珍珠','浓浓焦糖香','搅一搅再喝哦～','黒糖タピオカミルク','黒糖タピオカ','香ばしい黒糖','混ぜてから飲んでね'],
+[/抹茶ミルク/,'抹茶牛奶','抹茶配牛奶','微苦又香甜','抹茶控快来～','もちもち抹茶ミルク','抹茶×ミルク','ほろ苦くて甘い','抹茶好きおいで～'],
+[/Mixベリーミルク|ミックスベリーミルク/,'莓莓多多','好几种莓果','配上牛奶','酸甜又顺滑～','ミックスベリーミルク','ベリーいろいろ','ミルクと合わせて','甘酸っぱくなめらか'],
+[/チーズクリーム四季春/,'芝士四季春','绵密芝士奶盖','配清香四季春','先喝一口奶盖～','チーズクリーム四季春','ふわふわチーズ','爽やか四季春と','まずクリームから～'],
+[/チーズクリームジャスミン/,'芝士茉莉','绵绵芝士奶盖','配茉莉花香','清爽又浓郁～','チーズクリームジャスミン','ふわふわチーズ','ジャスミンの香り','爽やかで濃厚～'],
+[/チーズクリーム宇治抹茶/,'芝士抹茶','宇治抹茶','加咸香芝士奶盖','抹茶控绝配～','チーズクリーム宇治抹茶','宇治抹茶','塩チーズクリーム','抹茶好きに最高～'],
+[/ココナッツ/,'椰子牛奶冰','椰香满满','冰冰凉凉','一口好清爽～','ココナッツミルクフローズン','ココナッツの香り','ひんやり冷たい','すっきり爽やか～'],
+[/満杯ドラゴンフルーツ/,'满杯火龙果','满满一杯火龙果','颜色超漂亮','清爽解渴～','満杯ドラゴンフルーツ','果肉ぎっしり','色がとってもきれい','さっぱり潤う～'],
+[/満杯いちごスムージー|イチゴゴゴ/,'芝芝莓莓','满杯草莓','酸甜刚刚好','草莓控必点～','満杯イチゴゴゴ','いちごたっぷり','ちょうどいい甘酸','いちご好き必見～'],
+[/チェリー/,'满杯车厘子','车厘子满满','果香浓郁','车厘子控冲～','満杯チェリー','さくらんぼたっぷり','フルーティー','チェリー好きどうぞ'],
+[/ヤンジー|楊枝甘露|杨枝甘露/,'杨枝甘露','芒果加西柚','港式经典甜品','一口好幸福～','ヤンジーカンルー','マンゴー×グレフル','香港の定番スイーツ','ひと口で幸せ～'],
+[/Mixベリースムージー/,'综合莓果冰沙','新品上市！','多种莓果打成冰沙','酸甜冰爽～','Mixベリースムージー','新登場！','ベリーのスムージー','甘酸っぱくひんやり'],
+[/ブルーベリー/,'蓝莓冰沙','新品上市！','蓝莓酸酸甜甜','冰沙口感超爽～','ブルーベリースムージー','新登場！','甘酸っぱいブルーベリー','シャリシャリ爽快～'],
+[/パイナップル/,'海盐菠萝冰沙','新品上市！','海盐配菠萝','咸甜好特别～','海塩パイナップルスムージー','新登場！','塩×パイナップル','甘じょっぱいよ～'],
+[/パッション/,'满杯百香果','百香果香到冒泡','酸甜开胃','超级清爽～','満杯パッションフルーツ','香りがはじける','甘酸っぱい','とっても爽やか～'],
+[/タロ芋/,'芋头牛奶冰沙','绵绵的芋头','配上牛奶','芋泥控快来～','タロ芋ミルクスムージー','ほっくりタロ芋','ミルクと合わせて','タロ芋好きおいで～'],
+[/爆ライム/,'爆青柠四季春','满满青柠','配四季春茶','清爽解腻～','爆ライム四季春','ライムたっぷり','四季春茶と一緒','さっぱり爽快～'],
+[/柚子|ゆず/,'满杯蜂蜜柚橙','柚子加橙子','蜂蜜甜甜的','冷热都能点哦～','ゆずハニーオレンジ','柚子とオレンジ','はちみつで甘く','ホットもアイスもOK']];
+var GEN=['这杯也超好喝','欢迎来尝尝哦～'],GJ=['こちらも美味しいよ～','ぜひ飲んでみてね～'];
 function cards(){var R=[],i,j,mp=window.SOMAP,m=document.getElementById('menu');if(!m)m=document.querySelector('img[src*="menu"]');
  if(!m)return R;var mr=m.getBoundingClientRect();if(mr.width<50)return R;
  if(!mp||!mp.length){mp=[];for(i=0;i<PI.length;i++)mp.push({re:PI[i][0],x:5+(i%6)*15,y:10+Math.floor(i/6)*20,w:12,h:16})}
@@ -109,7 +109,7 @@ function cards(){var R=[],i,j,mp=window.SOMAP,m=document.getElementById('menu');
  for(j=0;j<mp.length;j++){var b=mp[j];if(so.indexOf(b.x+'%|'+b.y+'%')>=0)continue;
   var t=null;for(i=0;i<PI.length;i++)if(b.re&&PI[i][0].source===b.re.source){t=PI[i];break}
   if(!t)for(i=0;i<PI.length;i++)if(b.re&&b.re.test&&b.re.test(PI[i][1])){t=PI[i];break}
-  R.push({x:mr.left+mr.width*b.x/100,y:mr.top+mr.height*b.y/100,w:mr.width*b.w/100,h:mr.height*b.h/100,n:t?t[1]:'',s:t?t.slice(2):GEN,mw:mr.width})}
+  R.push({x:mr.left+mr.width*b.x/100,y:mr.top+mr.height*b.y/100,w:mr.width*b.w/100,h:mr.height*b.h/100,n:t?t[1]:'',s:t?t.slice(2,5):GEN,jn:t?t[5]:'',js:t?t.slice(6,9):GJ,mw:mr.width})}
  return R}
 window.MSCritterCards=cards;
 if(/[?&]critter=off/.test(qs))return;
@@ -125,7 +125,7 @@ document.getElementsByTagName('head')[0].appendChild(st);
 var w=document.createElement('div');w.id='critter';w.innerHTML='<i>'+svg(k,hw)+'</i>';
 function start(){var gen=window.__critterGen=(window.__critterGen||0)+1,ids=['critter','cbub','cspk'],ii,oe;for(ii=0;ii<ids.length;ii++){while((oe=document.getElementById(ids[ii]))&&oe.parentNode)oe.parentNode.removeChild(oe)}document.body.appendChild(w);var ie=w.firstChild,sv=ie.firstChild;
 var S=64,fz=/[?&]critterpos=([\d.]+)/.exec(location.search),seg=0,sp=0,pause=0,last=0,ph=0,
-mode=0,tg=null,ox=0,oy=0,cx=0,cy=0,bx=0,by0=0,stay=0,nextI=(/[?&]critterintro=1/.test(location.search)?1.5:2+Math.random()*2),trip=0,q=[],li=0,talk=0,spk=document.createElement('div'),ci=Math.floor(Math.random()*99),bub=document.createElement('div'),
+mode=0,tg=null,ox=0,oy=0,cx=0,cy=0,bx=0,by0=0,stay=0,nextI=(/[?&]critterintro=1/.test(location.search)?1.5:2+Math.random()*2),trip=0,q=[],li=0,talk=0,pg=0,PG=5.4,spk=document.createElement('div'),ci=Math.floor(Math.random()*99),bub=document.createElement('div'),
 lpx=-1,lpy=-1,lmv=+new Date(),raf=window.requestAnimationFrame||window.webkitRequestAnimationFrame||function(f){return setTimeout(function(){f(+new Date())},33)};
 function tick(t){if(window.__critterGen!==gen){try{if(w.parentNode)w.parentNode.removeChild(w);if(bub.parentNode)bub.parentNode.removeChild(bub);if(spk.parentNode)spk.parentNode.removeChild(spk)}catch(e){}return}try{var W=window.innerWidth-S,H=window.innerHeight-S,L=[W,H,W,H],now=+new Date(),dt=last?Math.max(0,Math.min(now-last,100))/1000:0;last=now;
  var len=L[seg],v=len>=Math.max(W,H)?90:62;
@@ -137,8 +137,8 @@ function tick(t){if(window.__critterGen!==gen){try{if(w.parentNode)w.parentNode.
  if(mode===1||mode===3){trip+=dt;if(trip>15){mode=0;trip=0;q=[];nextI=30;hideBub()}}else trip=0;
  if(mode===2&&stay<-3){mode=3;q=[];hideBub()}
  if(mode){var gx=mode===3?ox:bx,gy=mode===3?oy:by0,ddx=gx-cx,ddy=gy-cy,dd=Math.sqrt(ddx*ddx+ddy*ddy),st2=170*dt;
-  if(mode===2){stay-=dt;talk+=dt;pause=0;ph+=dt/0.5;var nl=Math.min(tg.s.length,1+Math.floor(talk/1.7)),sps=bub.getElementsByTagName('span');while(li<nl&&li<sps.length){sps[li].className='on';li++}if(stay<=0){bub.style.opacity='0';spk.style.display='none';var nc=null,cs2=cards(),u2,z;while(q.length&&!nc){z=q.shift();for(u2=0;u2<cs2.length;u2++)if(cs2[u2].n===z.n)nc=cs2[u2]}if(nc){tg=nc;mode=1;bx=Math.max(0,nc.x-S*0.55);by0=nc.y+nc.h*0.35-S/2}else mode=3}}
-  else if(dd<=st2||dd<1){cx=gx;cy=gy;if(mode===1){mode=2;talk=0;li=0;stay=1.7*tg.s.length+1.6;showBub(tg)}else{mode=0;nextI=40+Math.random()*20}}
+  if(mode===2){stay-=dt;talk+=dt;pause=0;ph+=dt/0.5;if(pg===0&&talk>=PG){pg=1;li=0;showBub(tg,1)}var nl=Math.min(3,1+Math.floor((talk-pg*PG)/1.2)),sps=bub.getElementsByTagName('span');while(li<nl&&li<sps.length){sps[li].className='on';li++}if(stay<=0){bub.style.opacity='0';spk.style.display='none';var nc=null,cs2=cards(),u2,z;while(q.length&&!nc){z=q.shift();for(u2=0;u2<cs2.length;u2++)if(cs2[u2].n===z.n)nc=cs2[u2]}if(nc){tg=nc;mode=1;bx=Math.max(0,nc.x-S*0.55);by0=nc.y+nc.h*0.35-S/2}else mode=3}}
+  else if(dd<=st2||dd<1){cx=gx;cy=gy;if(mode===1){mode=2;talk=0;li=0;pg=0;stay=2*PG;showBub(tg,0)}else{mode=0;nextI=40+Math.random()*20}}
   else{cx+=ddx/dd*st2;cy+=ddy/dd*st2;fl=ddx<0?1:-1;sp-=v*dt}
   if(mode){x=cx;y=cy;r=0;if(mode===2)fl=1}}
  var tr='translate3d('+x.toFixed(1)+'px,'+y.toFixed(1)+'px,0) rotate('+r+'deg) scaleX('+fl+')';
@@ -155,7 +155,7 @@ function tick(t){if(window.__critterGen!==gen){try{if(w.parentNode)w.parentNode.
  }catch(x){reset()}raf(tick)}
 function hideBub(){try{bub.style.opacity='0';spk.style.display='none'}catch(e){}}
 function reset(){mode=0;q=[];tg=null;trip=0;stay=0;talk=0;pause=0;nextI=30;lmv=+new Date();hideBub()}
-function showBub(c){var fs=Math.max(22,Math.round(c.mw/60)),i,h='';bub.style.fontSize=fs+'px';
+function showBub(c0,jp){var c={x:c0.x,y:c0.y,w:c0.w,h:c0.h,mw:c0.mw,n:jp?c0.jn:c0.n,s:jp?c0.js:c0.s},fs=Math.max(22,Math.round(c.mw/60)),i,h='';bub.style.fontSize=fs+'px';
  for(i=0;i<c.s.length;i++)h+='<span>'+c.s[i]+'</span>';bub.className='';bub.innerHTML=(c.n?'<b>'+c.n+'</b>':'')+h;var bh=bub.offsetHeight,bw=bub.offsetWidth,lx=Math.max(4,Math.min(c.x,window.innerWidth-bw-4)),ty=c.y-bh-6,cl='up';
  if(ty<4){ty=c.y+c.h+14;cl='dn'}bub.style.left=lx+'px';bub.style.top=ty+'px';void bub.offsetWidth;bub.className=cl+' pop';bub.style.opacity='1';
  var sx2=c.x+c.w*0.75,sy2=c.y+c.h*0.6;spk.style.left=sx2+'px';spk.style.top=sy2+'px';spk.style.display='block'}
