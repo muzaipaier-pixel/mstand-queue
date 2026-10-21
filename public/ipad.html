@@ -1,147 +1,185 @@
 <!doctype html><html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>M Stand 店长 iPad</title><link rel="manifest" href="/ipad.webmanifest"><meta name="theme-color" content="#ff7a45">
+<title>M Stand 店长</title><link rel="manifest" href="/ipad.webmanifest"><meta name="theme-color" content="#fff7f2">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="M Stand店长"><link rel="apple-touch-icon" href="/icon-180.png">
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;font-family:-apple-system,"Hiragino Sans","PingFang SC",sans-serif;background:#fff4ec;color:#4a2a1a;padding:env(safe-area-inset-top) 18px 90px}
-header{display:flex;align-items:center;gap:12px;padding:12px 0}header h1{font-size:20px;margin:0;color:#ff5c8a;flex:1}
-#conn{font-size:14px}.tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:#fff;border-top:1px solid #f3d3c3;padding:6px 8px calc(6px + env(safe-area-inset-bottom));z-index:50}
-.tabs button{flex:1;border:0;background:none;font-size:15px;font-weight:800;color:#b08878;padding:8px;border-radius:14px}.tabs button.on{background:#ffe6d8;color:#ff5c8a}
-.pg{display:none}.pg.on{display:block}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.card{background:#fff;border-radius:20px;padding:14px 16px;box-shadow:0 2px 8px #ffb08a33}
-.card small{color:#a07a6a;font-size:13px;font-weight:700}.big{font-size:34px;font-weight:900;color:#e2552b;line-height:1.2}.sub{font-size:13px;color:#8a6a5a}
-.wide{grid-column:span 2}.full{grid-column:1/-1}
-.bar{height:22px;background:#ffe6d8;border-radius:11px;overflow:hidden;margin:8px 0}.bar i{display:block;height:100%;background:linear-gradient(90deg,#ff8a3d,#ff5c8a);border-radius:11px}
-.hrs{display:flex;align-items:flex-end;gap:3px;height:70px}.hrs i{flex:1;background:#ffb38a;border-radius:4px 4px 0 0;min-height:2px}.hrl{display:flex;gap:3px;font-size:9px;color:#b09080}.hrl span{flex:1;text-align:center}
-.alert{display:none;background:linear-gradient(135deg,#ff4f4f,#ff7a45);color:#fff;border-radius:18px;padding:12px 16px;margin-bottom:12px;font-weight:800;align-items:center;gap:12px}.alert.on{display:flex}
-.alert span{flex:1}.alert a{background:#fff;color:#e33;text-decoration:none;padding:10px 14px;border-radius:12px;font-size:15px}
-.alert.y{background:linear-gradient(135deg,#ffb020,#ff8a3d)}
-button.b{border:0;border-radius:16px;font-size:18px;font-weight:800;padding:16px;color:#fff;background:#ff7a45}
-.cur{background:linear-gradient(135deg,#ff8a3d,#ff5c8a);color:#fff;border-radius:22px;padding:12px;text-align:center}.cur .n{font-size:84px;font-weight:900;line-height:1}
-.pr{display:flex;align-items:center;gap:10px;background:#fff;border:2px solid #ffd27a;border-radius:14px;padding:8px 12px;margin-top:8px}.pr b{font-size:28px;color:#e2552b;min-width:70px}.pr i{flex:1;font-style:normal;font-size:14px}
-.pr button{border:0;border-radius:10px;font-size:15px;padding:8px 12px;background:#ffa64d;color:#fff;font-weight:800}
-.vip{display:inline-block;background:#fff0f6;border:1px solid #ff9cc0;color:#d6336c;border-radius:10px;padding:2px 8px;font-size:12px;margin-top:4px}
-.sog{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.so-c{background:#fff;border-radius:18px;padding:10px;display:flex;gap:12px;align-items:flex-start;border:3px solid #fff}.so-c img{width:84px;height:84px;object-fit:cover;border-radius:12px;background:#ffe6d8}.so-c.all{border-color:#e33}.so-c.all img{filter:grayscale(1) opacity(.5)}.so-c.part{border-color:#ffb020}.so-c h4{margin:0 0 4px;font-size:16px}.st{font-size:13px;font-weight:900;border-radius:8px;padding:3px 8px;display:inline-block}.st.ok{background:#dff5e1;color:#2a7}.st.part{background:#fff1d6;color:#c70}.st.all{background:#e33;color:#fff}.vb{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.vb button{border:2px solid #9c9;background:#f2fff2;color:#2a7;border-radius:12px;padding:10px 12px;font-size:15px;font-weight:800;min-width:96px}.vb button.so{border-color:#e33;background:#ffecec;color:#e33;text-decoration:line-through}.ab{border:0;border-radius:14px;padding:14px 12px;font-size:16px;font-weight:900;color:#fff;background:#e33;min-width:118px}.ab.re{background:#3a3}
-.items{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.it{background:#fff;border-radius:16px;overflow:hidden;position:relative;border:3px solid transparent}
-.it img{width:100%;height:110px;object-fit:cover;display:block;background:#ffe6d8}.it div{padding:6px 8px;font-size:13px;font-weight:700;height:44px;overflow:hidden}
-.it.so{border-color:#e33}.it.so img{filter:grayscale(1) opacity(.5)}.it.so:after{content:"售罄";position:absolute;top:36px;left:50%;transform:translateX(-50%) rotate(-10deg);background:#e33;color:#fff;font-weight:900;font-size:22px;padding:4px 14px;border-radius:10px}
-table{width:100%;border-collapse:collapse;font-size:15px}td,th{padding:8px;border-bottom:1px solid #f6e0d4;text-align:left}td input{width:70px;font-size:16px;padding:6px;border:1px solid #ffc2a8;border-radius:8px}
-.low td{background:#ffecec;color:#c22}.pill{border-radius:10px;padding:2px 8px;font-size:12px;font-weight:800}
-#modal{position:fixed;top:0;left:0;right:0;bottom:0;background:#0006;display:none;align-items:center;justify-content:center;z-index:99}#modal div{background:#fff;border-radius:24px;padding:24px;width:420px;text-align:center}
-#modal h3{margin:0 0 12px}#modal .row{display:flex;gap:10px;margin-top:16px}#modal button{flex:1}
-#lock{position:fixed;top:0;left:0;right:0;bottom:0;background:#fff4ec;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:200}#lock input{font-size:28px;padding:12px;border-radius:14px;border:2px solid #ffc2a8;text-align:center;width:300px}
-input.t,textarea{font-size:18px;padding:12px;border-radius:14px;border:2px solid #ffc2a8;width:100%}
-.sb{flex:1;background:#e9d6cc;color:#7a5a4a;padding:12px;font-size:17px}.sb.on{background:linear-gradient(135deg,#ff8a3d,#ff5c8a);color:#fff;box-shadow:0 4px 12px #ff5c8a66}.sb small{font-size:12px}
-.note{font-size:12px;color:#a08070}
+html,body{margin:0;height:100%}
+body{font-family:-apple-system,"Hiragino Sans","PingFang SC",sans-serif;background:#fff7f2;color:#3d2a20;padding:env(safe-area-inset-top) 16px 84px;font-size:16px}
+button{font-family:inherit;cursor:pointer}
+.hd{display:flex;align-items:center;gap:12px;height:56px}
+.hd h1{font-size:20px;margin:0;color:#ff5c8a;font-weight:900}
+.sum{margin-left:auto;display:flex;gap:8px}
+.sum div{background:#fff;border-radius:14px;padding:6px 12px;font-size:13px;color:#8a6d60;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.sum b{display:block;font-size:18px;color:#3d2a20}
+.dot{width:10px;height:10px;border-radius:5px;background:#ccc}
+.al{display:none;align-items:center;gap:10px;border-radius:14px;padding:10px 14px;margin-bottom:10px;font-weight:800;color:#fff}
+.al.on{display:flex}.al span{-webkit-box-flex:1;flex:1}.al a{background:#fff;color:#3d2a20;text-decoration:none;padding:8px 12px;border-radius:10px;font-size:14px}
+.al.red{background:#ef4b4b}.al.org{background:#ff9a2e}
+.home{display:-webkit-box;display:flex;gap:14px;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:14px}.c1{width:46%}.c2{-webkit-box-flex:1;flex:1;min-width:0}
+.card{background:#fff;border-radius:22px;padding:16px;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+.ct{font-size:14px;font-weight:800;color:#a08070;margin:0 0 10px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sb{border:3px solid #f1e4dc;background:#fff;border-radius:18px;height:76px;font-size:19px;font-weight:900;color:#5a4035}
+.sb small{display:block;font-size:12px;font-weight:700;color:#a08070}
+.sb.on{border-color:transparent;color:#fff}.sb.on small{color:rgba(255,255,255,.85)}
+.sb[data-m=open].on{background:#2fb36b}.sb[data-m=prep].on{background:#ff8a3d}.sb[data-m=shop].on{background:#7a6cf0}.sb[data-m=closed].on{background:#555}
+.cd{display:none;margin-top:12px;align-items:center;gap:10px;background:#fff3ea;border-radius:16px;padding:10px 12px}
+.cd.on{display:flex}.cd .t{-webkit-box-flex:1;flex:1;font-size:30px;font-weight:900;color:#e2552b}.cd .t small{display:block;font-size:12px;color:#a08070;font-weight:700}
+.sm{border:0;border-radius:12px;height:48px;min-width:58px;font-size:16px;font-weight:900;background:#ffe0cc;color:#c4561f;padding:0 10px}
+.us{font-size:13px;font-weight:700;margin-top:8px;color:#8a6d60}
+.qn{display:flex;align-items:center;gap:12px}
+.num{width:150px;height:120px;border-radius:20px;background:linear-gradient(135deg,#ff8a3d,#ff5c8a);color:#fff;display:flex;align-items:center;justify-content:center;font-size:64px;font-weight:900}
+.qb{-webkit-box-flex:1;flex:1;display:flex;flex-direction:column;gap:10px}
+.big{border:0;border-radius:18px;height:70px;font-size:24px;font-weight:900;color:#fff;background:#ff5c8a}
+.big.b2{background:#ffa64d;height:52px;font-size:20px}
+.row{display:flex;gap:10px;margin-top:10px}.row>*{-webkit-box-flex:1;flex:1}
+.ghost{border:2px solid #f1e4dc;background:#fff;border-radius:14px;height:48px;font-size:16px;font-weight:800;color:#8a6d60}
+.srch{display:flex;gap:8px;margin-bottom:10px}
+.srch input{-webkit-box-flex:1;flex:1;font-size:18px;height:50px;border-radius:14px;border:2px solid #f1e4dc;padding:0 14px;-webkit-appearance:none}
+.chips{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:10px}
+.chip{flex:none;border:2px solid #f1e4dc;background:#fff;border-radius:20px;height:40px;padding:0 14px;font-size:15px;font-weight:800;color:#8a6d60}
+.chip.on{background:#3d2a20;border-color:#3d2a20;color:#fff}
+.list{max-height:calc(100vh - 290px);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.it{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid #f6ece6}
+.it img{width:56px;height:56px;border-radius:12px;object-fit:cover;background:#ffe9dc;flex:none}
+.it .nm{-webkit-box-flex:1;flex:1;min-width:0}.it .nm b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag{display:inline-block;font-size:12px;font-weight:900;border-radius:8px;padding:2px 8px;margin-top:3px}
+.tag.ok{background:#e3f7ea;color:#239457}.tag.part{background:#fff0d9;color:#c57700}.tag.all{background:#ef4b4b;color:#fff}
+.it.all img{-webkit-filter:grayscale(1);filter:grayscale(1);opacity:.5}
+.tg{border:0;border-radius:14px;height:52px;min-width:104px;font-size:16px;font-weight:900;color:#fff;background:#ef4b4b}.tg.re{background:#2fb36b}
+.ex{border:0;background:none;font-size:22px;color:#b9a296;width:40px;height:52px}
+.vs{display:flex;flex-wrap:wrap;gap:8px;padding:0 4px 12px 72px}
+.vs button{border:2px solid #bfe8cd;background:#f2fbf5;color:#239457;border-radius:12px;height:48px;min-width:100px;font-size:15px;font-weight:800}
+.vs button.so{border-color:#f5b5b5;background:#fdeeee;color:#d33;text-decoration:line-through}
+.more{display:none}.more.on{display:block}.home.off{display:none}
+.mg{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.kv{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f6ece6}.kv b{font-size:18px}
+.bar{height:14px;background:#ffe9dc;border-radius:7px;overflow:hidden;margin:10px 0}.bar i{display:block;height:100%;background:#ff5c8a}
+.pr{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f6ece6}.pr b{font-size:24px;color:#e2552b;min-width:56px}.pr .nm{-webkit-box-flex:1;flex:1;font-size:14px}
+.vip{display:block;color:#d6336c;font-size:12px;margin-top:2px}
+input.tx,select{font-size:17px;height:48px;border-radius:12px;border:2px solid #f1e4dc;padding:0 12px;background:#fff;width:100%;-webkit-appearance:none}
+table{width:100%;border-collapse:collapse;font-size:15px}td{padding:8px 4px;border-bottom:1px solid #f6ece6}td input{width:64px;height:40px;font-size:16px;border:2px solid #f1e4dc;border-radius:10px;text-align:center}
+tr.low td{color:#d33;font-weight:800}
+.nav{position:fixed;left:0;right:0;bottom:0;display:flex;gap:10px;background:#fff;padding:8px 16px calc(8px + env(safe-area-inset-bottom));box-shadow:0 -2px 10px rgba(0,0,0,.05);z-index:50}
+.nav button{-webkit-box-flex:1;flex:1;border:0;background:#fff;height:52px;border-radius:14px;font-size:17px;font-weight:900;color:#a08070}.nav button.on{background:#ffe9dc;color:#ff5c8a}
+.ov{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:200}
+.dlg{background:#fff;border-radius:24px;padding:24px;width:420px;max-width:90%;text-align:center}.dlg h3{margin:0 0 8px;font-size:22px}.dlg p{color:#8a6d60;margin:0 0 16px}
+.lock{position:fixed;top:0;left:0;right:0;bottom:0;background:#fff7f2;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:300}
+.lock input{font-size:30px;height:64px;width:280px;text-align:center;border-radius:16px;border:2px solid #f1e4dc}
+#toast{display:none;position:fixed;left:50%;top:16px;-webkit-transform:translateX(-50%);transform:translateX(-50%);z-index:400;color:#fff;font-weight:800;font-size:18px;padding:14px 22px;border-radius:16px;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+@media (orientation:portrait){.home{display:block}.c1{width:auto;margin-bottom:14px}.list{max-height:none}.mg{grid-template-columns:1fr}}
 </style></head><body>
-<div id="lock"><h2 style="color:#ff5c8a">M Stand 店长 iPad<br><small>请输入 PIN / PINを入力</small></h2><input id="pin" type="password" inputmode="numeric" maxlength="8"><button class="b" style="width:300px;margin-top:12px" onclick="login()">进入 / 入る</button><div id="msg" style="color:#e33;margin-top:8px"></div></div>
-<header><h1>M Stand 池袋 · 店长 iPad</h1><span id="clock" class="sub"></span><span id="conn">●</span></header>
-<div class="alert" id="peak"><span id="peakT">🔥 高峰中</span><a href="https://merchants.ubereats.com/manager/" target="_blank">打开 Uber Manager 暂停接单 ↗</a></div>
-<div class="alert y" id="remind"><span>🌙 现在还是「营业结束」（昨天设的）— 开店了别忘了切回营业中，Uber 也还在暂停</span><a href="#" onclick="setShop('open');return false">切回营业中</a></div>
-<div class="alert y" id="lowA"><span id="lowT"></span><a href="#" onclick="tab('stock');return false">查看备料</a></div>
+<div class="lock" id="lock"><h2 style="color:#ff5c8a">M Stand 店长</h2><input id="pin" type="password" inputmode="numeric" maxlength="8" placeholder="PIN"><button class="big" style="width:280px;margin-top:14px" onclick="login()">进入</button><div id="msg" style="color:#d33;margin-top:10px"></div></div>
+<div id="toast"></div>
+<div class="hd"><h1>M Stand 店长</h1><div class="dot" id="conn"></div>
+ <div class="sum" onclick="nav('more')"><div>今日<b id="tRev">-</b></div><div>本月还差<b id="mGap">-</b></div></div></div>
+<div class="al red" id="aPeak"><span id="aPeakT"></span><a href="https://merchants.ubereats.com/manager/" target="_blank">暂停 Uber ↗</a></div>
+<div class="al red" id="aUber"><span id="aUberT"></span><a href="https://merchants.ubereats.com/manager/" target="_blank">Uber Manager ↗</a></div>
+<div class="al org" id="aClosed"><span>还是「营业结束」— 开店了吗？</span><a href="#" onclick="askShop('open');return false">切回营业中</a></div>
+<div class="al org" id="aLow"><span id="aLowT"></span><a href="#" onclick="nav('more');return false">备料</a></div>
 
-<div class="card" style="margin-bottom:12px;display:flex;gap:10px;align-items:center"><small style="min-width:70px">店铺状态<br>お店の状態</small>
- <button class="b sb" data-m="open" onclick="setShop('open')">✅ 营业中<br><small>営業中</small></button><button class="b sb" data-m="prep" onclick="setShop('prep')">🧋 材料准备中<br><small>準備中</small></button><button class="b sb" data-m="shop" onclick="setShop('shop')">🛒 附近采购中<br><small>買い出し中</small></button><button class="b sb" data-m="closed" onclick="setShop('closed')">🌙 营业结束<br><small>営業終了</small></button>
- <div style="font-size:13px">预计<br><select id="shopM" style="font-size:16px;padding:8px;border-radius:10px"><option value="10">+10分</option><option value="20">+20分</option><option value="30">+30分</option><option value="40" selected>+40分</option><option value="60">+60分</option></select></div><div style="flex:1"><div class="sub" id="shopNow"></div><div id="uberSt" style="font-size:13px;font-weight:800;margin-top:2px"></div><div id="shopAdj" style="display:none;gap:6px;margin-top:6px"><button class="b" style="padding:8px 12px;font-size:15px;background:#ffa64d" onclick="adjShop(-5)">−5分</button><button class="b" style="padding:8px 12px;font-size:15px;background:#ffa64d" onclick="adjShop(5)">+5分</button><button class="b" style="padding:8px 12px;font-size:15px;background:#3a3" onclick="setShop('open')">提前结束</button></div></div></div>
-<section class="pg on" id="p-sales"><div class="grid">
- <div class="card"><small>今日杯数 / 本日の杯数</small><div class="big" id="sCups">-</div><div class="sub" id="sOrd"></div></div>
- <div class="card"><small>今日营业额（店内 Square）</small><div class="big" id="sRev">-</div><div class="sub">客单价 <b id="sAvg">-</b></div></div>
- <div class="card"><small>今日 Uber Eats</small><div class="big" id="uRev">-</div><div class="sub" id="uSub"></div></div>
- <div class="card"><small>制作中 / 待叫号</small><div class="big" id="sOpen">-</div><div class="sub" id="sPeak"></div></div>
- <div class="card full"><small>本月目标 ¥1,200,000（店内 + Uber）</small>
-  <div style="display:flex;align-items:baseline;gap:16px"><div class="big" id="mTot">-</div><div class="sub" id="mBrk"></div></div>
-  <div class="bar"><i id="mBar" style="width:0"></i></div>
-  <div style="display:flex;gap:30px;font-size:16px"><div>还差 <b id="mGap" style="color:#e2552b;font-size:22px">-</b></div><div>剩 <b id="mDays">-</b> 天，每天需 <b id="mPer" style="color:#e2552b">-</b></div></div>
-  <div class="note" id="uNote"></div></div>
- <div class="card full"><small>今日每小时杯数（店内）</small><div class="hrs" id="hrs"></div><div class="hrl" id="hrl"></div></div>
-</div></section>
+<div class="home" id="home">
+ <div class="col c1">
+  <div class="card"><div class="ct" style="display:flex;align-items:center">店铺状态<span style="margin-left:auto;font-weight:700">等待时长 <select id="shopM" style="width:96px;height:36px;font-size:15px;display:inline-block"><option value="20">20分</option><option value="30">30分</option><option value="40" selected>40分</option><option value="60">60分</option></select></span></div>
+   <div class="g2">
+    <button class="sb" data-m="open" onclick="askShop('open')">营业中<small>営業中</small></button>
+    <button class="sb" data-m="prep" onclick="askShop('prep')">准备中<small>準備中</small></button>
+    <button class="sb" data-m="shop" onclick="askShop('shop')">采购中<small>買い出し中</small></button>
+    <button class="sb" data-m="closed" onclick="askShop('closed')">营业结束<small>営業終了</small></button>
+   </div>
+   <div class="cd" id="cd"><div class="t"><span id="cdT">--:--</span><small id="cdE"></small></div><button class="sm" onclick="adjShop(-5)">−5</button><button class="sm" onclick="adjShop(5)">+5</button><button class="sm" style="background:#2fb36b;color:#fff" onclick="askShop('open')">结束</button></div>
+   <div class="us" id="uSt"></div>
+  </div>
+  <div class="card"><div class="ct">叫号</div>
+   <div class="qn"><div class="num" id="n">-</div><div class="qb"><button class="big" onclick="act('next')">下一位 ▶</button><button class="big b2" onclick="act('recall')">重叫</button></div></div>
+   <div class="row"><button class="ghost" onclick="act('skip')">跳号</button><button class="ghost" onclick="nav('more')">制作中 <b id="nOpen">0</b></button></div>
+  </div>
+ </div>
+ <div class="col c2"><div class="card"><div class="ct">售罄</div>
+  <div class="srch"><input id="q" placeholder="搜索饮品" oninput="drawMenu()"><button class="ghost" style="width:120px;flex:none" onclick="restoreAll()">全部恢复</button></div>
+  <div class="chips" id="chips"></div><div class="list" id="items"></div></div></div>
+</div>
 
-<section class="pg" id="p-queue"><div class="grid">
- <div class="wide"><div class="cur"><small>当前号码 / 現在の番号</small><div class="n" id="n">-</div></div>
-  <div class="grid" style="grid-template-columns:1fr 1fr 1fr;margin-top:10px">
-   <button class="b" style="background:linear-gradient(135deg,#ff8a3d,#ff5c8a)" onclick="act('next')">叫下一个 ▶</button>
-   <button class="b" style="background:#ffa64d" onclick="act('recall')">🔁 重叫</button>
-   <button class="b" style="background:#c9a99a" onclick="act('skip')">⏭ 跳号<br><small style="font-size:12px">不播报</small></button></div>
-  <div class="card" style="margin-top:12px"><small>横屏音量 / 画面の音量 <b id="volV"></b></small><input id="vol" type="range" min="0" max="100" step="5" style="width:100%;height:40px" onchange="setVol(this.value)"></div>
-  <div class="card" style="margin-top:12px"><small>横屏公告 / お知らせ（最多60字）</small><input class="t" id="ann" maxlength="60" placeholder="例：今日芒果售罄 / 本日マンゴー売り切れ">
-   <div style="display:flex;gap:8px;margin-top:8px;align-items:center"><select id="annM" style="font-size:16px;padding:10px;border-radius:12px"><option value="30">30分钟</option><option value="60" selected>1小时</option><option value="180">3小时</option><option value="720">到打烊</option></select>
-   <button class="b" style="flex:1;padding:12px" onclick="setAnn()">发布到横屏</button><button class="b" style="background:#c9a99a;padding:12px" onclick="clearAnn()">撤下</button></div>
-   <div class="note" id="annNow"></div></div></div>
- <div class="wide"><div class="card"><small>制作中 / Preparing（点号码叫号，💗=熟客）</small><div id="prep"></div></div></div>
-</div></section>
+<div class="more" id="more"><div class="mg">
+ <div class="card"><div class="ct">销售</div>
+  <div class="kv"><span>今日杯数</span><b id="sCups">-</b></div><div class="kv"><span>今日店内</span><b id="sRev">-</b></div><div class="kv"><span>今日 Uber</span><b id="uRev">-</b></div>
+  <div class="kv"><span>本月合计</span><b id="mTot">-</b></div><div class="bar"><i id="mBar" style="width:0"></i></div>
+  <div class="kv"><span>还差 / 每天需</span><b id="mPer">-</b></div><div class="us" id="uNote"></div></div>
+ <div class="card"><div class="ct">制作中（💗熟客）</div><div id="prep"></div></div>
+ <div class="card"><div class="ct">横屏公告 · 音量</div>
+  <input class="tx" id="ann" maxlength="60" placeholder="例：今日芒果售罄 / 本日マンゴー売り切れ">
+  <div class="row"><select id="annM"><option value="60">1小时</option><option value="180">3小时</option><option value="720">到打烊</option></select><button class="big b2" onclick="setAnn()">发布</button><button class="ghost" onclick="clearAnn()">撤下</button></div>
+  <div class="us" id="annNow"></div>
+  <div class="row" style="align-items:center"><span style="flex:none;font-weight:800">音量 <span id="volV"></span></span><input id="vol" type="range" min="0" max="100" step="10" style="height:40px" onchange="setVol(this.value)"></div></div>
+ <div class="card"><div class="ct">备料（开店库存 − 今日用量）</div><table id="stk"></table>
+  <div class="row"><button class="big b2" onclick="saveStock()">保存</button><button class="ghost" onclick="askDo('今日重新开始？','从现在开始重新计算用量','确定','#ff9a2e',function(){stockPost({restock:true})})">重新开始</button></div>
+  </div>
+</div></div>
 
-<section class="pg" id="p-sold"><div class="card" style="margin-bottom:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
- <input class="t" id="soQ" placeholder="🔍 搜索饮品 / 検索" style="flex:1;min-width:220px" oninput="drawMenu()">
- <select id="soC" style="font-size:16px;padding:12px;border-radius:12px" onchange="drawMenu()"></select>
- <select id="soF" style="font-size:16px;padding:12px;border-radius:12px" onchange="drawMenu()"><option value="">全部状态</option><option value="out">有售罄</option></select>
- <button class="b" style="background:#3a3;padding:12px 16px" onclick="restoreAll()">♻ 恢复全部</button>
- <div class="note" style="width:100%">改的是 Square；Uber 由售罄同步（约1分钟）按每个规格跟随；横屏菜单：全部售罄显示「售罄」，部分售罄显示售罄的规格。不会改价格。</div></div><div id="items"></div></section>
-
-<section class="pg" id="p-stock"><div class="card"><small>备料估算 = 开店库存 − 今日杯数 × 配方用量（店内+Square 订单）</small>
- <table><thead><tr><th>材料</th><th>开店库存</th><th>已用</th><th>剩余</th><th>提醒线</th><th></th></tr></thead><tbody id="stk"></tbody></table>
- <div style="display:flex;gap:10px;margin-top:12px"><button class="b" onclick="saveStock()">保存库存设置</button><button class="b" style="background:#ffa64d" onclick="if(confirm('今天重新开始计算？'))stockPost({restock:true})">今日重新开始</button></div>
- <details style="margin-top:14px"><summary style="font-weight:800">配方用量（高级）</summary><textarea id="rcp" rows="8" style="font-family:monospace;font-size:14px;margin-top:8px"></textarea><div class="note">每行：饮品名关键字 = 材料:用量, 材料:用量（例：アボカド = avocado:1, milk:1）</div><button class="b" style="margin-top:8px" onclick="saveRecipe()">保存配方</button></details></div></section>
-
-<div class="tabs"><button class="on" data-t="sales" onclick="tab('sales')">📊 销售看板</button><button data-t="queue" onclick="tab('queue')">📣 叫号·公告</button><button data-t="sold" onclick="tab('sold')">🚫 一键售罄</button><button data-t="stock" onclick="tab('stock')">🥑 备料</button></div>
-<div id="toast" style="display:none;position:fixed;left:50%;top:20px;-webkit-transform:translateX(-50%);transform:translateX(-50%);z-index:300;color:#fff;font-weight:800;font-size:18px;padding:14px 22px;border-radius:16px;box-shadow:0 4px 16px #0004"></div>
-<div id="modal"><div><h3 id="mT"></h3><div id="mS" class="sub"></div><div class="row"><button class="b" style="background:#c9a99a" onclick="modal.style.display='none'">取消</button><button class="b" id="mOk">确定</button></div></div></div>
+<div class="nav"><button class="on" id="nHome" onclick="nav('home')">首页</button><button id="nMore" onclick="nav('more')">更多</button></div>
+<div class="ov" id="ov"><div class="dlg"><h3 id="dT"></h3><p id="dS"></p><div class="row"><button class="ghost" onclick="$('ov').style.display='none'">取消</button><button class="big" id="dOk" style="height:52px;font-size:20px">确定</button></div></div></div>
 <script>
-var PIN=localStorage.pin||'',ST={},CUST={},MENU=[];
-var $=function(i){return document.getElementById(i)};var yen=function(n){return n==null?'-':'¥'+Math.round(n).toLocaleString()};
-var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return '&#'+c.charCodeAt(0)+';'})};
-function toast(t,bad){var e=$('toast');e.textContent=t;e.style.background=bad?'#e33':'#3a3';e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display='none'},bad?6000:2500)}
-function api(p,b){return fetch('/api/ipad/'+p,{method:b?'POST':'GET',headers:{'Content-Type':'application/json','x-pin':PIN},body:b?JSON.stringify(b):undefined}).then(function(r){if(r.status===403){$('lock').style.display='flex';toast('PIN 已更改，请重新输入 PIN',true);throw 0}return r.json()})}
+var PIN=localStorage.pin||'',ST={},CUST={},MENU=[],OPEN={},CAT='',OV=null,CLK=0;
+function $(i){return document.getElementById(i)}
+function yen(n){return n==null?'-':'¥'+Math.round(n).toLocaleString()}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return '&#'+c.charCodeAt(0)+';'})}
+function toast(t,bad){var e=$('toast');e.textContent=t;e.style.background=bad?'#ef4b4b':'#2fb36b';e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display='none'},bad?6000:2500)}
+function api(p,b){return fetch('/api/ipad/'+p,{method:b?'POST':'GET',headers:{'Content-Type':'application/json','x-pin':PIN},body:b?JSON.stringify(b):undefined}).then(function(r){if(r.status===403){$('lock').style.display='flex';toast('PIN 错误或已更改',true);throw 0}return r.json()})}
 function post(b){b.pin=PIN;return fetch('/api/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}).then(function(r){return r.json()})}
-function login(){PIN=$('pin').value;api('overview').then(function(){localStorage.pin=PIN;$('lock').style.display='none';boot()}).catch(function(){$('msg').textContent='PIN 错误 / PINが違います'})}
-function tab(t){[].forEach.call(document.querySelectorAll('.pg'),function(e){e.classList.toggle('on',e.id==='p-'+t)});[].forEach.call(document.querySelectorAll('.tabs button'),function(e){e.classList.toggle('on',e.dataset.t===t)});if(t==='sold')loadMenu();if(t==='stock')loadStock();location.hash=t}
-function loadSales(){api('sales').then(function(s){var t=s.today||{cups:0,rev:0,orders:0},u=s.uber||{};
- $('sCups').textContent=t.cups+' 杯';$('sOrd').textContent='Square 订单 '+t.orders+' 单';$('sRev').textContent=yen(t.rev);$('sAvg').textContent=t.orders?yen(t.rev/t.orders):'-';
- if(u.today){$('uRev').textContent=yen(u.today.rev);$('uSub').textContent=(u.today.orders||0)+' 单'}else{$('uRev').textContent='—';$('uSub').textContent='暂无今日 Uber 数据'}
- var shop=s.mtd?s.mtd.rev:0,ub=u.mtd?u.mtd.rev:0;$('mTot').textContent=yen(s.total);$('mBrk').textContent='店内 '+yen(shop)+' ＋ Uber '+(u.mtd?yen(ub):'(未接入)');
- $('mBar').style.width=Math.min(100,s.total/s.target*100)+'%';$('mGap').textContent=s.gap?yen(s.gap):'已达成 🎉';$('mDays').textContent=s.daysLeft;$('mPer').textContent=yen(s.perDay);
- $('uNote').textContent=u.src==='pushed'?'Uber 数据来自售罄同步电脑推送（'+new Date(u.pushedAt).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})+' 更新）':u.src==='square'?'Uber 数据来自 Square 里的 Uber 订单':'Uber 本月数据未接入，目前只算店内 Square。';
- if(s.err)$('uNote').textContent+='  ⚠ Square: '+s.err;
- var h=s.hourly||[],mx=1,i,a='',b='';for(i=10;i<23;i++)mx=Math.max(mx,h[i]||0);for(i=10;i<23;i++){a+='<i title="'+h[i]+'" style="height:'+((h[i]||0)/mx*100)+'%"></i>';b+='<span>'+i+'</span>'}$('hrs').innerHTML=a;$('hrl').innerHTML=b}).catch(function(){})}
-function loadOv(){api('overview').then(function(o){var n=(ST.preparing||[]).length;$('sOpen').textContent=n+' 单';$('sPeak').textContent='提醒线 '+o.cfg.peak+' 单';
- $('peak').classList.toggle('on',o.peak);$('peakT').textContent='🔥 高峰中：'+o.open+' 单在做（≥'+o.cfg.peak+'）— 忙不过来可以暂停 Uber';
- $('lowA').classList.toggle('on',o.stockLow.length>0);$('lowT').textContent='⚠ 备料快用完：'+o.stockLow.join('、');
- var v=Math.round((o.screen.vol==null?1:o.screen.vol)*100);$('vol').value=v;$('volV').textContent=v+'%';
- var sh=o.screen.shop,sm=sh?sh.mode:'open';[].forEach.call(document.querySelectorAll('.sb'),function(e){e.classList.toggle('on',e.dataset.m===sm)});$('shopNow').textContent=sh?'横屏正在显示'+(sh.until?'，预计 '+new Date(sh.until).toLocaleTimeString('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit'}):''):'横屏正常显示菜单';$('shopAdj').style.display=sh&&sh.until?'flex':'none';var U=o.chan.uber,col={ok:'#2a7',dry:'#2a7',pending:'#d80',fail:'#e33',offline:'#e33'}[U.state];$('uberSt').style.color=col;$('uberSt').textContent='Uber：'+U.text;$('remind').classList.toggle('on',o.closedStale);
- var a=o.screen.ann;$('annNow').textContent=a&&a.until>Date.now()?'横屏正在显示：「'+a.text+'」 到 '+new Date(a.until).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}):'横屏没有公告'}).catch(function(){})}
-function act(a){post({action:a})}
+function login(){PIN=$('pin').value;api('overview').then(function(){localStorage.pin=PIN;$('lock').style.display='none';boot()}).catch(function(){$('msg').textContent='PIN 错误'})}
+function nav(t){$('home').className='home'+(t==='home'?'':' off');$('more').className='more'+(t==='more'?' on':'');$('nHome').className=t==='home'?'on':'';$('nMore').className=t==='more'?'on':'';if(t==='more'){loadStock();loadSales()}}
+function askDo(t,s,ok,col,fn){$('dT').textContent=t;$('dS').innerHTML=s;$('dOk').textContent=ok;$('dOk').style.background=col;$('ov').style.display='flex';$('dOk').onclick=function(){$('dOk').onclick=null;$('ov').style.display='none';fn()}}
+var SHN={open:'营业中',prep:'准备中',shop:'采购中',closed:'营业结束'};
+function askShop(m){var mins=+$('shopM').value;askDo('切换为「'+SHN[m]+'」？',m==='open'?'横屏恢复菜单 · Uber 恢复接单':(m==='closed'?'横屏显示营业结束':'横屏显示等待 '+mins+' 分钟')+' · Uber 暂停接单',
+ '确定',m==='open'?'#2fb36b':'#ff5c8a',function(){api('screen',{shop:m,mins:mins}).then(loadOv)})}
 function adjShop(d){api('screen',{shopAdj:d}).then(loadOv)}
-var SHN={open:'✅ 营业中',prep:'🧋 材料准备中',shop:'🛒 附近采购中',closed:'🌙 营业结束'};
-function setShop(m){$('mT').textContent='切换为「'+SHN[m]+'」？';$('mS').innerHTML=m==='open'?'横屏恢复菜单 · Uber 恢复接单 · 扫码点单恢复':'横屏显示'+(m==='closed'?'营业结束':'等待提示（预计 '+$('shopM').value+' 分钟）')+'<br>Uber 暂停接单 · 扫码点单暂停';
- $('mOk').style.background=m==='open'?'#3a3':'#ff5c8a';$('mOk').textContent='确定';$('modal').style.display='flex';$('mOk').onclick=function(){$('mOk').onclick=null;$('modal').style.display='none';api('screen',{shop:m,mins:+$('shopM').value}).then(loadOv)}}
+function act(a){post({action:a})}
 function setVol(v){$('volV').textContent=v+'%';api('screen',{vol:v/100}).then(loadOv)}
-function setAnn(){var t=$('ann').value.trim();if(!t)return;api('screen',{ann:t,mins:$('annM').value}).then(loadOv)}
+function setAnn(){var t=$('ann').value.replace(/^\s+|\s+$/g,'');if(!t)return;api('screen',{ann:t,mins:$('annM').value}).then(function(){toast('已发布到横屏');loadOv()})}
 function clearAnn(){api('screen',{ann:''}).then(loadOv)}
-function custTag(x){var c=CUST[x.order];if(!c||c.none||!c.visits)return '';return '<div class="vip">💗 '+(c.name?esc(c.name)+' · ':'')+'第 '+c.visits+' 次 · 常点：'+c.top.map(function(t){return esc(t.n)+'×'+t.q}).join('、')+'</div>'}
-function render(s){ST=s;$('n').textContent=(s.current||s.current===0)?s.current:'-';
- $('prep').innerHTML=(s.preparing||[]).map(function(x){if(x.order&&!(x.order in CUST)&&!/^DRY|^web/.test(x.id)){CUST[x.order]=null;api('customer?order='+encodeURIComponent(x.order)).then(function(c){CUST[x.order]=c;render(ST)}).catch(function(){})}
-  return '<div class="pr"><b>'+esc(x.num)+'</b><i>'+esc(x.items||'')+custTag(x)+'</i><button onclick="post({action:\'callid\',id:\''+esc(x.id)+'\'})">叫号</button><button style="background:#c9a99a" onclick="post({action:\'done\',id:\''+esc(x.id)+'\'})">✕</button></div>'}).join('')||'<div class="sub" style="padding:10px">— 没有待做订单 —</div>';
- $('sOpen').textContent=(s.preparing||[]).length+' 单'}
-var OPEN={};function loadMenu(){api('menu').then(function(m){MENU=m;var cs={};m.forEach(function(i){cs[i.cat]=1});var c=$('soC'),v=c.value;c.innerHTML='<option value="">全部分类</option>'+Object.keys(cs).map(function(k){return '<option>'+esc(k)+'</option>'}).join('');c.value=v;drawMenu()})}
-function soN(i){return i.vars.filter(function(v){return v.so}).length}
-function drawMenu(){var q=$('soQ').value.trim().toLowerCase(),c=$('soC').value,f=$('soF').value;
- $('items').innerHTML='<div class="sog">'+MENU.map(function(i,ix){var n=soN(i),t=i.vars.length;if(q&&i.name.toLowerCase().indexOf(q)<0)return '';if(c&&i.cat!==c)return '';if(f==='out'&&!n)return '';
-  var cls=n===0?'':n===t?'all':'part',lab=n===0?'<span class="st ok">全部在售</span>':n===t?'<span class="st all">全部售罄</span>':'<span class="st part">部分售罄 '+n+'/'+t+'</span>';
-  return '<div class="so-c '+cls+'"><img src="'+esc(i.img)+'" loading="lazy"><div style="flex:1"><h4>'+esc(i.name)+'</h4>'+lab+' <a href="#" style="font-size:13px;color:#a07a6a" onclick="OPEN['+ix+']=!OPEN['+ix+'];drawMenu();return false">'+(OPEN[ix]?'收起 ▲':'按规格 ▼')+'</a>'+
-  (OPEN[ix]?'<div class="vb">'+i.vars.map(function(v,vi){return '<button class="'+(v.so?'so':'')+'" onclick="askVar('+ix+','+vi+')">'+esc(v.name)+'</button>'}).join('')+'</div>':'')+'</div>'+
-  (n===t?'<button class="ab re" onclick="askSold('+ix+',false)">全部恢复</button>':'<button class="ab" onclick="askSold('+ix+',true)">全部售罄</button>')+'</div>'}).join('')+'</div>'}
-function confirmDo(title,sub,okTxt,color,fn){$('mT').textContent=title;$('mS').innerHTML=sub;$('mOk').style.background=color;$('mOk').textContent=okTxt;$('modal').style.display='flex';$('mOk').onclick=function(){$('mOk').onclick=null;$('modal').style.display='none';fn()}}
-function doSold(i,b){toast('正在更新 Square…');return api('soldout',b).then(function(r){if(r.error){toast('失败：'+r.error,true);return}(i.vars||[]).forEach(function(v){if(!b.vars||b.vars.indexOf(v.id)>=0)v.so=b.sold});i.so=i.vars.every(function(v){return v.so});drawMenu();toast((b.sold?'已售罄：':'已恢复：')+i.name+'（Uber 约1分钟内跟随）');setTimeout(loadMenu,4000)}).catch(function(e){toast(e===0?'PIN 错误，请重新输入':'网络错误，请重试',true)})}
-function askSold(ix,to){var i=MENU[ix];confirmDo((to?'全部售罄？':'全部恢复？'),'<b>'+esc(i.name)+'</b>（'+i.vars.length+' 个规格）<br>'+(to?'Square・Uber・横屏都显示售罄':'Square・Uber・横屏恢复可点'),to?'确定售罄':'确定恢复',to?'#e33':'#3a3',function(){doSold(i,{id:i.id,sold:to,confirm:true})})}
-function askVar(ix,vi){var i=MENU[ix],v=i.vars[vi],to=!v.so;confirmDo((to?'这个规格售罄？':'这个规格恢复？'),'<b>'+esc(i.name)+'</b><br>'+esc(v.name),to?'确定售罄':'确定恢复',to?'#e33':'#3a3',function(){doSold(i,{id:i.id,vars:[v.id],sold:to,confirm:true})})}
-function restoreAll(){var L=MENU.filter(function(i){return soN(i)>0});if(!L.length){alert('现在没有售罄的饮品');return}confirmDo('恢复全部售罄？',L.map(function(i){return esc(i.name)+'（'+soN(i)+'/'+i.vars.length+'）'}).join('<br>'),'全部恢复','#3a3',function(){api('restore-all',{confirm:true}).then(loadMenu)})}
-var STK=null;function loadStock(){api('stock').then(drawStock)}
-function drawStock(s){STK=s;$('stk').innerHTML=s.items.map(function(i,ix){return '<tr class="'+(i.low?'low':'')+'"><td><b>'+esc(i.name)+'</b></td><td><input type="number" id="st'+ix+'" value="'+i.start+'"> '+esc(i.unit)+'</td><td>'+i.used+'</td><td><b style="font-size:20px">'+i.left+'</b> '+esc(i.unit)+'</td><td><input type="number" id="lw'+ix+'" value="'+i.lowAt+'"></td><td>'+(i.low?'<span class="pill" style="background:#e33;color:#fff">快没了</span>':'<span class="pill" style="background:#dff5e1;color:#2a7">够用</span>')+'</td></tr>'}).join('');
- $('rcp').value=s.recipe.map(function(r){return r.re+' = '+Object.keys(r.use).map(function(k){return k+':'+r.use[k]}).join(', ')}).join('\n')}
-function stockPost(b){api('stock',b).then(function(s){drawStock(s);loadOv()})}
+function loadSales(){api('sales').then(function(s){var t=s.today||{cups:0,rev:0,orders:0},u=s.uber||{};
+ $('tRev').textContent=yen(t.rev+(u.today?u.today.rev:0));$('mGap').textContent=s.gap?yen(s.gap):'达成 🎉';
+ $('sCups').textContent=t.cups+' 杯 · '+t.orders+' 单';$('sRev').textContent=yen(t.rev);$('uRev').textContent=u.today?yen(u.today.rev):'—';
+ $('mTot').textContent=yen(s.total)+' / '+yen(s.target);$('mBar').style.width=Math.min(100,s.total/s.target*100)+'%';$('mPer').textContent=yen(s.gap)+' / '+yen(s.perDay);
+ $('uNote').textContent=u.src==='none'?'Uber 本月数据未接入，只算店内':'';if(s.err)$('uNote').textContent+=' Square: '+s.err}).catch(function(){})}
+function loadOv(){api('overview').then(function(o){OV=o;CLK=o.now?o.now-new Date().getTime():CLK;
+ var sh=o.screen.shop,m=sh?sh.mode:'open',b=document.querySelectorAll('.sb'),i;for(i=0;i<b.length;i++)b[i].className='sb'+(b[i].getAttribute('data-m')===m?' on':'');
+ $('cd').className='cd'+(sh&&sh.until?' on':'');tickCd();
+ var U=o.chan.uber,bad=U.state==='fail'||U.state==='offline';$('uSt').textContent='Uber：'+U.text;$('uSt').style.color=bad?'#d33':U.state==='pending'?'#c57700':'#239457';
+ $('aUber').className='al red'+(bad&&sh?' on':'');$('aUberT').textContent='Uber 没有同步：'+U.text;
+ $('aPeak').className='al red'+(o.peak?' on':'');$('aPeakT').textContent='高峰：'+o.open+' 单在做';
+ $('aLow').className='al org'+(o.stockLow.length?' on':'');$('aLowT').textContent='快用完：'+o.stockLow.join('、');
+ $('aClosed').className='al org'+(o.closedStale?' on':'');
+ var v=Math.round((o.screen.vol==null?1:o.screen.vol)*100);$('vol').value=v;$('volV').textContent=v+'%';
+ var a=o.screen.ann;$('annNow').textContent=a&&a.until>Date.now()?'正在显示：'+a.text:''}).catch(function(){})}
+function hm(t){var d=new Date(t+9*3600e3);return ('0'+d.getUTCHours()).slice(-2)+':'+('0'+d.getUTCMinutes()).slice(-2)}
+function tickCd(){var sh=OV&&OV.screen.shop;if(!sh||!sh.until)return;var ms=Math.max(0,sh.until-(new Date().getTime()+CLK)),s=Math.ceil(ms/1000);
+ $('cdT').textContent=('0'+Math.floor(s/60)).slice(-2)+':'+('0'+s%60).slice(-2);$('cdE').textContent='预计 '+hm(sh.until)+' 自动恢复营业';if(!ms)setTimeout(loadOv,2500)}
+function custTag(x){var c=CUST[x.order];if(!c||c.none||!c.visits)return '';return '<span class="vip">💗 '+(c.name?esc(c.name)+' · ':'')+'第'+c.visits+'次 · '+c.top.map(function(t){return esc(t.n)}).join('、')+'</span>'}
+function render(s){ST=s;$('n').textContent=(s.current||s.current===0)?s.current:'-';var p=s.preparing||[];$('nOpen').textContent=p.length;
+ $('prep').innerHTML=p.map(function(x){if(x.order&&!(x.order in CUST)&&!/^web/.test(x.id)){CUST[x.order]=null;api('customer?order='+encodeURIComponent(x.order)).then(function(c){CUST[x.order]=c;render(ST)}).catch(function(){})}
+  return '<div class="pr"><b>'+esc(x.num)+'</b><div class="nm">'+esc(x.items||'')+custTag(x)+'</div><button class="sm" onclick="post({action:\'callid\',id:\''+esc(x.id)+'\'})">叫号</button><button class="sm" style="background:#eee;color:#888" onclick="post({action:\'done\',id:\''+esc(x.id)+'\'})">✕</button></div>'}).join('')||'<div class="us">没有订单</div>'}
+function soN(i){var n=0;for(var k=0;k<i.vars.length;k++)if(i.vars[k].so)n++;return n}
+function loadMenu(){api('menu').then(function(m){MENU=m;drawMenu()}).catch(function(){})}
+function drawMenu(){var cs=['全部','有售罄'],seen={},i;for(i=0;i<MENU.length;i++)if(!seen[MENU[i].cat]){seen[MENU[i].cat]=1;cs.push(MENU[i].cat)}
+ $('chips').innerHTML=cs.map(function(c){var k=c==='全部'?'':c;return '<button class="chip'+(CAT===k?' on':'')+'" onclick="CAT=\''+esc(k)+'\';drawMenu()">'+esc(c)+'</button>'}).join('');
+ var q=$('q').value.replace(/^\s+|\s+$/g,'').toLowerCase();
+ $('items').innerHTML=MENU.map(function(it,ix){var n=soN(it),t=it.vars.length;if(q&&it.name.toLowerCase().indexOf(q)<0)return '';if(CAT==='有售罄'&&!n)return '';if(CAT&&CAT!=='有售罄'&&it.cat!==CAT)return '';
+  var all=n===t,tag=n===0?'<span class="tag ok">在售</span>':all?'<span class="tag all">售罄</span>':'<span class="tag part">部分售罄 '+n+'/'+t+'</span>';
+  return '<div class="it'+(all?' all':'')+'"><img src="'+esc(it.img)+'"><div class="nm"><b>'+esc(it.name)+'</b>'+tag+'</div>'+(t>1?'<button class="ex" onclick="OPEN['+ix+']=!OPEN['+ix+'];drawMenu()">'+(OPEN[ix]?'▴':'▾')+'</button>':'')+
+  '<button class="tg'+(all?' re':'')+'" onclick="askSold('+ix+','+(!all)+')">'+(all?'恢复':'售罄')+'</button></div>'+
+  (OPEN[ix]?'<div class="vs">'+it.vars.map(function(v,vi){return '<button class="'+(v.so?'so':'')+'" onclick="askVar('+ix+','+vi+')">'+esc(v.name)+'</button>'}).join('')+'</div>':'')}).join('')||'<div class="us">没有符合的饮品</div>'}
+function doSold(it,b){toast('正在更新…');return api('soldout',b).then(function(r){if(r.error){toast('失败：'+r.error,true);return}
+ for(var k=0;k<it.vars.length;k++)if(!b.vars||b.vars.indexOf(it.vars[k].id)>=0)it.vars[k].so=b.sold;drawMenu();toast((b.sold?'已售罄 ':'已恢复 ')+it.name);setTimeout(loadMenu,4000)}).catch(function(e){toast(e===0?'PIN 错误':'网络错误，请重试',true)})}
+function askSold(ix,to){var it=MENU[ix];askDo(to?'售罄？':'恢复？','<b>'+esc(it.name)+'</b>'+(it.vars.length>1?'（全部 '+it.vars.length+' 个规格）':''),to?'售罄':'恢复',to?'#ef4b4b':'#2fb36b',function(){doSold(it,{id:it.id,sold:to,confirm:true})})}
+function askVar(ix,vi){var it=MENU[ix],v=it.vars[vi],to=!v.so;askDo(to?'这个规格售罄？':'这个规格恢复？','<b>'+esc(it.name)+'</b><br>'+esc(v.name),to?'售罄':'恢复',to?'#ef4b4b':'#2fb36b',function(){doSold(it,{id:it.id,vars:[v.id],sold:to,confirm:true})})}
+function restoreAll(){var L=MENU.filter(function(i){return soN(i)>0});if(!L.length){toast('没有售罄的饮品');return}askDo('全部恢复？',L.map(function(i){return esc(i.name)}).join('<br>'),'全部恢复','#2fb36b',function(){api('restore-all',{confirm:true}).then(function(){toast('已全部恢复');loadMenu()})})}
+var STK=null;function loadStock(){api('stock').then(drawStock).catch(function(){})}
+function drawStock(s){STK=s;$('stk').innerHTML='<tr style="color:#a08070;font-size:13px"><td>材料</td><td>开店</td><td>剩余</td><td>提醒</td></tr>'+s.items.map(function(i,ix){return '<tr class="'+(i.low?'low':'')+'"><td>'+esc(i.name.split(' ')[0])+'</td><td><input type="number" id="st'+ix+'" value="'+i.start+'"></td><td><b>'+i.left+'</b> '+esc(i.unit)+'</td><td><input type="number" id="lw'+ix+'" value="'+i.lowAt+'"></td></tr>'}).join('')}
+function stockPost(b){api('stock',b).then(function(s){drawStock(s);loadOv();toast('已保存')})}
 function saveStock(){stockPost({items:STK.items.map(function(i,ix){return {k:i.k,name:i.name,unit:i.unit,start:+$('st'+ix).value,low:+$('lw'+ix).value}})})}
-function saveRecipe(){var r=$('rcp').value.split('\n').map(function(l){var p=l.split('=');if(p.length<2)return null;var u={};p[1].split(',').forEach(function(x){var kv=x.split(':');if(kv[0].trim())u[kv[0].trim()]=+kv[1]||0});return {re:p[0].trim(),use:u}}).filter(Boolean);stockPost({recipe:r})}
-function sse(){var es=new EventSource('/events');es.onmessage=function(e){$('conn').style.color='#3c3';render(JSON.parse(e.data))};es.onerror=function(){$('conn').style.color='#e33'}}
-function clock(){$('clock').textContent=new Date().toLocaleString('zh-CN',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit'})}
-var booted=0;function boot(){if(booted++)return;sse();loadSales();loadOv();clock();setInterval(loadSales,60000);setInterval(loadOv,15000);setInterval(clock,20000);var h=location.hash.slice(1);if(h)tab(h)}
+function sse(){var es=new EventSource('/events');es.onmessage=function(e){$('conn').style.background='#2fb36b';var s=JSON.parse(e.data);render(s);if(s.event==='screen')loadOv()};es.onerror=function(){$('conn').style.background='#ef4b4b'}}
+var booted=0;function boot(){if(booted++)return;sse();loadOv();loadSales();loadMenu();setInterval(loadOv,15000);setInterval(loadSales,60000);setInterval(loadMenu,60000);setInterval(tickCd,1000)}
 if(PIN)api('overview').then(function(){$('lock').style.display='none';boot()}).catch(function(){});
 </script></body></html>
