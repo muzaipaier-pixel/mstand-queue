@@ -111,7 +111,7 @@ tr.low td{color:#d33;font-weight:800}
 <div class="more" id="more"><div class="mg">
  <div class="card"><div class="ct">销售</div>
   <table class="kvt">
-  <tr><td class="l">今日杯数</td><td class="v" id="sCups">-</td></tr>
+  <tr><td class="l">今日杯数（店内+Uber）</td><td class="v" id="sCups">-</td></tr>
   <tr><td class="l">今日店内</td><td class="v" id="sRev">-</td></tr>
   <tr><td class="l">今日 Uber</td><td class="v" id="uRev">-</td></tr>
   <tr><td class="l">本月店内</td><td class="v" id="mShop">-</td></tr>
@@ -177,8 +177,8 @@ function setAnn(){var t=$('ann').value.replace(/^\s+|\s+$/g,'');if(!t)return;api
 function clearAnn(){api('screen',{ann:''}).then(loadOv)}
 function loadSales(){api('sales').then(function(s){var t=s.today||{cups:0,rev:0,orders:0},u=s.uber||{};
  $('tRev').textContent=yen(t.rev+(u.today?u.today.rev:0));$('mGap').textContent=s.gap?yen(s.gap):'达成 🎉';
- $('sCups').textContent=t.cups+' 杯 · '+t.orders+' 单';$('sRev').textContent=yen(t.rev);$('uRev').textContent=u.today?yen(u.today.rev):'—';
- $('mTot').textContent=yen(s.total)+' / '+yen(s.target);$('mShop').textContent=yen(s.mtd?s.mtd.rev:0);$('mUber').textContent=u.mtd?yen(u.mtd.rev):'未接入';$('mGap2').textContent=s.gap?yen(s.gap):'达成';$('mDays').textContent=s.daysLeft;$('mBar').style.width=Math.min(100,s.total/s.target*100)+'%';$('mPer').textContent=yen(s.perDay);
+ var ut=u.today||{},um=u.mtd||{},uc=function(x){return (x.orders!=null?' · '+x.orders+'单':'')+(x.cups!=null?' · '+x.cups+'杯':'')};$('sCups').textContent=(t.cups+(ut.cups||0))+' 杯'+(ut.cups!=null?'（店内 '+t.cups+' + Uber '+ut.cups+'）':'')+' · '+(t.orders+(ut.orders||0))+' 单';$('sRev').textContent=yen(t.rev)+' · '+t.orders+'单 · '+t.cups+'杯';$('uRev').textContent=u.today?yen(ut.rev)+uc(ut):'—';
+ $('mTot').textContent=yen(s.total)+' / '+yen(s.target);$('mShop').textContent=yen(s.mtd?s.mtd.rev:0)+(s.mtd?' · '+s.mtd.orders+'单 · '+s.mtd.cups+'杯':'');$('mUber').textContent=u.mtd?yen(um.rev)+uc(um):'未接入';$('mGap2').textContent=s.gap?yen(s.gap):'达成';$('mDays').textContent=s.daysLeft;$('mBar').style.width=Math.min(100,s.total/s.target*100)+'%';$('mPer').textContent=yen(s.perDay);
  $('uNote').textContent=u.src==='none'?'Uber 本月数据未接入，只算店内':(u.pushedAt?'Uber 数据更新于 '+hm(u.pushedAt):'');if(s.err)$('uNote').textContent+=' Square: '+s.err}).catch(function(){})}
 function loadOv(){api('overview').then(function(o){OV=o;CLK=o.now?o.now-new Date().getTime():CLK;
  var sh=o.screen.shop,m=sh?sh.mode:'open',b=document.querySelectorAll('.sb'),i;for(i=0;i<b.length;i++)b[i].className='sb'+(b[i].getAttribute('data-m')===m?' on':'');

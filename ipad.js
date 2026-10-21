@@ -131,7 +131,7 @@ return async function api(u,q,r){const j=q.method==='POST'?await body(q):{};
  try{
  if(p==='sales'){if(u.searchParams.get('refresh')==='1'||Date.now()-S.at>3*60e3)await refresh();return send(r,200,sales())}
  if(p==='uber'&&q.method==='GET'){const day=tokyoDay(),u_=C.uber;return send(r,200,{has:!!(u_&&u_.day===day&&u_.today),day,at:u_&&u_.at||null})}
- if(p==='uber'&&q.method==='POST'){const day=tokyoDay();const n=x=>x&&{rev:Math.max(0,parseInt(x.rev)||0),orders:Math.max(0,parseInt(x.orders)||0),cups:Math.max(0,parseInt(x.cups)||0)};
+ if(p==='uber'&&q.method==='POST'){const day=tokyoDay();const n=x=>x&&{rev:Math.max(0,parseInt(x.rev)||0),orders:Math.max(0,parseInt(x.orders)||0),cups:x.cups==null?null:Math.max(0,parseInt(x.cups)||0)};
   C.uber={day,month:day.slice(0,7),today:n(j.today)||(C.uber&&C.uber.day===day?C.uber.today:null),mtd:n(j.mtd)||(C.uber&&C.uber.month===day.slice(0,7)?C.uber.mtd:null),at:Date.now()};save();return send(r,200,sales())}
  if(p==='menu'){const m=await menu();return send(r,200,m.map(i=>({id:i.id,name:i.name,cat:i.cat,img:i.img,so:i.so,vars:i.vars.map(v=>({id:v.id,name:v.name,so:v.so}))})))}
  if(p==='soldout'&&q.method==='POST'){if(j.confirm!==true)return send(r,400,{error:'confirm required'});return send(r,200,await setSoldOut(String(j.id||''),!!j.sold,j.vars))}

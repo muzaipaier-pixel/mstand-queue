@@ -19,6 +19,7 @@ const jst=()=>new Date(Date.now()+9*3600e3);const bizDay=()=>new Date(Date.now()
  const sum=pts=>Math.round(pts.reduce((a,p)=>a+(+p.y||0),0)),pick=(pts,d)=>Math.round(+((pts.find(p=>p.dateTime===d)||{}).y||0));
  const S=cur(sw[0]).points,O=cur(sw[1]).points;
  const today={rev:pick(S,day),orders:pick(O,day)},mtd={rev:sum(S.filter(p=>p.dateTime.slice(0,7)===day.slice(0,7))),orders:sum(O.filter(p=>p.dateTime.slice(0,7)===day.slice(0,7)))};
+ try{const c=await require('./uber_cups_http')({cookie:COOKIE},day);today.cups=c.today.cups;mtd.cups=c.mtd.cups;today.ordersDetail=c.today.orders;mtd.ordersDetail=c.mtd.orders}catch(e){console.log('cups ERR '+e.message.slice(0,120))}
  if(process.argv.includes('--dry')){console.log('DRY',JSON.stringify({today,mtd}));return}
  const p=await fetch(APP+'/api/ipad/uber',{method:'POST',headers:{'content-type':'application/json','x-worker-key':(process.env.WORKER_KEY||'').trim()},body:JSON.stringify({today,mtd}),signal:AbortSignal.timeout(30000)});
  console.log('push',p.status,JSON.stringify({today,mtd}));if(!p.ok)process.exit(1)
