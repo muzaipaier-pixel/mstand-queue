@@ -65,7 +65,7 @@ if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r,u.searchParams.get
   else if(j.action==='set'){const n=parseInt(j.number);if(!(n>=0&&n<10000)){r.writeHead(400);return r.end('{}')}st.current=n}
   else if(j.action==='recall'){if(!st.current&&st.current!==0){return r.end('{}')}ev='recall'}
   else if(j.action==='skip'){st.current=/^[0-9]{1,4}$/.test(String(st.current))?(+st.current+1)%10000:1;st.history=[st.current,...st.history.filter(x=>x!==st.current)].slice(0,8);ev='skip'}
-  else if(j.action==='reset'){st={current:0,history:[],seq:st.seq,preparing:[],seenPay:st.seenPay,sqSince:st.sqSince,ipad:st.ipad,screenVol:st.screenVol,shop:st.shop};ev='reset'}
+  else if(j.action==='reset'){st={current:0,history:[],seq:st.seq,preparing:[],seenPay:st.seenPay,sqSince:st.sqSince,ipad:st.ipad,screenVol:st.screenVol,critVoice:st.critVoice,critShow:st.critShow,shop:st.shop};ev='reset'}
   else if(j.action==='callid'){const x=st.preparing.find(y=>y.id===j.id);if(!x)return r.end('{}');{const k=kds.get(x.order);callNum(/^[0-9]+$/.test(String(x.num))?parseInt(x.num):x.num,k?itemsOf(k.raw):[],k&&k.raw)}return r.end(JSON.stringify({ok:true,...pub()}))}
   else if(j.action==='paid'){const x=st.preparing.find(y=>y.id===j.id);if(x)x.unpaid=false;ev='prep'}
   else if(j.action==='done'){st.preparing=st.preparing.filter(x=>x.id!==j.id);ev='prep'}

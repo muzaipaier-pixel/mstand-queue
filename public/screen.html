@@ -67,8 +67,10 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-c
 @-webkit-keyframes bob{50%{-webkit-transform:translateY(-.6vw) scale(1.25)}}@keyframes bob{50%{transform:translateY(-.6vw) scale(1.25)}}
 /* daily falling decorations (holiday days use theme emoji, 12 pieces, CSS-only infinite animation) */
 #dly{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden;pointer-events:none;z-index:3}
-#dly i{position:absolute;top:-5%;display:block;font-style:normal;line-height:1;opacity:.85;text-shadow:0 .15vw .4vw rgba(0,0,0,.35);-webkit-animation:dfall 16s linear infinite;animation:dfall 16s linear infinite}
+#dly i{position:absolute;top:-5%;display:block;font-style:normal;line-height:0;opacity:.82;-webkit-animation:dfall 16s linear infinite;animation:dfall 16s linear infinite}
 @-webkit-keyframes dfall{0%{-webkit-transform:translate3d(0,0,0) rotate(0)}50%{-webkit-transform:translate3d(1.5vw,55vh,0) rotate(160deg)}100%{-webkit-transform:translate3d(-1vw,112vh,0) rotate(320deg)}}
+@-webkit-keyframes dsway{0%{-webkit-transform:translate3d(0,0,0) rotate(-20deg)}25%{-webkit-transform:translate3d(2.5vw,28vh,0) rotate(20deg)}50%{-webkit-transform:translate3d(-2vw,56vh,0) rotate(-20deg)}75%{-webkit-transform:translate3d(2.5vw,84vh,0) rotate(20deg)}100%{-webkit-transform:translate3d(0,112vh,0) rotate(-10deg)}}
+@keyframes dsway{0%{transform:translate3d(0,0,0) rotate(-20deg)}25%{transform:translate3d(2.5vw,28vh,0) rotate(20deg)}50%{transform:translate3d(-2vw,56vh,0) rotate(-20deg)}75%{transform:translate3d(2.5vw,84vh,0) rotate(20deg)}100%{transform:translate3d(0,112vh,0) rotate(-10deg)}}
 @keyframes dfall{0%{transform:translate3d(0,0,0) rotate(0)}50%{transform:translate3d(1.5vw,55vh,0) rotate(160deg)}100%{transform:translate3d(-1vw,112vh,0) rotate(320deg)}}
 /* scan-to-order card (layout A default: middle of right column; B via ?qr=B: bottom) */
 #q{z-index:4}#qrc{position:absolute;left:4%;width:92%;top:34%;height:29%;background-color:#fff;border-radius:.9vw;color:#4B00B5;text-align:center;-webkit-box-sizing:border-box;box-sizing:border-box;padding:.4vw .3vw;box-shadow:0 0 1vw rgba(255,31,158,.6)}
@@ -95,7 +97,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-c
 #hs .c .s{font-size:.8em;overflow:hidden;text-overflow:ellipsis}
 #hs .sw{display:inline-block;width:1em;height:1em;border-radius:50%;border:2px solid #fff;vertical-align:-.15em;margin-right:.3em}
 #hs .k{display:inline-block;width:1em;color:#FFE600;font-weight:900}
-.calling #critter *,.calling .crf *,.calling #cbub,.calling #cbub *,.calling #cfx *{-webkit-animation-play-state:paused!important;animation-play-state:paused!important}</style><script src="/kcal.js?v=2"></script><script src="/critter.js?v=15"></script></head><body>
+.calling #critter *,.calling .crf *,.calling #cbub,.calling #cbub *,.calling #cfx *{-webkit-animation-play-state:paused!important;animation-play-state:paused!important}.nocrit #critter,.nocrit .crf,.nocrit #cbub,.nocrit #cspk,.nocrit #cfx,.nocrit #nbub{display:none!important}</style><script src="/kcal.js?v=2"></script><script src="/critter.js?v=16"></script></head><body>
 <img id="menu" src="/menu.jpg?v=7" alt="menu"><div id="kcmask"></div><div id="shopb" style="display:none;position:fixed;left:50%;bottom:4vw;-webkit-transform:translateX(-50%);transform:translateX(-50%);z-index:8999;background:rgba(255,250,244,.94);border:.5vw solid #ff8fb1;border-radius:3vw;padding:1.4vw 3vw;text-align:center;box-shadow:0 1vw 3vw rgba(0,0,0,.25);font-family:-apple-system,'Hiragino Sans','PingFang SC',sans-serif;color:#5a2a1a;white-space:nowrap"></div><div id="annb" style="display:none;position:fixed;left:0;right:0;top:0;z-index:9000;background:#ff4f7b;color:#fff;font:900 3.4vw/1.5 -apple-system,'Hiragino Sans','PingFang SC',sans-serif;text-align:center;padding:.5vw 2vw;box-shadow:0 .4vw 1.5vw rgba(0,0,0,.3)"></div><div id="somask"></div><div id="hdr"><div id="hs"></div></div>
 <div id="q" class="qrA">
  <div class="t">お呼び出し番号<span>请取餐</span></div>
@@ -192,7 +194,8 @@ function shopTick(){try{var e=$('shopcd');if(!e||!shopEnd)return;var ms=shopEnd-
 function shopUpd(s){try{if(typeof s.now==='number')clkOff=s.now-new Date().getTime();var m=s.shop,b=$('shopb'),k='';if(m&&m.mode){var tm='';if(m.until){var d=new Date(m.until+9*3600e3);tm=('0'+d.getUTCHours()).slice(-2)+':'+('0'+d.getUTCMinutes()).slice(-2)}k=m.mode+tm}
  if(k===shopK)return;shopK=k;shopEnd=m&&m.until||0;if(!shopTm)shopTm=setInterval(shopTick,1000);if(!k){b.style.display='none';return}var P=m.mode==='closed'?['<svg width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\" style=\"vertical-align:-.12em\"><path d=\"M15.5 3.5A8.5 8.5 0 1020.5 16 7 7 0 0115.5 3.5z\" fill=\"#ffe27a\" stroke=\"#d9a300\" stroke-width=\"1.4\"/><circle cx=\"6\" cy=\"5\" r=\"1\" fill=\"#ffb3c7\"/><circle cx=\"19\" cy=\"4\" r=\".8\" fill=\"#ffb3c7\"/></svg>','\u672c\u65e5\u8425\u4e1a\u7ed3\u675f\u00b7\u611f\u8c22\u5149\u4e34','\u672c\u65e5\u306e\u55b6\u696d\u306f\u7d42\u4e86\u3057\u307e\u3057\u305f']:m.mode==='shop'?['<svg width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\" style=\"vertical-align:-.12em\"><path d=\"M4 8h16l-1.3 13H5.3z\" fill=\"#c9b8ff\" stroke=\"#7a6cf0\" stroke-width=\"1.6\"/><path d=\"M8.5 10V6.5a3.5 3.5 0 017 0V10\" fill=\"none\" stroke=\"#7a6cf0\" stroke-width=\"1.6\" stroke-linecap=\"round\"/><path d=\"M12 13.2l.9 1.8 2 .3-1.4 1.4.3 2-1.8-.9-1.8.9.3-2-1.4-1.4 2-.3z\" fill=\"#fff\"/></svg>','\u9644\u8fd1\u91c7\u8d2d\u4e2d\u00b7\u8bf7\u7a0d\u540e','\u8fd1\u304f\u3067\u8cb7\u3044\u51fa\u3057\u4e2d\u3067\u3059\u3001\u5c11\u3005\u304a\u5f85\u3061\u304f\u3060\u3055\u3044']:['<svg width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\" style=\"vertical-align:-.12em\"><path d=\"M5 8h14l-1.6 13H6.6z\" fill=\"#ffd6a0\" stroke=\"#e2552b\" stroke-width=\"1.6\"/><rect x=\"4\" y=\"6\" width=\"16\" height=\"3\" rx=\"1.2\" fill=\"#ff8fb1\"/><path d=\"M13 6l2-5\" stroke=\"#e2552b\" stroke-width=\"1.6\" stroke-linecap=\"round\"/><circle cx=\"9.5\" cy=\"18\" r=\"1.2\" fill=\"#5a2a1a\"/><circle cx=\"12.5\" cy=\"18.6\" r=\"1.2\" fill=\"#5a2a1a\"/><circle cx=\"15\" cy=\"17.6\" r=\"1.2\" fill=\"#5a2a1a\"/></svg>','\u6750\u6599\u51c6\u5907\u4e2d\u00b7\u8bf7\u7a0d\u5019','\u6e96\u5099\u4e2d\u3067\u3059\u3001\u5c11\u3005\u304a\u5f85\u3061\u304f\u3060\u3055\u3044'];
  b.innerHTML='<div style="font-size:4.4vw;font-weight:900;color:#ff4f7b">'+P[0]+' '+P[1]+'</div><div style="font-size:2.6vw;font-weight:800;margin-top:.4vw">'+P[2]+'</div>'+(tm?'<div id="shopcd" style="font-size:5vw;font-weight:900;margin-top:.4vw;color:#e2552b"></div><div style="font-size:2.2vw;font-weight:800;color:#a0604a">\u9884\u8ba1 / \u4e88\u5b9a '+tm+'</div>':'');b.style.display='block';shopTick()}catch(e){}}
-function annUpd(s){try{var v=(typeof s.screenVol==='number')?s.screenVol:1;if(v!==SVOL){SVOL=v;var ids=['chime','vo'];for(var i=0;i<ids.length;i++){var e=$(ids[i]);if(e&&e.volume>0)e.volume=SVOL}}
+function critUpd(s){try{window.CRIT_VOICE=s.critVoice!==false;var sh=s.critShow!==false,b=document.body,has=/(^| )nocrit( |$)/.test(b.className);window.CRIT_SHOW=sh;if(!sh&&!has){b.className+=' nocrit';if(window.__critterStop)window.__critterStop();if(window.noticeStop)window.noticeStop()}else if(sh&&has)b.className=b.className.replace(/(^| )nocrit( |$)/,' ');if(!window.CRIT_VOICE){if(window.__critterStop)window.__critterStop();if(window.noticeStop)window.noticeStop()}}catch(e){}}
+function annUpd(s){critUpd(s);try{var v=(typeof s.screenVol==='number')?s.screenVol:1;if(v!==SVOL){SVOL=v;var ids=['chime','vo'];for(var i=0;i<ids.length;i++){var e=$(ids[i]);if(e&&e.volume>0)e.volume=SVOL}}
  var a=s.ann,t=(a&&a.text&&a.until>new Date().getTime())?a.text:'';if(t!==annTxt){annTxt=t;var b=$('annb');b.innerHTML='\u2605 '+esc(t)+' \u2605';b.style.display=t?'block':'none'}}catch(e){}}
 function waitUpd(s){try{var e=$('wait'),w=s.wait;if(!e)return;if(!w||w.hidden||w.min==null){e.style.display='none';return}e.innerHTML=w.min?'预计等待约 '+w.min+' 分钟<br>お待ち時間 約'+w.min+'分':'即刻取餐<br>すぐお渡し';e.style.display='block'}catch(x){}}
 function handle(s){annUpd(s);shopUpd(s);waitUpd(s);
@@ -226,36 +229,62 @@ var TH=theme();setInterval(function(){TH=theme()},10*60*1000);
 // ---------- daily falling decorations (holiday themes take priority) ----------
 if(/[?&]demo=callburst/.test(location.search))setTimeout(function(){try{callBurst()}catch(e){}},300);
 if(/[?&]demo=orderburst/.test(location.search))setTimeout(function(){try{callBurst(1)}catch(e){}},300);
-var DSETS=[
- ["fruits",["\ud83c\udf53", "\ud83e\udd6d", "\ud83c\udf52", "\ud83e\udd51", "\ud83c\udf4b", "\ud83c\udf51", "\ud83c\udf4a", "\ud83c\udf47"]],
- ["hearts",["\ud83d\udc96", "\ud83d\udc97", "\ud83d\udc95", "\ud83d\udc93", "\ud83d\udc9e", "\ud83d\udc9d", "\ud83d\udc98", "\ud83d\udc9c"]],
- ["stars",["\u2b50", "\ud83c\udf1f", "\u2728", "\ud83d\udcab", "\ud83c\udf20", "\u2b50", "\u2728"]],
- ["flowers",["\ud83c\udf38", "\ud83c\udf3c", "\ud83c\udf37", "\ud83c\udf3a", "\ud83c\udf39", "\ud83d\udc90", "\ud83c\udf3b"]],
- ["drinks",["\ud83e\udd64", "\ud83c\udf79", "\ud83c\udf75", "\ud83e\udd5b", "\u2615", "\ud83c\udf67"]],
- ["sky",["\ud83c\udf19", "\ud83c\udf08", "\ud83c\udf1e", "\u26c5", "\u2b50", "\ud83c\udf88"]],
- ["tropical",["\ud83c\udf4d", "\ud83e\udd65", "\ud83c\udf49", "\ud83c\udf51", "\ud83c\udf34", "\ud83c\udf48", "\ud83e\udd6d"]],
- ["berries",["\ud83c\udf53", "\ud83c\udf47", "\ud83c\udf52", "\ud83c\udf53", "\ud83c\udf52", "\ud83c\udf47", "\ud83c\udf38"]],
- ["sweets",["\ud83c\udf6c", "\ud83c\udf6d", "\ud83c\udf69", "\ud83e\uddc1", "\ud83c\udf6a", "\ud83c\udf6b", "\ud83c\udf6e"]],
- ["animals",["\ud83d\udc31", "\ud83d\udc3b", "\ud83d\udc30", "\ud83d\udc3c", "\ud83d\udc28", "\ud83e\udd8a", "\ud83d\udc39", "\ud83d\udc36"]],
- ["desserts",["\ud83c\udf68", "\ud83c\udf70", "\ud83c\udf66", "\ud83e\uddc1", "\ud83c\udf82", "\ud83c\udf6e", "\ud83c\udf67", "\ud83c\udf61"]],
- ["ocean",["\ud83d\udc1a", "\ud83d\udc20", "\ud83d\udc33", "\ud83d\udc2c", "\ud83d\udc19", "\ud83e\udd80", "\ud83d\udc1f", "\ud83d\udca7"]],
- ["gems",["\ud83d\udc8e", "\u2728", "\ud83d\udc8d", "\ud83d\udd2e", "\ud83c\udf1f", "\ud83d\udca0", "\ud83d\udcab"]],
- ["garden",["\ud83c\udf3b", "\ud83c\udf40", "\ud83e\udd8b", "\ud83d\udc1e", "\ud83c\udf31", "\ud83c\udf37", "\ud83d\udc1d", "\ud83c\udf43"]],
- ["faces",["\ud83e\udd70", "\ud83d\ude0b", "\ud83d\ude0a", "\ud83d\ude0d", "\ud83e\udd17", "\ud83d\ude18", "\ud83d\ude06", "\ud83e\udd73"]],
- ["fruitmix",["\ud83c\udf4e", "\ud83c\udf50", "\ud83c\udf4a", "\ud83c\udf4b", "\ud83c\udf4c", "\ud83c\udf49", "\ud83c\udf47", "\ud83c\udf53", "\ud83c\udf52", "\ud83c\udf51", "\ud83e\udd5d", "\ud83e\udd65"]],
- ["music",["\ud83c\udfb5", "\ud83c\udfb6", "\ud83c\udfa4", "\ud83c\udfa7", "\ud83c\udfb9", "\ud83c\udfb8", "\ud83c\udfb7"]]];
-var DSEASON={autumn:['autumn',['🍁','🍂','🌰','🍄','🍠','🌾','🍁','🍂']],winter:['winter',['⛄','🧣','🧤','✨','🎿','⛄','🧣','✨']]};
+/* drawn SVG shapes only (old Android 9 WebView shows emoji as boxes). k=shape, fill colour */
+var SHP={
+ heart:'<path d="M12 21C3 14 1 9 4 6c2.5-2.5 6-1.5 8 1.5C14 4.5 17.5 3.5 20 6c3 3 1 8-8 15z"/>',
+ star:'<path d="M12 1.5l3 6.6 7.2.8-5.4 4.9 1.5 7.1L12 17.3l-6.3 3.6 1.5-7.1L1.8 8.9 9 8.1z" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/>',
+ spark:'<path d="M12 0C13 8 16 11 24 12 16 13 13 16 12 24 11 16 8 13 0 12 8 11 11 8 12 0z"/>',
+ flower:'<g><circle cx="12" cy="5.5" r="4.6"/><circle cx="18.2" cy="10" r="4.6"/><circle cx="15.8" cy="17.4" r="4.6"/><circle cx="8.2" cy="17.4" r="4.6"/><circle cx="5.8" cy="10" r="4.6"/><circle cx="12" cy="12" r="3.6" fill="#FFE066"/></g>',
+ sakura:'<g><path d="M12 12C9 9 9 3 12 1c3 2 3 8 0 11z"/><path d="M12 12C9 9 9 3 12 1c3 2 3 8 0 11z" transform="rotate(72 12 12)"/><path d="M12 12C9 9 9 3 12 1c3 2 3 8 0 11z" transform="rotate(144 12 12)"/><path d="M12 12C9 9 9 3 12 1c3 2 3 8 0 11z" transform="rotate(216 12 12)"/><path d="M12 12C9 9 9 3 12 1c3 2 3 8 0 11z" transform="rotate(288 12 12)"/><circle cx="12" cy="12" r="2" fill="#fff"/></g>',
+ bubble:'<g><circle cx="12" cy="12" r="10" fill-opacity=".35" stroke="#fff" stroke-width="1.6"/><ellipse cx="8.5" cy="8" rx="2.6" ry="1.6" fill="#fff" transform="rotate(-35 8.5 8)"/></g>',
+ drop:'<g><path d="M12 1C12 1 4 11 4 15.5a8 8 0 0016 0C20 11 12 1 12 1z"/><ellipse cx="9" cy="15" rx="1.6" ry="2.6" fill="#fff" fill-opacity=".7"/></g>',
+ leaf:'<g><path d="M3 21C3 9 10 3 22 2c0 12-7 19-19 19z"/><path d="M3 21L16 8" stroke="#fff" stroke-opacity=".6" stroke-width="1.4" fill="none"/></g>',
+ clover:'<g><circle cx="8" cy="8" r="5"/><circle cx="16" cy="8" r="5"/><circle cx="8" cy="16" r="5"/><circle cx="16" cy="16" r="5"/><circle cx="12" cy="12" r="2.2" fill="#fff" fill-opacity=".7"/></g>',
+ moon:'<path d="M14 2A10 10 0 1 0 22 15 8 8 0 0 1 14 2z"/>',
+ cloud:'<path d="M6 19a5 5 0 01-.6-10A7 7 0 0118.6 8 5.5 5.5 0 0118 19z"/>',
+ snow:'<g stroke-width="2.2" stroke-linecap="round" fill="none"><path d="M12 1v22M2.5 6.5l19 11M2.5 17.5l19-11"/><path d="M9 3l3 3 3-3M9 21l3-3 3 3"/></g>',
+ candy:'<g><path d="M6 12L1 7v10zM18 12l5-5v10z"/><circle cx="12" cy="12" r="6.5"/><path d="M8 9c3 0 5 3 8 3" stroke="#fff" stroke-width="1.6" fill="none"/></g>',
+ donut:'<g><circle cx="12" cy="12" r="10" fill="#F2B56B"/><path d="M12 3.2a8.8 8.8 0 110 17.6 8.8 8.8 0 010-17.6zm0 5.3a3.5 3.5 0 100 7 3.5 3.5 0 000-7z"/><circle cx="12" cy="12" r="3.5" fill="none"/></g>',
+ cherry:'<g><path d="M8 15C9 8 12 4 18 2M16 15c0-6 1-10 2-13" stroke="#3E8E3E" stroke-width="1.6" fill="none"/><circle cx="7.5" cy="17" r="5"/><circle cx="16.5" cy="17" r="5"/><circle cx="6" cy="15.5" r="1.3" fill="#fff" fill-opacity=".7"/></g>',
+ berry:'<g><path d="M12 22C5 17 3 11 5 7.5 8 5.5 16 5.5 19 7.5 21 11 19 17 12 22z"/><path d="M7 7l2-4 3 2 3-2 2 4z" fill="#3E9E4E"/><circle cx="9" cy="11" r=".9" fill="#FFE9A8"/><circle cx="14" cy="11.5" r=".9" fill="#FFE9A8"/><circle cx="11.5" cy="15" r=".9" fill="#FFE9A8"/><circle cx="15.5" cy="15.5" r=".9" fill="#FFE9A8"/><circle cx="8.5" cy="15" r=".9" fill="#FFE9A8"/></g>',
+ citrus:'<g><circle cx="12" cy="12" r="10.5"/><circle cx="12" cy="12" r="8" fill="#fff" fill-opacity=".55"/><path d="M12 4.5v15M4.5 12h15M6.7 6.7l10.6 10.6M17.3 6.7L6.7 17.3" stroke="#fff" stroke-width="1.2"/></g>',
+ note:'<g><path d="M9 18V5l11-3v13" stroke-width="2" fill="none"/><circle cx="6.5" cy="18" r="3.3"/><circle cx="17.5" cy="15" r="3.3"/></g>',
+ gem:'<g><path d="M6 3h12l5 6-11 13L1 9z"/><path d="M1 9h22M9 3l3 6 3-6M12 9l0 13" stroke="#fff" stroke-opacity=".7" stroke-width="1" fill="none"/></g>',
+ ribbon:'<g><path d="M12 12L2 6v12zM12 12l10-6v12z"/><circle cx="12" cy="12" r="3"/></g>',
+ paw:'<g><ellipse cx="12" cy="16" rx="5.5" ry="4.5"/><circle cx="5" cy="10" r="2.4"/><circle cx="9.3" cy="6" r="2.4"/><circle cx="14.7" cy="6" r="2.4"/><circle cx="19" cy="10" r="2.4"/></g>',
+ maple:'<path d="M12 1l2 5 4-2-1 5 5 1-4 3 2 3-5-1 0 6h-2l0-6-5 1 2-3-4-3 5-1-1-5 4 2z"/>',
+ pumpkin:'<g><ellipse cx="7.5" cy="14" rx="5.5" ry="7"/><ellipse cx="16.5" cy="14" rx="5.5" ry="7"/><ellipse cx="12" cy="14" rx="5" ry="7.5"/><path d="M12 7V2" stroke="#4E8A3A" stroke-width="2.4"/></g>',
+ ghost:'<g><path d="M4 22V11a8 8 0 0116 0v11l-2.7-2-2.6 2-2.7-2-2.6 2L6.7 20z" fill="#fff"/><circle cx="9.3" cy="11" r="1.4" fill="#4B2A6B"/><circle cx="14.7" cy="11" r="1.4" fill="#4B2A6B"/></g>',
+ tree:'<g><path d="M12 1L4 12h4l-5 7h18l-5-7h4z"/><rect x="10.5" y="19" width="3" height="4" fill="#8B5A2B"/></g>',
+ bell:'<g><path d="M12 2a6 6 0 00-6 6v6l-2 4h16l-2-4V8a6 6 0 00-6-6z"/><circle cx="12" cy="20.5" r="2.2"/></g>'};
 function jstDay(){var t=new Date().getTime()+9*3600000;return Math.floor(t/86400000)}
+var DSETS=[
+ ["hearts",[['heart','#FF5C9A'],['heart','#FF9EC4'],['spark','#FFE45C'],['heart','#FFFFFF'],['heart','#C77DFF'],['bubble','#FFB3D1']]],
+ ["stars",[['star','#FFE45C'],['spark','#FFFFFF'],['star','#FFB0D8'],['spark','#7FE3FF'],['star','#FFFFFF'],['moon','#FFE45C']]],
+ ["flowers",[['flower','#FF9EC4'],['sakura','#FFC2DA'],['flower','#FFFFFF'],['leaf','#7BD88F'],['sakura','#FFFFFF'],['flower','#C9A7FF']]],
+ ["fruits",[['berry','#FF4D6D'],['cherry','#E8173D'],['citrus','#FFC23A'],['citrus','#FF8C2A'],['leaf','#6CCB5F'],['drop','#FFFFFF']]],
+ ["drinks",[['bubble','#FFFFFF'],['drop','#9FE8FF'],['bubble','#FFC2DA'],['spark','#FFFFFF'],['drop','#FFB3D1'],['citrus','#FFD84A']]],
+ ["sky",[['cloud','#FFFFFF'],['moon','#FFE45C'],['star','#FFE45C'],['cloud','#DDEBFF'],['spark','#FFFFFF'],['drop','#9FE8FF']]],
+ ["sweets",[['candy','#FF6FAE'],['donut','#FF8FC1'],['candy','#7FE3FF'],['ribbon','#FFE45C'],['donut','#B784FF'],['heart','#FFFFFF']]],
+ ["garden",[['clover','#6CCB5F'],['leaf','#9BE38B'],['flower','#FFE45C'],['sakura','#FFC2DA'],['clover','#B6F0A8'],['drop','#9FE8FF']]],
+ ["music",[['note','#FFFFFF'],['note','#FFE45C'],['spark','#FFFFFF'],['note','#FF9EC4'],['star','#7FE3FF'],['heart','#FFB0D8']]],
+ ["gems",[['gem','#7FE3FF'],['gem','#FF9EC4'],['spark','#FFFFFF'],['gem','#C9A7FF'],['star','#FFE45C'],['spark','#7FE3FF']]],
+ ["paws",[['paw','#FFFFFF'],['heart','#FF9EC4'],['paw','#FFD3E6'],['spark','#FFE45C'],['paw','#FFE8C2'],['ribbon','#FF6FAE']]],
+ ["confetti",[['heart','#FF5C9A'],['star','#FFE45C'],['clover','#7BD88F'],['spark','#7FE3FF'],['flower','#FFFFFF'],['candy','#C77DFF'],['drop','#FF9EC4'],['ribbon','#FFB347']]]];
+var DSEASON={autumn:['autumn',[['maple','#FF7A2A'],['maple','#E8452C'],['leaf','#FFB347'],['leaf','#C9752E'],['maple','#FFC23A'],['spark','#FFE9A8']]],winter:['winter',[['snow','#FFFFFF'],['snow','#CDEBFF'],['spark','#FFFFFF'],['bubble','#E6F4FF'],['star','#FFFFFF'],['snow','#FFFFFF']]]};
 function dailySet(){var m=/[?&]day=(\d+)/.exec(location.search),n=m?parseInt(m[1],10):jstDay();
  var M=new Date(n*86400000).getUTCMonth()+1,L=DSETS.slice(0);
  if(M>=9&&M<=11)L.push(DSEASON.autumn,DSEASON.autumn);if(M===12||M<=2)L.push(DSEASON.winter,DSEASON.winter);
  return L[n%L.length]}
 var DLY_KEY='';
-var DTHEME={halloween:['halloween',['\uD83C\uDF83','\uD83D\uDC7B','\uD83E\uDD87','\uD83C\uDF6C','\uD83C\uDF6D','\uD83C\uDF42','\uD83C\uDF83','\uD83C\uDF41']],christmas:['christmas',['\uD83C\uDF84','\u2B50','\uD83C\uDF85','\uD83C\uDF81','\uD83C\uDF6A','\uD83D\uDD14','\u2728','\u26C4']]};
+var DTHEME={halloween:['halloween',[['pumpkin','#FF8A1F'],['ghost','#fff'],['candy','#B784FF'],['star','#FFE45C'],['maple','#FF7A2A'],['moon','#FFE45C']]],christmas:['christmas',[['tree','#3EBF6A'],['star','#FFE45C'],['bell','#FFD23A'],['snow','#FFFFFF'],['ribbon','#FF3B5C'],['spark','#FFFFFF']]]};
+function dshape(p,z){var k=p[0],c=p[1];return '<svg width="'+z+'" height="'+z+'" viewBox="0 0 24 24" fill="'+c+'" stroke="'+(k==='snow'||k==='note'?c:'none')+'">'+SHP[k]+'</svg>'}
 function daily(){try{var c=$('dly');
- var st=(TH&&DTHEME[TH]&&!demoHas('daily'))?DTHEME[TH]:dailySet();if(st[0]===DLY_KEY)return;DLY_KEY=st[0];var E=st[1],h='';
- for(var i=0;i<16;i++){var l=(i*6.2+Math.random()*5).toFixed(1),du=(13+Math.random()*9).toFixed(1),dl=(-Math.random()*20).toFixed(1),fs=(2.8+Math.random()*1.4).toFixed(2);
-  h+='<i style="left:'+l+'%;font-size:'+fs+'vw;-webkit-animation-duration:'+du+'s;animation-duration:'+du+'s;-webkit-animation-delay:'+dl+'s;animation-delay:'+dl+'s">'+E[i%E.length]+'</i>'}
+ var st=(TH&&DTHEME[TH]&&!demoHas('daily'))?DTHEME[TH]:dailySet();if(st[0]===DLY_KEY)return;DLY_KEY=st[0];var E=st[1],h='',vw=window.innerWidth/100;
+ /* each day also mixes in 2 accent shapes so the pattern is never monotonous */
+ var X=[['spark','#FFFFFF'],['heart','#FFB0D8'],['star','#FFE45C'],['bubble','#FFFFFF']],o=jstDay()%X.length;E=E.concat([X[o],X[(o+1)%X.length]]);
+ for(var i=0;i<18;i++){var l=(i*5.5+Math.random()*4).toFixed(1),du=(13+Math.random()*9).toFixed(1),dl=(-Math.random()*20).toFixed(1),z=Math.round((1.8+Math.random()*1.8)*vw),an=(i%3===1)?'dsway':'dfall';
+  h+='<i style="left:'+l+'%;-webkit-animation-name:'+an+';animation-name:'+an+';-webkit-animation-duration:'+du+'s;animation-duration:'+du+'s;-webkit-animation-delay:'+dl+'s;animation-delay:'+dl+'s">'+dshape(E[(i*5+o)%E.length],z)+'</i>'}
  c.innerHTML=h}catch(e){}}
 daily();setInterval(daily,10*60*1000);
 function confetti(kind){try{var c=$('cf'),h='',E=kind==='halloween'?['\uD83C\uDF83','\uD83D\uDC7B','\uD83C\uDF6C']:kind==='christmas'?['\u2744','\u2B50','\uD83C\uDF84']:null,C=['#FFE600','#FF1F9E','#00E0C6','#FF7A00','#7CFF4D','#ffffff'];
@@ -377,5 +406,5 @@ soPoll();setInterval(soPoll,15000);
 }catch(e){}
 })();
 </script>
-<script src="/chat.js?v=1"></script>
+<script src="/chat.js?v=2"></script>
 </body></html>

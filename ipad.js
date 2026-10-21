@@ -152,7 +152,7 @@ return async function api(u,q,r){const j=q.method==='POST'?await body(q):{};
    save()}return send(r,200,stockView())}
  if(p==='cfg'&&q.method==='POST'){if(j.peak)C.cfg.peak=Math.max(1,Math.min(50,parseInt(j.peak)||6));save();return send(r,200,C.cfg)}
  if(p==='health'){const G=global.SEEN||{},sh=ST().shop||null;return send(r,200,{now:Date.now(),screen:G.screen||null,orderVisit:G.orderVisit||null,orderVisitsToday:G.ovN||0,lastOrder:G.lastOrder||null,shop:sh?sh.mode:'open',orderGate:process.env.SHOP_GATE_ORDER!=='0',uberSync:G.uberSync||null,uberSales:C.uber&&C.uber.at||null,uberHb:C.uberHb&&C.uberHb.at||null,uberStore:C.uberStore||null,uberWant:shopWantsPause(sh)?'paused':'open'})}
- if(p==='overview'){const prep=ST().preparing||[];return send(r,200,{now:Date.now(),cfg:C.cfg,open:prep.length,peak:prep.length>=C.cfg.peak,stockLow:stockView().items.filter(i=>i.low).map(i=>i.name),screen:{vol:ST().screenVol==null?1:ST().screenVol,ann:ST().ann||null,shop:ST().shop||null},chan:{seq:C.chanSeq||0,uber:uberStatus(),orderGate:process.env.SHOP_GATE_ORDER!=='0'},wait:global.WAIT_EST?global.WAIT_EST():null,closedStale:!!(ST().shop&&ST().shop.mode==='closed'&&tokyoDay(ST().shop.at)!==tokyoDay()&&new Date(Date.now()+9*3600e3).getUTCHours()>=10)})}
+ if(p==='overview'){const prep=ST().preparing||[];return send(r,200,{now:Date.now(),cfg:C.cfg,open:prep.length,peak:prep.length>=C.cfg.peak,stockLow:stockView().items.filter(i=>i.low).map(i=>i.name),screen:{vol:ST().screenVol==null?1:ST().screenVol,critVoice:ST().critVoice!==false,critShow:ST().critShow!==false,ann:ST().ann||null,shop:ST().shop||null},chan:{seq:C.chanSeq||0,uber:uberStatus(),orderGate:process.env.SHOP_GATE_ORDER!=='0'},wait:global.WAIT_EST?global.WAIT_EST():null,closedStale:!!(ST().shop&&ST().shop.mode==='closed'&&tokyoDay(ST().shop.at)!==tokyoDay()&&new Date(Date.now()+9*3600e3).getUTCHours()>=10)})}
  // box-side worker (uber-sync on the shop PC) polls desired Uber state and acks; Render cannot drive a browser
  if(p==='uber-desired'){shopExpire();const sh=ST().shop;return send(r,200,{seq:C.chanSeq||0,paused:shopWantsPause(sh),mode:sh?sh.mode:'open',until:sh&&sh.until||null,now:Date.now()})}
  if(p==='uber-ack'&&q.method==='POST'){const sq_=parseInt(j.seq)||0;if(sq_<(C.chanSeq||0)&&sq_!==-1)return send(r,200,{ok:true,stale:true}); // ignore acks for superseded seqs
@@ -162,11 +162,13 @@ return async function api(u,q,r){const j=q.method==='POST'?await body(q):{};
  if(p==='uber-hb'&&q.method==='POST'){C.uberHb={at:Date.now(),observed:['open','paused','unknown'].includes(j.observed)?j.observed:(C.uberHb&&C.uberHb.observed)||'unknown',trying:j.trying?{n:parseInt(j.trying.n)||0,err:String(j.trying.err||'').slice(0,80)}:null,dry:!!j.dry};return send(r,200,{ok:true,seq:C.chanSeq||0})}
  if(p==='customer'){return send(r,200,await customer(u.searchParams.get('order')||''))}
  if(p==='screen'&&q.method==='POST'){
+   if(j.critVoice!=null)ST().critVoice=!!j.critVoice;
+   if(j.critShow!=null)ST().critShow=!!j.critShow;
    if(j.vol!=null)ST().screenVol=Math.max(0,Math.min(1,+j.vol));
    if(j.ann!=null){const t=String(j.ann).replace(/[\u200d\ufe0f<>]/g,'').slice(0,60);ST().ann=t?{text:t,until:Date.now()+Math.max(1,Math.min(720,parseInt(j.mins)||60))*60e3}:null}
    if(j.shop!=null)setShop(j.shop,j.mins,j.uber)
    if(j.shopAdj&&ST().shop&&ST().shop.until){const sh=ST().shop;sh.until=Math.max(Date.now()+60e3,Math.min(Date.now()+180*60e3,sh.until+(parseInt(j.shopAdj)||0)*60e3))}
-   ST().seq++;save();push('screen');return send(r,200,{vol:ST().screenVol,ann:ST().ann,shop:ST().shop||null})}
+   ST().seq++;save();push('screen');return send(r,200,{vol:ST().screenVol,critVoice:ST().critVoice!==false,critShow:ST().critShow!==false,ann:ST().ann,shop:ST().shop||null})}
  return send(r,404,{error:'nf'})
  }catch(e){console.error('ipad',p,e.message);return send(r,502,{error:e.message})}}
 };
