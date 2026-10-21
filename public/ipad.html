@@ -21,6 +21,7 @@ button.b{border:0;border-radius:16px;font-size:18px;font-weight:800;padding:16px
 .pr{display:flex;align-items:center;gap:10px;background:#fff;border:2px solid #ffd27a;border-radius:14px;padding:8px 12px;margin-top:8px}.pr b{font-size:28px;color:#e2552b;min-width:70px}.pr i{flex:1;font-style:normal;font-size:14px}
 .pr button{border:0;border-radius:10px;font-size:15px;padding:8px 12px;background:#ffa64d;color:#fff;font-weight:800}
 .vip{display:inline-block;background:#fff0f6;border:1px solid #ff9cc0;color:#d6336c;border-radius:10px;padding:2px 8px;font-size:12px;margin-top:4px}
+.sog{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.so-c{background:#fff;border-radius:18px;padding:10px;display:flex;gap:12px;align-items:flex-start;border:3px solid #fff}.so-c img{width:84px;height:84px;object-fit:cover;border-radius:12px;background:#ffe6d8}.so-c.all{border-color:#e33}.so-c.all img{filter:grayscale(1) opacity(.5)}.so-c.part{border-color:#ffb020}.so-c h4{margin:0 0 4px;font-size:16px}.st{font-size:13px;font-weight:900;border-radius:8px;padding:3px 8px;display:inline-block}.st.ok{background:#dff5e1;color:#2a7}.st.part{background:#fff1d6;color:#c70}.st.all{background:#e33;color:#fff}.vb{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.vb button{border:2px solid #9c9;background:#f2fff2;color:#2a7;border-radius:12px;padding:10px 12px;font-size:15px;font-weight:800;min-width:96px}.vb button.so{border-color:#e33;background:#ffecec;color:#e33;text-decoration:line-through}.ab{border:0;border-radius:14px;padding:14px 12px;font-size:16px;font-weight:900;color:#fff;background:#e33;min-width:118px}.ab.re{background:#3a3}
 .items{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.it{background:#fff;border-radius:16px;overflow:hidden;position:relative;border:3px solid transparent}
 .it img{width:100%;height:110px;object-fit:cover;display:block;background:#ffe6d8}.it div{padding:6px 8px;font-size:13px;font-weight:700;height:44px;overflow:hidden}
 .it.so{border-color:#e33}.it.so img{filter:grayscale(1) opacity(.5)}.it.so:after{content:"售罄";position:absolute;top:36px;left:50%;transform:translateX(-50%) rotate(-10deg);background:#e33;color:#fff;font-weight:900;font-size:22px;padding:4px 14px;border-radius:10px}
@@ -36,11 +37,12 @@ input.t,textarea{font-size:18px;padding:12px;border-radius:14px;border:2px solid
 <div id="lock"><h2 style="color:#ff5c8a">M Stand 店长 iPad<br><small>请输入 PIN / PINを入力</small></h2><input id="pin" type="password" inputmode="numeric" maxlength="8"><button class="b" style="width:300px;margin-top:12px" onclick="login()">进入 / 入る</button><div id="msg" style="color:#e33;margin-top:8px"></div></div>
 <header><h1>M Stand 池袋 · 店长 iPad</h1><span id="clock" class="sub"></span><span id="conn">●</span></header>
 <div class="alert" id="peak"><span id="peakT">🔥 高峰中</span><a href="https://merchants.ubereats.com/manager/" target="_blank">打开 Uber Manager 暂停接单 ↗</a></div>
+<div class="alert y" id="remind"><span>🌙 现在还是「营业结束」（昨天设的）— 开店了别忘了切回营业中，Uber 也还在暂停</span><a href="#" onclick="setShop('open');return false">切回营业中</a></div>
 <div class="alert y" id="lowA"><span id="lowT"></span><a href="#" onclick="tab('stock');return false">查看备料</a></div>
 
 <div class="card" style="margin-bottom:12px;display:flex;gap:10px;align-items:center"><small style="min-width:70px">店铺状态<br>お店の状態</small>
  <button class="b sb" data-m="open" onclick="setShop('open')">✅ 营业中<br><small>営業中</small></button><button class="b sb" data-m="prep" onclick="setShop('prep')">🧋 材料准备中<br><small>準備中</small></button><button class="b sb" data-m="shop" onclick="setShop('shop')">🛒 附近采购中<br><small>買い出し中</small></button><button class="b sb" data-m="closed" onclick="setShop('closed')">🌙 营业结束<br><small>営業終了</small></button>
- <div style="font-size:13px">预计<br><select id="shopM" style="font-size:16px;padding:8px;border-radius:10px"><option value="10">+10分</option><option value="20">+20分</option><option value="30">+30分</option><option value="40" selected>+40分</option><option value="60">+60分</option></select></div><div style="flex:1"><div class="sub" id="shopNow"></div><div id="shopAdj" style="display:none;gap:6px;margin-top:6px"><button class="b" style="padding:8px 12px;font-size:15px;background:#ffa64d" onclick="adjShop(-5)">−5分</button><button class="b" style="padding:8px 12px;font-size:15px;background:#ffa64d" onclick="adjShop(5)">+5分</button><button class="b" style="padding:8px 12px;font-size:15px;background:#3a3" onclick="setShop('open')">提前结束</button></div></div></div>
+ <div style="font-size:13px">预计<br><select id="shopM" style="font-size:16px;padding:8px;border-radius:10px"><option value="10">+10分</option><option value="20">+20分</option><option value="30">+30分</option><option value="40" selected>+40分</option><option value="60">+60分</option></select></div><div style="flex:1"><div class="sub" id="shopNow"></div><div id="uberSt" style="font-size:13px;font-weight:800;margin-top:2px"></div><div id="shopAdj" style="display:none;gap:6px;margin-top:6px"><button class="b" style="padding:8px 12px;font-size:15px;background:#ffa64d" onclick="adjShop(-5)">−5分</button><button class="b" style="padding:8px 12px;font-size:15px;background:#ffa64d" onclick="adjShop(5)">+5分</button><button class="b" style="padding:8px 12px;font-size:15px;background:#3a3" onclick="setShop('open')">提前结束</button></div></div></div>
 <section class="pg on" id="p-sales"><div class="grid">
  <div class="card"><small>今日杯数 / 本日の杯数</small><div class="big" id="sCups">-</div><div class="sub" id="sOrd"></div></div>
  <div class="card"><small>今日营业额（店内 Square）</small><div class="big" id="sRev">-</div><div class="sub">客单价 <b id="sAvg">-</b></div></div>
@@ -68,7 +70,12 @@ input.t,textarea{font-size:18px;padding:12px;border-radius:14px;border:2px solid
  <div class="wide"><div class="card"><small>制作中 / Preparing（点号码叫号，💗=熟客）</small><div id="prep"></div></div></div>
 </div></section>
 
-<section class="pg" id="p-sold"><div class="card" style="margin-bottom:12px"><small>一键售罄：点饮品 → 确认。会改 Square，Uber 由售罄同步自动跟随，横屏菜单显示「售罄」。不会改价格。</small></div><div class="items" id="items"></div></section>
+<section class="pg" id="p-sold"><div class="card" style="margin-bottom:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+ <input class="t" id="soQ" placeholder="🔍 搜索饮品 / 検索" style="flex:1;min-width:220px" oninput="drawMenu()">
+ <select id="soC" style="font-size:16px;padding:12px;border-radius:12px" onchange="drawMenu()"></select>
+ <select id="soF" style="font-size:16px;padding:12px;border-radius:12px" onchange="drawMenu()"><option value="">全部状态</option><option value="out">有售罄</option></select>
+ <button class="b" style="background:#3a3;padding:12px 16px" onclick="restoreAll()">♻ 恢复全部</button>
+ <div class="note" style="width:100%">改的是 Square；Uber 由售罄同步（约1分钟）按每个规格跟随；横屏菜单：全部售罄显示「售罄」，部分售罄显示售罄的规格。不会改价格。</div></div><div id="items"></div></section>
 
 <section class="pg" id="p-stock"><div class="card"><small>备料估算 = 开店库存 − 今日杯数 × 配方用量（店内+Square 订单）</small>
  <table><thead><tr><th>材料</th><th>开店库存</th><th>已用</th><th>剩余</th><th>提醒线</th><th></th></tr></thead><tbody id="stk"></tbody></table>
@@ -97,13 +104,13 @@ function loadOv(){api('overview').then(function(o){var n=(ST.preparing||[]).leng
  $('peak').classList.toggle('on',o.peak);$('peakT').textContent='🔥 高峰中：'+o.open+' 单在做（≥'+o.cfg.peak+'）— 忙不过来可以暂停 Uber';
  $('lowA').classList.toggle('on',o.stockLow.length>0);$('lowT').textContent='⚠ 备料快用完：'+o.stockLow.join('、');
  var v=Math.round((o.screen.vol==null?1:o.screen.vol)*100);$('vol').value=v;$('volV').textContent=v+'%';
- var sh=o.screen.shop,sm=sh?sh.mode:'open';[].forEach.call(document.querySelectorAll('.sb'),function(e){e.classList.toggle('on',e.dataset.m===sm)});$('shopNow').textContent=sh?'横屏正在显示'+(sh.until?'，预计 '+new Date(sh.until).toLocaleTimeString('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit'}):''):'横屏正常显示菜单';$('shopAdj').style.display=sh&&sh.until?'flex':'none';var ua=o.chan.uberAck;$('shopNow').textContent+=' ｜ Uber：'+(!ua||ua.seq<o.chan.seq?'同步中…':(ua.ok?(ua.paused?'已暂停':'接单中')+(ua.dry?'（演练模式）':''):'失败 '+ua.msg));
+ var sh=o.screen.shop,sm=sh?sh.mode:'open';[].forEach.call(document.querySelectorAll('.sb'),function(e){e.classList.toggle('on',e.dataset.m===sm)});$('shopNow').textContent=sh?'横屏正在显示'+(sh.until?'，预计 '+new Date(sh.until).toLocaleTimeString('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit'}):''):'横屏正常显示菜单';$('shopAdj').style.display=sh&&sh.until?'flex':'none';var U=o.chan.uber,col={ok:'#2a7',dry:'#2a7',pending:'#d80',fail:'#e33',offline:'#e33'}[U.state];$('uberSt').style.color=col;$('uberSt').textContent='Uber：'+U.text;$('remind').classList.toggle('on',o.closedStale);
  var a=o.screen.ann;$('annNow').textContent=a&&a.until>Date.now()?'横屏正在显示：「'+a.text+'」 到 '+new Date(a.until).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}):'横屏没有公告'}).catch(function(){})}
 function act(a){post({action:a})}
 function adjShop(d){api('screen',{shopAdj:d}).then(loadOv)}
 var SHN={open:'✅ 营业中',prep:'🧋 材料准备中',shop:'🛒 附近采购中',closed:'🌙 营业结束'};
 function setShop(m){$('mT').textContent='切换为「'+SHN[m]+'」？';$('mS').innerHTML=m==='open'?'横屏恢复菜单 · Uber 恢复接单 · 扫码点单恢复':'横屏显示'+(m==='closed'?'营业结束':'等待提示（预计 '+$('shopM').value+' 分钟）')+'<br>Uber 暂停接单 · 扫码点单暂停';
- $('mOk').style.background=m==='open'?'#3a3':'#ff5c8a';$('mOk').textContent='确定';$('modal').style.display='flex';$('mOk').onclick=function(){$('modal').style.display='none';api('screen',{shop:m,mins:+$('shopM').value}).then(loadOv)}}
+ $('mOk').style.background=m==='open'?'#3a3':'#ff5c8a';$('mOk').textContent='确定';$('modal').style.display='flex';$('mOk').onclick=function(){$('mOk').onclick=null;$('modal').style.display='none';api('screen',{shop:m,mins:+$('shopM').value}).then(loadOv)}}
 function setVol(v){$('volV').textContent=v+'%';api('screen',{vol:v/100}).then(loadOv)}
 function setAnn(){var t=$('ann').value.trim();if(!t)return;api('screen',{ann:t,mins:$('annM').value}).then(loadOv)}
 function clearAnn(){api('screen',{ann:''}).then(loadOv)}
@@ -112,10 +119,19 @@ function render(s){ST=s;$('n').textContent=(s.current||s.current===0)?s.current:
  $('prep').innerHTML=(s.preparing||[]).map(function(x){if(x.order&&!(x.order in CUST)&&!/^DRY|^web/.test(x.id)){CUST[x.order]=null;api('customer?order='+encodeURIComponent(x.order)).then(function(c){CUST[x.order]=c;render(ST)}).catch(function(){})}
   return '<div class="pr"><b>'+esc(x.num)+'</b><i>'+esc(x.items||'')+custTag(x)+'</i><button onclick="post({action:\'callid\',id:\''+esc(x.id)+'\'})">叫号</button><button style="background:#c9a99a" onclick="post({action:\'done\',id:\''+esc(x.id)+'\'})">✕</button></div>'}).join('')||'<div class="sub" style="padding:10px">— 没有待做订单 —</div>';
  $('sOpen').textContent=(s.preparing||[]).length+' 单'}
-function loadMenu(){api('menu').then(function(m){MENU=m;$('items').innerHTML=m.map(function(i,ix){return '<div class="it'+(i.so?' so':'')+'" onclick="askSold('+ix+')"><img src="'+esc(i.img)+'" loading="lazy"><div>'+esc(i.name)+'</div></div>'}).join('')})}
-function askSold(ix){var i=MENU[ix],to=!i.so;$('mT').textContent=(to?'设为售罄？':'恢复供应？');$('mS').innerHTML='<b>'+esc(i.name)+'</b><br>'+(to?'Square・Uber・横屏菜单都会显示售罄':'Square・Uber・横屏菜单恢复可点');
- $('mOk').style.background=to?'#e33':'#3a3';$('mOk').textContent=to?'确定售罄':'确定恢复';$('modal').style.display='flex';
- $('mOk').onclick=function(){$('mOk').disabled=true;api('soldout',{id:i.id,sold:to,confirm:true}).then(function(r){$('mOk').disabled=false;$('modal').style.display='none';if(r.error)alert('失败：'+r.error);else{i.so=to;loadMenu()}}).catch(function(){$('mOk').disabled=false})}}
+var OPEN={};function loadMenu(){api('menu').then(function(m){MENU=m;var cs={};m.forEach(function(i){cs[i.cat]=1});var c=$('soC'),v=c.value;c.innerHTML='<option value="">全部分类</option>'+Object.keys(cs).map(function(k){return '<option>'+esc(k)+'</option>'}).join('');c.value=v;drawMenu()})}
+function soN(i){return i.vars.filter(function(v){return v.so}).length}
+function drawMenu(){var q=$('soQ').value.trim().toLowerCase(),c=$('soC').value,f=$('soF').value;
+ $('items').innerHTML='<div class="sog">'+MENU.map(function(i,ix){var n=soN(i),t=i.vars.length;if(q&&i.name.toLowerCase().indexOf(q)<0)return '';if(c&&i.cat!==c)return '';if(f==='out'&&!n)return '';
+  var cls=n===0?'':n===t?'all':'part',lab=n===0?'<span class="st ok">全部在售</span>':n===t?'<span class="st all">全部售罄</span>':'<span class="st part">部分售罄 '+n+'/'+t+'</span>';
+  return '<div class="so-c '+cls+'"><img src="'+esc(i.img)+'" loading="lazy"><div style="flex:1"><h4>'+esc(i.name)+'</h4>'+lab+' <a href="#" style="font-size:13px;color:#a07a6a" onclick="OPEN['+ix+']=!OPEN['+ix+'];drawMenu();return false">'+(OPEN[ix]?'收起 ▲':'按规格 ▼')+'</a>'+
+  (OPEN[ix]?'<div class="vb">'+i.vars.map(function(v,vi){return '<button class="'+(v.so?'so':'')+'" onclick="askVar('+ix+','+vi+')">'+esc(v.name)+'</button>'}).join('')+'</div>':'')+'</div>'+
+  (n===t?'<button class="ab re" onclick="askSold('+ix+',false)">全部恢复</button>':'<button class="ab" onclick="askSold('+ix+',true)">全部售罄</button>')+'</div>'}).join('')+'</div>'}
+function confirmDo(title,sub,okTxt,color,fn){$('mT').textContent=title;$('mS').innerHTML=sub;$('mOk').style.background=color;$('mOk').textContent=okTxt;$('modal').style.display='flex';$('mOk').onclick=function(){$('mOk').onclick=null;$('modal').style.display='none';fn()}}
+function doSold(i,b){return api('soldout',b).then(function(r){if(r.error)alert('失败：'+r.error);loadMenu()}).catch(function(){alert('失败，请重试')})}
+function askSold(ix,to){var i=MENU[ix];confirmDo((to?'全部售罄？':'全部恢复？'),'<b>'+esc(i.name)+'</b>（'+i.vars.length+' 个规格）<br>'+(to?'Square・Uber・横屏都显示售罄':'Square・Uber・横屏恢复可点'),to?'确定售罄':'确定恢复',to?'#e33':'#3a3',function(){doSold(i,{id:i.id,sold:to,confirm:true})})}
+function askVar(ix,vi){var i=MENU[ix],v=i.vars[vi],to=!v.so;confirmDo((to?'这个规格售罄？':'这个规格恢复？'),'<b>'+esc(i.name)+'</b><br>'+esc(v.name),to?'确定售罄':'确定恢复',to?'#e33':'#3a3',function(){doSold(i,{id:i.id,vars:[v.id],sold:to,confirm:true})})}
+function restoreAll(){var L=MENU.filter(function(i){return soN(i)>0});if(!L.length){alert('现在没有售罄的饮品');return}confirmDo('恢复全部售罄？',L.map(function(i){return esc(i.name)+'（'+soN(i)+'/'+i.vars.length+'）'}).join('<br>'),'全部恢复','#3a3',function(){api('restore-all',{confirm:true}).then(loadMenu)})}
 var STK=null;function loadStock(){api('stock').then(drawStock)}
 function drawStock(s){STK=s;$('stk').innerHTML=s.items.map(function(i,ix){return '<tr class="'+(i.low?'low':'')+'"><td><b>'+esc(i.name)+'</b></td><td><input type="number" id="st'+ix+'" value="'+i.start+'"> '+esc(i.unit)+'</td><td>'+i.used+'</td><td><b style="font-size:20px">'+i.left+'</b> '+esc(i.unit)+'</td><td><input type="number" id="lw'+ix+'" value="'+i.lowAt+'"></td><td>'+(i.low?'<span class="pill" style="background:#e33;color:#fff">快没了</span>':'<span class="pill" style="background:#dff5e1;color:#2a7">够用</span>')+'</td></tr>'}).join('');
  $('rcp').value=s.recipe.map(function(r){return r.re+' = '+Object.keys(r.use).map(function(k){return k+':'+r.use[k]}).join(', ')}).join('\n')}
