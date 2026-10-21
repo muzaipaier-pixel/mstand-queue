@@ -131,13 +131,18 @@ tr.low td{color:#d33;font-weight:800}
   <div class="row" style="align-items:center"><span style="flex:none;font-weight:800">音量 <span id="volV"></span></span><input id="vol" type="range" min="0" max="100" step="10" style="height:40px" onchange="setVol(this.value)"></div>
   <div class="row" style="align-items:center"><span style="flex:1;font-weight:800">小动物语音<span style="font-weight:400;color:#8a6d60;font-size:13px">（下单感谢·闲聊，不影响叫号）</span></span><button class="ghost" id="cvB" style="flex:none;min-width:96px" onclick="setCrit('critVoice')"></button></div>
   <div class="row" style="align-items:center"><span style="flex:1;font-weight:800">横屏显示小动物</span><button class="ghost" id="csB" style="flex:none;min-width:96px" onclick="setCrit('critShow')"></button></div></div>
- <div class="card"><div class="ct">备料（开店库存 − 今日用量）</div><table id="stk"></table>
+</div></div>
+<div class="more" id="boss"><div class="mg">
+ <div class="card"><div class="ct">差评预警</div><div class="us" id="revT">载入中…</div><div class="row"><button class="ghost" id="revAck" style="display:none" onclick="api('reviews',{ack:true}).then(drawRev)">知道了</button></div></div>
+ <div class="card"><div class="ct">原料库存（开店库存 − 今日用量，店里+Uber）</div><table id="stk"></table>
   <div class="row"><button class="big b2" onclick="saveStock()">保存</button><button class="ghost" onclick="askDo('今日重新开始？','从现在开始重新计算用量','确定','#ff9a2e',function(){stockPost({restock:true})})">重新开始</button></div>
   </div>
+ <div class="card"><div class="ct">每周经营报告</div><pre id="wkT" style="white-space:pre-wrap;font-family:inherit;font-size:14px;line-height:1.55;margin:0">点开店长页自动载入</pre>
+  <div class="row"><button class="ghost" onclick="loadWeek(1)">重新计算</button></div></div>
 </div></div>
 
 <div id="dbg" style="text-align:center;font-size:11px;color:#b9a296;margin-top:14px"></div>
-<div class="nav"><button class="on" id="nHome" onclick="nav('home')">首页</button><button id="nMore" onclick="nav('more')">更多</button></div>
+<div class="nav"><button class="on" id="nHome" onclick="nav('home')">首页</button><button id="nMore" onclick="nav('more')">更多</button><button id="nBoss" onclick="nav('boss')">店长</button></div>
 <div class="ov" id="ov"><div class="dlg" id="dlg"><h3 id="dT"></h3><p id="dS"></p><div class="row"><button class="ghost" id="dNo" style="height:64px;font-size:20px">取消</button><button class="big" id="dOk" style="height:64px;font-size:22px">确定</button></div></div></div>
 <script>
 var PIN=sget('pin'),ST={},CUST={},MENU=[],OPEN={},CAT='',OV=null,CLK=0;
@@ -161,7 +166,10 @@ function post(b){b.pin=PIN;return xhr('POST','/api/action',b,{})}
 function sget(k){try{return localStorage.getItem(k)||''}catch(e){return ''}}
 function sset(k,v){try{if(v)localStorage.setItem(k,v);else localStorage.removeItem(k)}catch(e){}}
 function login(){PIN=$('pin').value;api('overview').then(function(){sset('pin',PIN);$('lock').style.display='none';boot()}).catch(function(){$('msg').textContent='PIN 错误'})}
-function nav(t){$('home').className='home'+(t==='home'?'':' off');$('more').className='more'+(t==='more'?' on':'');$('nHome').className=t==='home'?'on':'';$('nMore').className=t==='more'?'on':'';if(t==='more'){loadStock();loadSales()}}
+function nav(t){$('home').className='home'+(t==='home'?'':' off');$('more').className='more'+(t==='more'?' on':'');$('boss').className='more'+(t==='boss'?' on':'');$('nHome').className=t==='home'?'on':'';$('nMore').className=t==='more'?'on':'';$('nBoss').className=t==='boss'?'on':'';if(t==='more')loadSales();if(t==='boss'){loadStock();loadWeek();loadRev()}}
+function loadWeek(f){$('wkT').textContent='计算中…';api('weekly'+(f?'?fresh=1':'')).then(function(w){$('wkT').textContent=w.err?('暂时算不出：'+w.err):w.text}).catch(function(){$('wkT').textContent='载入失败'})}
+function loadRev(){api('reviews').then(drawRev).catch(function(){$('revT').textContent='载入失败'})}
+function drawRev(v){var t=[];if(v.alert)t.push('⚠️ '+v.alert.text+'（'+new Date(v.alert.at).toLocaleString('zh-CN',{hour12:false})+'）');if(v.uber){var g=v.uber.ratings||{};t.push('Uber 评分 '+v.uber.avg+' ★（'+v.uber.stars+' 个星级评价）　5★'+(g['5']||0)+' 4★'+(g['4']||0)+' 3★'+(g['3']||0)+' 2★'+(g['2']||0)+' 1★'+(g['1']||0))}else t.push('Uber 评分：还没有数据');t.push(v.google?('Google 评分 '+v.google.avg+' ★'):'Google 评价：尚未接入');$('revT').innerHTML=t.map(esc).join('<br>');$('revAck').style.display=v.alert?'':'none'}
 var PEND=null,DLG_AT=0,DLG_OPEN=false;
 function closeDlg(){DLG_OPEN=false;PEND=null;$('ov').style.display='none';$('dOk').disabled=false;$('dNo').disabled=false}
 function askDo(t,s,ok,col,fn){$('dT').textContent=t;$('dS').innerHTML=s;$('dOk').textContent=ok;$('dOk').style.background=col;$('dOk').disabled=false;$('dNo').disabled=false;PEND=fn;DLG_AT=new Date().getTime();DLG_OPEN=true;$('ov').style.display='flex'}

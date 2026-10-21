@@ -25,6 +25,11 @@ C.recipe=C.recipe||[
  {re:'アボカド',use:{avocado:1,milk:1}},{re:'マンゴー',use:{mango:1}},{re:'マンゴーミルク',use:{milk:1}},
  {re:'タピオカ',use:{pearl:1}},{re:'いちご|イチゴ',use:{strawberry:1,milk:1}},{re:'ドラゴン',use:{dragon:1,milk:1}},
  {re:'抹茶ミルク|黒糖|ミルクティー',use:{milk:1}}];
+if(C.recipeV!==2){C.recipeV=2;
+ const add=[{k:'milkml',name:'牛奶 ml',unit:'ml',start:5000,low:1000},{k:'syrup',name:'糖浆 ml',unit:'ml',start:2000,low:400},{k:'condensed',name:'炼乳 g',unit:'g',start:1000,low:150},{k:'cocopow',name:'椰子粉 g',unit:'g',start:1000,low:150},{k:'cocomilk',name:'椰浆 ml',unit:'ml',start:800,low:100},{k:'cup700',name:'700ml杯套',unit:'套',start:200,low:40}];
+ add.forEach(a=>{if(!C.stock.items.some(i=>i.k===a.k))C.stock.items.push(a)});
+ C.recipe=[{re:'アボカド',use:{avocado:1,milkml:250,syrup:40,condensed:15}},{re:'ココナッツ',use:{cocopow:40,milkml:250}},{re:'楊枝甘露|ヤンジー',use:{cocomilk:20}}]
+  .concat(C.recipe.filter(r=>!/アボカド/.test(r.re)));}
 // ---- Square aggregation (read-only) ----
 async function ordersSince(startIso,maxPages){let out=[],cur,p=0;
  do{const d=await sq('/orders/search',{method:'POST',body:JSON.stringify({location_ids:[LOC],limit:500,cursor:cur,query:{filter:{date_time_filter:{created_at:{start_at:startIso}},state_filter:{states:['OPEN','COMPLETED']}},sort:{sort_field:'CREATED_AT',sort_order:'ASC'}}})});
@@ -129,7 +134,7 @@ function uberStatus(){const a=C.uberAck,hb=C.uberHb,seq=C.chanSeq||0,now=Date.no
  return {state:st,text:txt+(mismatch?' ｜ 注意：Uber 现在是「'+(obs==='paused'?'暂停':'接单')+'」（可能在 Uber 里手动改过）':''),want,observed:obs,hbAt:hb&&hb.at||null}}
 return async function api(u,q,r){const j=q.method==='POST'?await body(q):{};
  const p=u.pathname.slice('/api/ipad/'.length);const pin=String(q.headers['x-pin']||j.pin||'');
- const wk=String(q.headers['x-worker-key']||'');const isW=/^uber(-desired|-ack|-hb|-toppings|-hot|-status)?$/.test(p)&&WKEY&&wk.length===WKEY.length&&require('crypto').timingSafeEqual(Buffer.from(wk),Buffer.from(WKEY));
+ const wk=String(q.headers['x-worker-key']||'');const isW=/^uber(-desired|-ack|-hb|-toppings|-hot|-status|-week|-reviews)?$/.test(p)&&WKEY&&wk.length===WKEY.length&&require('crypto').timingSafeEqual(Buffer.from(wk),Buffer.from(WKEY));
  if(!isW&&(!PIN||pin!==PIN))return send(r,403,{error:'PIN'});
  try{
  if(p==='sales'){if(u.searchParams.get('refresh')==='1'||Date.now()-S.at>3*60e3)await refresh();return send(r,200,sales())}
@@ -144,6 +149,11 @@ return async function api(u,q,r){const j=q.method==='POST'?await body(q):{};
  if(p==='hot-off'){if(q.method==='POST'){if(j.confirm!==true)return send(r,400,{error:'confirm required'});C.uberHotOff=j.off?Date.now():null;save()}return send(r,200,{ok:true,off:!!C.uberHotOff,at:C.uberHotOff||null})}
  if(p==='uber-toppings'){(global.SEEN||(global.SEEN={})).uberSync=Date.now();const t=await toppings();return send(r,200,{sold:t.filter(x=>x.so).map(x=>x.name)})}
  if(p==='restore-all'&&q.method==='POST'){if(j.confirm!==true)return send(r,400,{error:'confirm required'});const m=await menu();const out=[];for(const i of m.filter(i=>i.vars.some(v=>v.so))){try{const x=await setSoldOut(i.id,false);out.push(i.name+(x.ok?'':' ✗'))}catch(e){out.push(i.name+' ✗'+e.message)}}return send(r,200,{ok:true,restored:out})}
+ if(p==='weekly'){if(!TOK)return send(r,200,{err:'no Square token'});const W=require('./lib/weekly');const st=u.searchParams.get('start')||W.lastWeekStart();
+  if(!(C.weekly&&C.weekly.range.start===st&&Date.now()-C.weekly.at<6*3600e3&&!u.searchParams.get('fresh'))){try{const R=await W.compute(sq,LOC,{start:st,uber:C.uberWk||null});C.weekly={range:R.range,text:R.text,at:R.at};save()}catch(e){return send(r,200,{err:e.message})}}return send(r,200,C.weekly)}
+ if(p==='uber-week'&&q.method==='POST'){if(!isW)return send(r,403,{});C.uberWk={orders:(j.orders||[]).slice(-3000).map(o=>({t:+o.t,cups:+o.cups||0})),daily:j.daily||{},at:Date.now()};C.weekly=null;save();return send(r,200,{ok:true})}
+ if(p==='uber-reviews'&&q.method==='POST'){if(!isW)return send(r,403,{});const prev=C.reviews||{};const low=x=>x&&x.ratings?(+x.ratings['1']||0)+(+x.ratings['2']||0):0;const nu=j.uber||prev.uber||null;let alert=prev.alert||null;if(prev.uber&&nu&&low(nu)>low(prev.uber))alert={at:Date.now(),src:'Uber',n:low(nu)-low(prev.uber),text:'Uber 新增 '+(low(nu)-low(prev.uber))+' 个 1-2 星评价'};C.reviews={uber:nu,google:j.google||prev.google||null,alert,at:Date.now()};save();return send(r,200,{ok:true})}
+ if(p==='reviews'){if(q.method==='POST'&&j.ack&&C.reviews){C.reviews.alert=null;save()}return send(r,200,C.reviews||{})}
  if(p==='stock'){if(q.method==='POST'){
    if(j.items)C.stock.items=j.items.slice(0,30).map(i=>({k:String(i.k).replace(/\W/g,'').slice(0,20),name:String(i.name||i.k).slice(0,30),unit:String(i.unit||'').slice(0,6),start:+i.start||0,low:+i.low||0}));
    if(j.recipe)C.recipe=j.recipe.slice(0,60).map(x=>({re:String(x.re).slice(0,60),use:Object.fromEntries(Object.entries(x.use||{}).map(([k,v])=>[k,+v||0]))}));
@@ -152,7 +162,7 @@ return async function api(u,q,r){const j=q.method==='POST'?await body(q):{};
    save()}return send(r,200,stockView())}
  if(p==='cfg'&&q.method==='POST'){if(j.peak)C.cfg.peak=Math.max(1,Math.min(50,parseInt(j.peak)||6));save();return send(r,200,C.cfg)}
  if(p==='health'){const G=global.SEEN||{},sh=ST().shop||null;return send(r,200,{now:Date.now(),screen:G.screen||null,orderVisit:G.orderVisit||null,orderVisitsToday:G.ovN||0,lastOrder:G.lastOrder||null,shop:sh?sh.mode:'open',orderGate:process.env.SHOP_GATE_ORDER!=='0',uberSync:G.uberSync||null,uberSales:C.uber&&C.uber.at||null,uberHb:C.uberHb&&C.uberHb.at||null,uberStore:C.uberStore||null,uberWant:shopWantsPause(sh)?'paused':'open'})}
- if(p==='overview'){const prep=ST().preparing||[];return send(r,200,{now:Date.now(),cfg:C.cfg,open:prep.length,peak:prep.length>=C.cfg.peak,stockLow:stockView().items.filter(i=>i.low).map(i=>i.name),screen:{vol:ST().screenVol==null?1:ST().screenVol,critVoice:ST().critVoice!==false,critShow:ST().critShow!==false,annOp:ST().annOp==null?0.62:ST().annOp,ann:ST().ann||null,shop:ST().shop||null},chan:{seq:C.chanSeq||0,uber:uberStatus(),orderGate:process.env.SHOP_GATE_ORDER!=='0'},wait:global.WAIT_EST?global.WAIT_EST():null,closedStale:!!(ST().shop&&ST().shop.mode==='closed'&&tokyoDay(ST().shop.at)!==tokyoDay()&&new Date(Date.now()+9*3600e3).getUTCHours()>=10)})}
+ if(p==='overview'){const prep=ST().preparing||[];return send(r,200,{now:Date.now(),cfg:C.cfg,open:prep.length,peak:prep.length>=C.cfg.peak,revAlert:C.reviews&&C.reviews.alert||null,stockLow:stockView().items.filter(i=>i.low).map(i=>i.name),screen:{vol:ST().screenVol==null?1:ST().screenVol,critVoice:ST().critVoice!==false,critShow:ST().critShow!==false,annOp:ST().annOp==null?0.62:ST().annOp,ann:ST().ann||null,shop:ST().shop||null},chan:{seq:C.chanSeq||0,uber:uberStatus(),orderGate:process.env.SHOP_GATE_ORDER!=='0'},wait:global.WAIT_EST?global.WAIT_EST():null,closedStale:!!(ST().shop&&ST().shop.mode==='closed'&&tokyoDay(ST().shop.at)!==tokyoDay()&&new Date(Date.now()+9*3600e3).getUTCHours()>=10)})}
  // box-side worker (uber-sync on the shop PC) polls desired Uber state and acks; Render cannot drive a browser
  if(p==='uber-desired'){shopExpire();const sh=ST().shop;return send(r,200,{seq:C.chanSeq||0,paused:shopWantsPause(sh),mode:sh?sh.mode:'open',until:sh&&sh.until||null,now:Date.now()})}
  if(p==='uber-ack'&&q.method==='POST'){const sq_=parseInt(j.seq)||0;if(sq_<(C.chanSeq||0)&&sq_!==-1)return send(r,200,{ok:true,stale:true}); // ignore acks for superseded seqs
