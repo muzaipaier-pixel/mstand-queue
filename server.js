@@ -18,7 +18,7 @@ const saveSync=()=>{if(sTimer){clearTimeout(sTimer);sTimer=null}if(!sDirty)retur
 process.on('beforeExit',saveSync);
 ['SIGTERM','SIGINT'].forEach(sig=>process.on(sig,()=>{saveSync();process.exit(0)}));
 const clients=new Set();
-const pub=()=>{const{seenPay,sqSince,rdySince,calledOrders,kdsLocal,...o}=st;return o};
+const pub=()=>{const{seenPay,sqSince,rdySince,calledOrders,kdsLocal,ipad,...o}=st;o.now=Date.now();return o};
 const SSE_MAX=1<<20;
 const dropClient=(c)=>{clients.delete(c);try{c.end()}catch(e){}try{c.destroy&&c.destroy()}catch(e){}};
 const sseWrite=(c,d)=>{try{const so=c.socket||c.connection;if(c.destroyed||c.writableEnded||(so&&so.destroyed)){clients.delete(c);return}
@@ -38,6 +38,7 @@ if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r,u.searchParams.get
  if(u.pathname==='/api/checkout'&&q.method==='POST'){let b='';q.on('data',c=>{b+=c;if(b.length>2e4)q.destroy()});q.on('end',()=>checkout(b,q,r));return;}
  if(u.pathname==='/api/order-status'){orderStatus(u.searchParams.get('id')||'',r);return;}
  if(u.pathname.startsWith('/api/kds')){kdsApi(u,q,r);return;}
+ if(u.pathname.startsWith('/api/ipad/')){IPAD(u,q,r);return;}
  if(u.pathname==='/api/fun')return jres(r,200,funState());
  if(u.pathname==='/api/state')return r.end(JSON.stringify(pub()));
  if(u.pathname==='/api/action'&&q.method==='POST'){let b='';q.on('data',c=>b+=c);q.on('end',()=>{let j={};try{j=JSON.parse(b)}catch(e){}
@@ -48,7 +49,8 @@ if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r,u.searchParams.get
   if(j.action==='next')st.current=/^[0-9]{1,4}$/.test(String(st.current))?(+st.current+1)%10000:1; // 9999 -> 0
   else if(j.action==='set'){const n=parseInt(j.number);if(!(n>=0&&n<10000)){r.writeHead(400);return r.end('{}')}st.current=n}
   else if(j.action==='recall'){if(!st.current&&st.current!==0){return r.end('{}')}ev='recall'}
-  else if(j.action==='reset'){st={current:0,history:[],seq:st.seq,preparing:[],seenPay:st.seenPay,sqSince:st.sqSince};ev='reset'}
+  else if(j.action==='skip'){st.current=/^[0-9]{1,4}$/.test(String(st.current))?(+st.current+1)%10000:1;st.history=[st.current,...st.history.filter(x=>x!==st.current)].slice(0,8);ev='skip'}
+  else if(j.action==='reset'){st={current:0,history:[],seq:st.seq,preparing:[],seenPay:st.seenPay,sqSince:st.sqSince,ipad:st.ipad,screenVol:st.screenVol,shop:st.shop};ev='reset'}
   else if(j.action==='callid'){const x=st.preparing.find(y=>y.id===j.id);if(!x)return r.end('{}');{const k=kds.get(x.order);callNum(/^[0-9]+$/.test(String(x.num))?parseInt(x.num):x.num,k?itemsOf(k.raw):[],k&&k.raw)}return r.end(JSON.stringify({ok:true,...pub()}))}
   else if(j.action==='paid'){const x=st.preparing.find(y=>y.id===j.id);if(x)x.unpaid=false;ev='prep'}
   else if(j.action==='done'){st.preparing=st.preparing.filter(x=>x.id!==j.id);ev='prep'}
@@ -56,7 +58,7 @@ if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r,u.searchParams.get
   if(ev==='call'){st.preparing=st.preparing.filter(x=>String(x.num)!==String(st.current));st.history=[st.current,...st.history.filter(x=>x!==st.current)].slice(0,8)}
   if(ev==='call'||ev==='recall'){try{st.callClip=callClip(st.current,st.callItems||[],st.callFx)}catch(e){st.callClip=null}}if(ev==='call'&&/^[0-9]{1,4}$/.test(String(st.current)))setTimeout(warmAfter,3000,+st.current);
   st.seq++;st.at=Date.now();if(ev==='call'||ev==='recall')st.callAt=st.at;save();push(ev);r.end(JSON.stringify({ok:true,...pub()}));});return;}
- let p=u.pathname==='/'?'/display.html':u.pathname==='/staff'?'/staff.html':u.pathname==='/display'?'/display.html':u.pathname==='/screen'?'/screen.html':u.pathname==='/screen-test'?'/screen-test.html':u.pathname==='/kds'?'/kds.html':u.pathname==='/order'?'/order.html':u.pathname==='/order/done'?'/order-done.html':u.pathname;
+ let p=u.pathname==='/'?'/display.html':u.pathname==='/staff'?'/staff.html':u.pathname==='/ipad'?'/ipad.html':u.pathname==='/display'?'/display.html':u.pathname==='/screen'?'/screen.html':u.pathname==='/screen-test'?'/screen-test.html':u.pathname==='/kds'?'/kds.html':u.pathname==='/order'?'/order.html':u.pathname==='/order/done'?'/order-done.html':u.pathname;
  const f=path.join(__dirname,'public',path.normalize(p).replace(/^(\.\.[\/\\])+/,''));
  fs.readFile(f,(e,d)=>{if(e){r.writeHead(404);return r.end('404')}r.writeHead(200,{'Content-Type':types[path.extname(f)]||'application/octet-stream','Cache-Control':(path.extname(f)==='.html'||p==='/sw.js'||/manifest\.json$/.test(p))?'no-cache':(/^\/voice\/num\/v\d+\//.test(p)||(u.searchParams.has('v')&&/\.(mp3|wav)$/.test(f)))?'public, max-age=31536000, immutable':'public, max-age=3600'});r.end(d)});
 }).listen(PORT,'0.0.0.0',()=>console.log('listening',PORT));
@@ -350,6 +352,7 @@ function nameCheck(raw){const n=String(raw||'').replace(/[<>&"'`\\\u0000-\u001f]
  if(!n)return {err:'name'};return {n:Array.from(n).slice(0,AP.nameMax).join('')}}
 function webOpen(id){const p=st.preparing.find(x=>x.order===id);return !!(p&&p.unpaid)}
 async function checkout(b,q,r){
+ if(st.shop&&st.shop.mode&&process.env.SHOP_GATE_ORDER!=='0')return jres(r,409,{error:'closed',mode:st.shop.mode}); // QR self-order paused while not 営業中
  const bad=(c,m)=>{r.writeHead(c,{'Content-Type':'application/json'});r.end(JSON.stringify({error:m}))};
  try{
   let j;try{j=JSON.parse(b)}catch(e){return bad(400,'json')}
@@ -534,3 +537,5 @@ async function weather(){
 }
 weather();setInterval(weather,20*60e3);
 function funState(){return {top3:stats.day===tokyoDay()?stats.top3:[],weather:wx.data,reward:FUN_REWARD,day:tokyoDay()}}
+
+const IPAD=require('./ipad')({sq,LOC,st:()=>st,save,push,PIN,menu,invalidateMenu:()=>{menuC.at=0;menu().catch(()=>{})},TOK});

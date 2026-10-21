@@ -94,8 +94,8 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-c
 #hs .c .s{font-size:.8em;overflow:hidden;text-overflow:ellipsis}
 #hs .sw{display:inline-block;width:1em;height:1em;border-radius:50%;border:2px solid #fff;vertical-align:-.15em;margin-right:.3em}
 #hs .k{display:inline-block;width:1em;color:#FFE600;font-weight:900}
-.calling #critter *,.calling .crf *,.calling #cbub,.calling #cbub *,.calling #cfx *{-webkit-animation-play-state:paused!important;animation-play-state:paused!important}</style><script src="/kcal.js?v=2"></script><script src="/critter.js?v=13"></script></head><body>
-<img id="menu" src="/menu.jpg?v=7" alt="menu"><div id="kcmask"></div><div id="somask"></div><div id="hdr"><div id="hs"></div></div>
+.calling #critter *,.calling .crf *,.calling #cbub,.calling #cbub *,.calling #cfx *{-webkit-animation-play-state:paused!important;animation-play-state:paused!important}</style><script src="/kcal.js?v=2"></script><script src="/critter.js?v=14"></script></head><body>
+<img id="menu" src="/menu.jpg?v=7" alt="menu"><div id="kcmask"></div><div id="shopb" style="display:none;position:fixed;left:50%;bottom:4vw;-webkit-transform:translateX(-50%);transform:translateX(-50%);z-index:8999;background:rgba(255,250,244,.94);border:.5vw solid #ff8fb1;border-radius:3vw;padding:1.4vw 3vw;text-align:center;box-shadow:0 1vw 3vw rgba(0,0,0,.25);font-family:-apple-system,'Hiragino Sans','PingFang SC',sans-serif;color:#5a2a1a;white-space:nowrap"></div><div id="annb" style="display:none;position:fixed;left:0;right:0;top:0;z-index:9000;background:#ff4f7b;color:#fff;font:900 3.4vw/1.5 -apple-system,'Hiragino Sans','PingFang SC',sans-serif;text-align:center;padding:.5vw 2vw;box-shadow:0 .4vw 1.5vw rgba(0,0,0,.3)"></div><div id="somask"></div><div id="hdr"><div id="hs"></div></div>
 <div id="q" class="qrA">
  <div class="t">お呼び出し番号<span>请取餐</span></div>
  <div id="deco"></div>
@@ -141,7 +141,7 @@ function busy(ms){window.__callBusy=+new Date()+ms;try{if(!/(^| )calling/.test(d
 function speak(num,items,fxq,clip){var iq='';try{iq=(items||[]).map(function(x){return String(x.n).replace(/[|*]/g,'')+'*'+x.q}).join('|')}catch(e){}if(!SOUND)return;
  var t0=+new Date(),done=false,dyn='/voice?v=2&n='+encodeURIComponent(String(num))+'&lang='+encodeURIComponent(LANGS)+(iq?'&i='+encodeURIComponent(iq):'')+(fxq?'&fx='+encodeURIComponent(fxq):'');busy(20000);
  var useClip=clip&&clip.url&&clip.langs===LANGS,url=useClip?clip.url:dyn,tag=useClip?(clip.src+(pfHas(url)?' pf=HIT':' pf=MISS')+(SWON?' sw':'')):'dyn';
- try{var a=$('vo');var fellBack=!useClip;a.onerror=function(){if(!fellBack){fellBack=true;alog('vo error '+tag+' -> dyn');a.src=dyn;if(a.load)a.load();return}a.onerror=null;alog('vo error');done=true;localSpeak(num)};a.preload='auto';a.volume=1;
+ try{var a=$('vo');var fellBack=!useClip;a.onerror=function(){if(!fellBack){fellBack=true;alog('vo error '+tag+' -> dyn');a.src=dyn;if(a.load)a.load();return}a.onerror=null;alog('vo error');done=true;localSpeak(num)};a.preload='auto';a.volume=SVOL;
   a.src=url;if(a.load)a.load();alog('vo src '+tag+' '+url.slice(0,40));
   var go=function(why){if(done)return;done=true;a.oncanplaythrough=null;var wait=Math.max(0,1800-(+new Date()-t0));alog('vo ready('+why+') '+tag+' '+(+new Date()-t0)+'ms');pfMark(url);
    setTimeout(function(){tryPlay(a,'vo');a.onended=function(){a.onended=null;busy(1500)}},wait)};
@@ -163,9 +163,9 @@ function prefetchAll(){var q=['/chime_marimba.mp3?v=1','/gap.mp3?v=1'],i=0,hit=0
    if(x.status===200){if(ms<40)hit++;else miss++;PF[u]=1}if(i%25===0)pfSave();setTimeout(step,ms<40?150:1500)};x.send()}catch(e){setTimeout(step,1500)}}
 }
 setTimeout(prefetchAll,20000);
-function unlock(){var ids=['chime','vo'];for(var k=0;k<ids.length;k++){try{var a=$(ids[k]);if(ids[k]==='vo'&&!a.src)a.src='/voice_fallback.mp3';a.volume=0;var p=a.play();if(p&&p['catch'])p['catch'](function(){});(function(b){setTimeout(function(){b.pause();b.volume=1},80)})(a)}catch(e){}}}
+function unlock(){var ids=['chime','vo'];for(var k=0;k<ids.length;k++){try{var a=$(ids[k]);if(ids[k]==='vo'&&!a.src)a.src='/voice_fallback.mp3';a.volume=0;var p=a.play();if(p&&p['catch'])p['catch'](function(){});(function(b){setTimeout(function(){b.pause();b.volume=SVOL},80)})(a)}catch(e){}}}
 if(document.addEventListener){document.addEventListener('click',unlock,false);document.addEventListener('touchstart',unlock,false)}
-setTimeout(function(){try{var a=$('chime');a.volume=0;var p=a.play();var r=function(){try{a.pause();a.currentTime=0;a.volume=1}catch(e){}};if(p&&p.then)p.then(function(){r();alog('autoplay probe OK')},function(er){r();alog('autoplay probe REJECT '+(er&&er.name))});else setTimeout(r,80)}catch(e){}},3000);
+setTimeout(function(){try{var a=$('chime');a.volume=0;var p=a.play();var r=function(){try{a.pause();a.currentTime=0;a.volume=SVOL}catch(e){}};if(p&&p.then)p.then(function(){r();alog('autoplay probe OK')},function(er){r();alog('autoplay probe REJECT '+(er&&er.name))});else setTimeout(r,80)}catch(e){}},3000);
 var lastCallAt=null;
 // shrink font (px) until content fits box (ES5, works on old WebView)
 function fitText(t,box,max,min,wrap,txt){var BW=box.clientWidth,BH=box.clientHeight;
@@ -188,8 +188,15 @@ var lastTxt=null,curTxt='-',seenPrep=null;
 function thank(name,tries){if(!SOUND)return;tries=tries||0;try{var a=$('vo');
  if(!a.paused&&!a.ended&&tries<8){setTimeout(function(){thank(name,tries+1)},2000);return}
  var n=/^[0-9]+$/.test(String(name))?'':String(name);
- a.onerror=null;a.src='/voice?v=2&t=thanks&n='+encodeURIComponent(n)+'&lang='+encodeURIComponent(LANGS);a.volume=1;if(a.load)a.load();var p=a.play();if(p&&p['catch'])p['catch'](function(){})}catch(e){}}
-function handle(s){
+ a.onerror=null;a.src='/voice?v=2&t=thanks&n='+encodeURIComponent(n)+'&lang='+encodeURIComponent(LANGS);a.volume=SVOL;if(a.load)a.load();var p=a.play();if(p&&p['catch'])p['catch'](function(){})}catch(e){}}
+var SVOL=1,annTxt='',shopK='',shopEnd=0,clkOff=0,shopTm=null;
+function shopTick(){try{var e=$('shopcd');if(!e||!shopEnd)return;var ms=shopEnd-(new Date().getTime()+clkOff);if(ms<0)ms=0;var sec=Math.ceil(ms/1000),mm=Math.floor(sec/60),ss=sec%60,t=(mm<10?'0':'')+mm+':'+(ss<10?'0':'')+ss;e.innerHTML='\u8fd8\u9700 '+t+' / \u3042\u3068 '+t;if(ms<=0){$('shopb').style.display='none';shopK=''}}catch(x){}}
+function shopUpd(s){try{if(typeof s.now==='number')clkOff=s.now-new Date().getTime();var m=s.shop,b=$('shopb'),k='';if(m&&m.mode){var tm='';if(m.until){var d=new Date(m.until+9*3600e3);tm=('0'+d.getUTCHours()).slice(-2)+':'+('0'+d.getUTCMinutes()).slice(-2)}k=m.mode+tm}
+ if(k===shopK)return;shopK=k;shopEnd=m&&m.until||0;if(!shopTm)shopTm=setInterval(shopTick,1000);if(!k){b.style.display='none';return}var P=m.mode==='closed'?['\ud83c\udf19','\u672c\u65e5\u8425\u4e1a\u7ed3\u675f\u00b7\u611f\u8c22\u5149\u4e34','\u672c\u65e5\u306e\u55b6\u696d\u306f\u7d42\u4e86\u3057\u307e\u3057\u305f']:m.mode==='shop'?['\ud83d\uded2','\u9644\u8fd1\u91c7\u8d2d\u4e2d\u00b7\u8bf7\u7a0d\u540e','\u8fd1\u304f\u3067\u8cb7\u3044\u51fa\u3057\u4e2d\u3067\u3059\u3001\u5c11\u3005\u304a\u5f85\u3061\u304f\u3060\u3055\u3044']:['\ud83e\uddcb','\u6750\u6599\u51c6\u5907\u4e2d\u00b7\u8bf7\u7a0d\u5019','\u6e96\u5099\u4e2d\u3067\u3059\u3001\u5c11\u3005\u304a\u5f85\u3061\u304f\u3060\u3055\u3044'];
+ b.innerHTML='<div style="font-size:4.4vw;font-weight:900;color:#ff4f7b">'+P[0]+' '+P[1]+'</div><div style="font-size:2.6vw;font-weight:800;margin-top:.4vw">'+P[2]+'</div>'+(tm?'<div id="shopcd" style="font-size:5vw;font-weight:900;margin-top:.4vw;color:#e2552b"></div><div style="font-size:2.2vw;font-weight:800;color:#a0604a">\u9884\u8ba1 / \u4e88\u5b9a '+tm+'</div>':'');b.style.display='block';shopTick()}catch(e){}}
+function annUpd(s){try{var v=(typeof s.screenVol==='number')?s.screenVol:1;if(v!==SVOL){SVOL=v;var ids=['chime','vo'];for(var i=0;i<ids.length;i++){var e=$(ids[i]);if(e&&e.volume>0)e.volume=SVOL}}
+ var a=s.ann,t=(a&&a.text&&a.until>new Date().getTime())?a.text:'';if(t!==annTxt){annTxt=t;var b=$('annb');b.innerHTML='\u2605 '+esc(t)+' \u2605';b.style.display=t?'block':'none'}}catch(e){}}
+function handle(s){annUpd(s);shopUpd(s);
  // new call = callAt changed
  var isCall=lastCallAt!==null&&s.callAt&&s.callAt!==lastCallAt&&(s.current||s.current===0);
  var nw=$('nw'),cur=String(s.current||s.current===0?s.current:'-');
