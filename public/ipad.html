@@ -119,14 +119,14 @@ tr.low td{color:#d33;font-weight:800}
 
 <div id="dbg" style="text-align:center;font-size:11px;color:#b9a296;margin-top:14px"></div>
 <div class="nav"><button class="on" id="nHome" onclick="nav('home')">首页</button><button id="nMore" onclick="nav('more')">更多</button></div>
-<div class="ov" id="ov"><div class="dlg"><h3 id="dT"></h3><p id="dS"></p><div class="row"><button class="ghost" onclick="$('ov').style.display='none'">取消</button><button class="big" id="dOk" style="height:52px;font-size:20px">确定</button></div></div></div>
+<div class="ov" id="ov"><div class="dlg" id="dlg"><h3 id="dT"></h3><p id="dS"></p><div class="row"><button class="ghost" id="dNo" style="height:64px;font-size:20px">取消</button><button class="big" id="dOk" style="height:64px;font-size:22px">确定</button></div></div></div>
 <script>
 var PIN=sget('pin'),ST={},CUST={},MENU=[],OPEN={},CAT='',OV=null,CLK=0;
 function $(i){return document.getElementById(i)}
 function yen(n){return n==null?'-':'¥'+Math.round(n).toLocaleString()}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return '&#'+c.charCodeAt(0)+';'})}
 function toast(t,bad){var e=$('toast');e.textContent=t;e.style.background=bad?'#ef4b4b':'#2fb36b';e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display='none'},bad?6000:2500)}
-var VER='v3',LAST='-';
+var VER='v4',LAST='-';
 function dbg(){var e=$('dbg');if(e)e.textContent='iPad '+VER+' · 上次请求 '+LAST}
 function T(){var ok=[],er=[],st=0,val,o={then:function(f,e){if(f)ok.push(f);if(e)er.push(e);fl();return o},'catch':function(e){er.push(e);fl();return o},
  _r:function(v){st=1;val=v;fl()},_j:function(v){st=2;val=v;fl()}};function fl(){var L;if(st===1){L=ok;ok=[];for(var i=0;i<L.length;i++){try{L[i](val)}catch(x){st=2;val=x;rep('cb '+x.message)}}}if(st===2){L=er;er=[];for(var j=0;j<L.length;j++){try{L[j](val)}catch(x){}}}}return o}
@@ -143,10 +143,19 @@ function sget(k){try{return localStorage.getItem(k)||''}catch(e){return ''}}
 function sset(k,v){try{if(v)localStorage.setItem(k,v);else localStorage.removeItem(k)}catch(e){}}
 function login(){PIN=$('pin').value;api('overview').then(function(){sset('pin',PIN);$('lock').style.display='none';boot()}).catch(function(){$('msg').textContent='PIN 错误'})}
 function nav(t){$('home').className='home'+(t==='home'?'':' off');$('more').className='more'+(t==='more'?' on':'');$('nHome').className=t==='home'?'on':'';$('nMore').className=t==='more'?'on':'';if(t==='more'){loadStock();loadSales()}}
-function askDo(t,s,ok,col,fn){$('dT').textContent=t;$('dS').innerHTML=s;$('dOk').textContent=ok;$('dOk').style.background=col;$('ov').style.display='flex';$('dOk').onclick=function(){$('dOk').onclick=null;$('ov').style.display='none';fn()}}
+var PEND=null,DLG_AT=0,DLG_OPEN=false;
+function closeDlg(){DLG_OPEN=false;PEND=null;$('ov').style.display='none';$('dOk').disabled=false;$('dNo').disabled=false}
+function askDo(t,s,ok,col,fn){$('dT').textContent=t;$('dS').innerHTML=s;$('dOk').textContent=ok;$('dOk').style.background=col;$('dOk').disabled=false;$('dNo').disabled=false;PEND=fn;DLG_AT=new Date().getTime();DLG_OPEN=true;$('ov').style.display='flex'}
+function dlgGuard(e){if(e){if(e.stopPropagation)e.stopPropagation();if(e.preventDefault)e.preventDefault()}return new Date().getTime()-DLG_AT<600}
+function initDlg(){if(initDlg.d)return;initDlg.d=1;$('ov').onclick=function(e){if(e&&e.stopPropagation)e.stopPropagation()}; /* backdrop never closes */
+ $('dlg').onclick=function(e){if(e&&e.stopPropagation)e.stopPropagation()};
+ $('dNo').onclick=function(e){if(dlgGuard(e))return;closeDlg()};
+ $('dOk').onclick=function(e){if(dlgGuard(e)||!PEND)return;var fn=PEND;PEND=null;$('dOk').disabled=true;$('dNo').disabled=true;$('dOk').textContent='处理中…';
+  var r;try{r=fn()}catch(x){toast('出错：'+x.message,true);closeDlg();return}
+  if(r&&r.then){r.then(function(){closeDlg()},function(){closeDlg()});setTimeout(function(){if(DLG_OPEN&&!PEND)closeDlg()},25000)}else closeDlg()}}
 var SHN={open:'营业中',prep:'准备中',shop:'采购中',closed:'营业结束'};
 function askShop(m){var mins=+$('shopM').value;askDo('切换为「'+SHN[m]+'」？',m==='open'?'横屏恢复菜单 · Uber 恢复接单':(m==='closed'?'横屏显示营业结束':'横屏显示等待 '+mins+' 分钟')+' · Uber 暂停接单',
- '确定',m==='open'?'#2fb36b':'#ff5c8a',function(){api('screen',{shop:m,mins:mins}).then(loadOv)})}
+ '确定',m==='open'?'#2fb36b':'#ff5c8a',function(){return api('screen',{shop:m,mins:mins}).then(function(r){toast('已切换为「'+SHN[m]+'」');loadOv()})})}
 function adjShop(d){api('screen',{shopAdj:d}).then(loadOv)}
 function act(a){post({action:a})}
 function setVol(v){$('volV').textContent=v+'%';api('screen',{vol:v/100}).then(loadOv)}
@@ -175,7 +184,7 @@ function render(s){ST=s;$('n').textContent=(s.current||s.current===0)?s.current:
  $('prep').innerHTML=p.map(function(x){if(x.order&&!(x.order in CUST)&&!/^web/.test(x.id)){CUST[x.order]=null;api('customer?order='+encodeURIComponent(x.order)).then(function(c){CUST[x.order]=c;render(ST)}).catch(function(){})}
   return '<div class="pr"><b>'+esc(x.num)+'</b><div class="nm">'+esc(x.items||'')+custTag(x)+'</div><button class="sm" onclick="post({action:\'callid\',id:\''+esc(x.id)+'\'})">叫号</button><button class="sm" style="background:#eee;color:#888" onclick="post({action:\'done\',id:\''+esc(x.id)+'\'})">✕</button></div>'}).join('')||'<div class="us">没有订单</div>'}
 function soN(i){var n=0;for(var k=0;k<i.vars.length;k++)if(i.vars[k].so)n++;return n}
-function loadMenu(){api('menu').then(function(m){MENU=m;drawMenu()}).catch(function(){})}
+function loadMenu(){if(DLG_OPEN)return;api('menu').then(function(m){if(DLG_OPEN)return;MENU=m;drawMenu()}).catch(function(){})}
 function drawMenu(){var cs=['全部','有售罄'],seen={},i;for(i=0;i<MENU.length;i++)if(!seen[MENU[i].cat]){seen[MENU[i].cat]=1;cs.push(MENU[i].cat)}
  $('chips').innerHTML=cs.map(function(c){var k=c==='全部'?'':c;return '<button class="chip'+(CAT===k?' on':'')+'" onclick="CAT=\''+esc(k)+'\';drawMenu()">'+esc(c)+'</button>'}).join('');
  var q=$('q').value.replace(/^\s+|\s+$/g,'').toLowerCase();
@@ -186,14 +195,14 @@ function drawMenu(){var cs=['全部','有售罄'],seen={},i;for(i=0;i<MENU.lengt
   (OPEN[ix]?'<div class="vs">'+it.vars.map(function(v,vi){return '<button class="'+(v.so?'so':'')+'" onclick="askVar('+ix+','+vi+')">'+esc(v.name)+'</button>'}).join('')+'</div>':'')}).join('')||'<div class="us">没有符合的饮品</div>'}
 function doSold(it,b){toast('正在更新…');return api('soldout',b).then(function(r){if(r.error){toast('失败：'+r.error,true);return}
  for(var k=0;k<it.vars.length;k++)if(!b.vars||b.vars.indexOf(it.vars[k].id)>=0)it.vars[k].so=b.sold;drawMenu();toast((b.sold?'已售罄 ':'已恢复 ')+it.name);setTimeout(loadMenu,4000)}).catch(function(e){toast(e===0?'PIN 错误':'网络错误，请重试',true)})}
-function askSold(ix,to){var it=MENU[ix];askDo(to?'售罄？':'恢复？','<b>'+esc(it.name)+'</b>'+(it.vars.length>1?'（全部 '+it.vars.length+' 个规格）':''),to?'售罄':'恢复',to?'#ef4b4b':'#2fb36b',function(){doSold(it,{id:it.id,sold:to,confirm:true})})}
-function askVar(ix,vi){var it=MENU[ix],v=it.vars[vi],to=!v.so;askDo(to?'这个规格售罄？':'这个规格恢复？','<b>'+esc(it.name)+'</b><br>'+esc(v.name),to?'售罄':'恢复',to?'#ef4b4b':'#2fb36b',function(){doSold(it,{id:it.id,vars:[v.id],sold:to,confirm:true})})}
-function restoreAll(){var L=MENU.filter(function(i){return soN(i)>0});if(!L.length){toast('没有售罄的饮品');return}askDo('全部恢复？',L.map(function(i){return esc(i.name)}).join('<br>'),'全部恢复','#2fb36b',function(){api('restore-all',{confirm:true}).then(function(){toast('已全部恢复');loadMenu()})})}
+function askSold(ix,to){var it=MENU[ix];askDo(to?'售罄？':'恢复？','<b>'+esc(it.name)+'</b>'+(it.vars.length>1?'（全部 '+it.vars.length+' 个规格）':''),to?'售罄':'恢复',to?'#ef4b4b':'#2fb36b',function(){return doSold(it,{id:it.id,sold:to,confirm:true})})}
+function askVar(ix,vi){var it=MENU[ix],v=it.vars[vi],to=!v.so;askDo(to?'这个规格售罄？':'这个规格恢复？','<b>'+esc(it.name)+'</b><br>'+esc(v.name),to?'售罄':'恢复',to?'#ef4b4b':'#2fb36b',function(){return doSold(it,{id:it.id,vars:[v.id],sold:to,confirm:true})})}
+function restoreAll(){var L=MENU.filter(function(i){return soN(i)>0});if(!L.length){toast('没有售罄的饮品');return}askDo('全部恢复？',L.map(function(i){return esc(i.name)}).join('<br>'),'全部恢复','#2fb36b',function(){return api('restore-all',{confirm:true}).then(function(){toast('已全部恢复');loadMenu()})})}
 var STK=null;function loadStock(){api('stock').then(drawStock).catch(function(){})}
 function drawStock(s){STK=s;$('stk').innerHTML='<tr style="color:#a08070;font-size:13px"><td>材料</td><td>开店</td><td>剩余</td><td>提醒</td></tr>'+s.items.map(function(i,ix){return '<tr class="'+(i.low?'low':'')+'"><td>'+esc(i.name.split(' ')[0])+'</td><td><input type="number" id="st'+ix+'" value="'+i.start+'"></td><td><b>'+i.left+'</b> '+esc(i.unit)+'</td><td><input type="number" id="lw'+ix+'" value="'+i.lowAt+'"></td></tr>'}).join('')}
 function stockPost(b){api('stock',b).then(function(s){drawStock(s);loadOv();toast('已保存')})}
 function saveStock(){stockPost({items:STK.items.map(function(i,ix){return {k:i.k,name:i.name,unit:i.unit,start:+$('st'+ix).value,low:+$('lw'+ix).value}})})}
 function sse(){var es=new EventSource('/events');es.onmessage=function(e){$('conn').style.background='#2fb36b';var s=JSON.parse(e.data);render(s);if(s.event==='screen')loadOv()};es.onerror=function(){$('conn').style.background='#ef4b4b'}}
-var booted=0;function boot(){if(booted++)return;sse();loadOv();loadSales();loadMenu();setInterval(loadOv,15000);setInterval(loadSales,60000);setInterval(loadMenu,60000);setInterval(tickCd,1000)}
-if(PIN)api('overview').then(function(){$('lock').style.display='none';boot()}).catch(function(){});
+var booted=0;function boot(){if(booted++)return;initDlg();sse();loadOv();loadSales();loadMenu();setInterval(loadOv,15000);setInterval(loadSales,60000);setInterval(loadMenu,60000);setInterval(tickCd,1000)}
+initDlg();if(PIN)api('overview').then(function(){$('lock').style.display='none';boot()}).catch(function(){});
 </script></body></html>
