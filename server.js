@@ -45,16 +45,16 @@ if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r,u.searchParams.get
   if(j.action==='check')return r.end('{"ok":true}');
   let ev='call';
   if(j.action==='next'||j.action==='set'){st.callItems=[];st.callFx=null}
-  if(j.action==='next')st.current=st.current+1;
-  else if(j.action==='set'){const n=parseInt(j.number);if(!(n>0&&n<10000)){r.writeHead(400);return r.end('{}')}st.current=n}
-  else if(j.action==='recall'){if(!st.current){return r.end('{}')}ev='recall'}
+  if(j.action==='next')st.current=/^[0-9]{1,4}$/.test(String(st.current))?(+st.current+1)%10000:1; // 9999 -> 0
+  else if(j.action==='set'){const n=parseInt(j.number);if(!(n>=0&&n<10000)){r.writeHead(400);return r.end('{}')}st.current=n}
+  else if(j.action==='recall'){if(!st.current&&st.current!==0){return r.end('{}')}ev='recall'}
   else if(j.action==='reset'){st={current:0,history:[],seq:st.seq,preparing:[],seenPay:st.seenPay,sqSince:st.sqSince};ev='reset'}
   else if(j.action==='callid'){const x=st.preparing.find(y=>y.id===j.id);if(!x)return r.end('{}');{const k=kds.get(x.order);callNum(/^[0-9]+$/.test(String(x.num))?parseInt(x.num):x.num,k?itemsOf(k.raw):[],k&&k.raw)}return r.end(JSON.stringify({ok:true,...pub()}))}
   else if(j.action==='paid'){const x=st.preparing.find(y=>y.id===j.id);if(x)x.unpaid=false;ev='prep'}
   else if(j.action==='done'){st.preparing=st.preparing.filter(x=>x.id!==j.id);ev='prep'}
   else {r.writeHead(400);return r.end('{}')}
   if(ev==='call'){st.preparing=st.preparing.filter(x=>String(x.num)!==String(st.current));st.history=[st.current,...st.history.filter(x=>x!==st.current)].slice(0,8)}
-  if(ev==='call'||ev==='recall'){try{st.callClip=callClip(st.current,st.callItems||[],st.callFx)}catch(e){st.callClip=null}}
+  if(ev==='call'||ev==='recall'){try{st.callClip=callClip(st.current,st.callItems||[],st.callFx)}catch(e){st.callClip=null}}if(ev==='call'&&/^[0-9]{1,4}$/.test(String(st.current)))setTimeout(warmAfter,3000,+st.current);
   st.seq++;st.at=Date.now();if(ev==='call'||ev==='recall')st.callAt=st.at;save();push(ev);r.end(JSON.stringify({ok:true,...pub()}));});return;}
  let p=u.pathname==='/'?'/display.html':u.pathname==='/staff'?'/staff.html':u.pathname==='/display'?'/display.html':u.pathname==='/screen'?'/screen.html':u.pathname==='/screen-test'?'/screen-test.html':u.pathname==='/kds'?'/kds.html':u.pathname==='/order'?'/order.html':u.pathname==='/order/done'?'/order-done.html':u.pathname;
  const f=path.join(__dirname,'public',path.normalize(p).replace(/^(\.\.[\/\\])+/,''));
@@ -106,7 +106,7 @@ function callNum(num,items,o){
  const go=()=>{try{st.callFx=Object.keys(fx).length?fx:null}catch(e){}callNum0(num,items)};
  if(o&&o.customer_id&&TOK)withTimeout(custFx(o),1500).then(c=>{Object.assign(fx,c||{})}).catch(()=>{}).finally(go);else go();
 }
-function callNum0(num,items){st.current=num;st.callItems=(items||[]).slice(0,10);try{st.callClip=callClip(num,st.callItems,st.callFx)}catch(e){st.callClip=null}st.preparing=st.preparing.filter(x=>String(x.num)!==String(num));st.history=[num,...st.history.filter(x=>String(x)!==String(num))].slice(0,8);st.seq++;st.at=Date.now();st.callAt=st.at;save();push('call')}
+function callNum0(num,items){st.current=num;st.callItems=(items||[]).slice(0,10);try{st.callClip=callClip(num,st.callItems,st.callFx)}catch(e){st.callClip=null}try{if(/^[0-9]{1,4}$/.test(String(num)))setTimeout(warmAfter,3000,+num)}catch(e){}st.preparing=st.preparing.filter(x=>String(x.num)!==String(num));st.history=[num,...st.history.filter(x=>String(x)!==String(num))].slice(0,8);st.seq++;st.at=Date.now();st.callAt=st.at;save();push('call')}
 async function labelOf(o){
  const rec=((o.fulfillments||[]).map(f=>((f.delivery_details||f.pickup_details||{}).recipient||{}).display_name).find(Boolean)||'').trim();
  let label=(o.ticket_name||'').trim()||rec||o.id.slice(-4);
@@ -189,7 +189,7 @@ function withTimeout(p,ms){return Promise.race([p,new Promise((_,j)=>setTimeout(
 async function edgeTTS(text,lang){
  const t=new MsEdgeTTS();
  try{await t.setMetadata(VOICES[lang],OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
-  const b=await new Promise((res,rej)=>{const {audioStream}=t.toStream(text,{rate:VT.rateFor(text,lang)});const c=[];audioStream.on('data',d=>c.push(d));audioStream.on('error',rej);audioStream.on('close',()=>res(Buffer.concat(c)))});
+  const b=await new Promise((res,rej)=>{const {audioStream}=t.toStream(text,VT.prosody(text,lang));const c=[];audioStream.on('data',d=>c.push(d));audioStream.on('error',rej);audioStream.on('close',()=>res(Buffer.concat(c)))});
   if(b.length<1000)throw new Error('edge short');return b;
  }finally{try{t.close()}catch(e){}}
 }
@@ -230,7 +230,7 @@ async function buildClip(n,langQ,itemsQ,kind,fxQ){
 }
 // returns {h, url}; starts generation (memory+disk) immediately, dedupes in-flight
 function pregen(n,items,fx,langQ){
- const iq=itemsQOf(items),fq=fxQOf(fx),key=vcKey(n,langQ,iq,'call',fq),h=crypto.createHash('sha1').update('v2|'+key).digest('hex').slice(0,20);
+ const iq=itemsQOf(items),fq=fxQOf(fx),key=vcKey(n,langQ,iq,'call',fq),h=crypto.createHash('sha1').update('v3|'+key).digest('hex').slice(0,20);
  vcMeta.set(h,{n,iq,fq,langQ});if(vcMeta.size>2000)vcMeta.delete(vcMeta.keys().next().value);
  if(!vcMem.has(h)&&!vcJob.has(h)){const t0=Date.now();
   const pr=(async()=>{const f=path.join(VC_DIR,h+'.mp3');
@@ -253,17 +253,26 @@ async function vcServe(h,r){
  fs.readFile(path.join(__dirname,'public','voice_fallback.mp3'),(e,d)=>{if(e){r.writeHead(404);return r.end()}r.writeHead(200,{'Content-Type':'audio/mpeg','Content-Length':d.length,'Cache-Control':'no-store'});r.end(d)});
 }
 // static pre-recorded number clips (public/voice/num/v1/<n>.mp3) for number-only calls with default langs
-const NUM_V='v1';let NUM_MAX=0;try{NUM_MAX=JSON.parse(fs.readFileSync(path.join(__dirname,'public','voice','num',NUM_V,'manifest.json'))).max||0}catch(e){}
+const NUM_V='v2';let NUM_MIN=1,NUM_MAX=0;try{const m=JSON.parse(fs.readFileSync(path.join(__dirname,'public','voice','num',NUM_V,'manifest.json')));NUM_MIN=m.min||0;NUM_MAX=m.max||0}catch(e){}
 function callClip(n,items,fx){
  const plain=(!items||!items.length)&&!fxQOf(fx);
- if(plain&&/^[0-9]+$/.test(String(n))&&+n>=1&&+n<=NUM_MAX&&String(+n)===String(n)&&DEFAULT_LANGS==='ja,zh,en')return {url:'/voice/num/'+NUM_V+'/'+n+'.mp3',langs:'ja,zh,en',src:'static'};
+ if(plain&&/^[0-9]+$/.test(String(n))&&+n>=NUM_MIN&&+n<=NUM_MAX&&String(+n)===String(n)&&DEFAULT_LANGS==='ja,zh,en')return {url:'/voice/num/'+NUM_V+'/'+n+'.mp3',langs:'ja,zh,en',src:'static'};
  const p=pregen(n,items,fx,DEFAULT_LANGS);return {url:p.url,langs:parseLangs(DEFAULT_LANGS).join(','),src:'pregen'};
 }
-// startup warm: number-only clips just above the highest recent 4-digit ticket number (beyond the static range)
-function warmNums(){try{const nums=(st.history||[]).concat((st.preparing||[]).map(x=>x.num)).filter(x=>/^[0-9]+$/.test(String(x))).map(Number);
- const hi=Math.max(0,...nums);if(hi<=NUM_MAX)return;const list=[];for(let i=hi-5;i<=hi+40;i++)if(i>NUM_MAX)list.push(i);
- let k=0;const step=()=>{if(k>=list.length)return;const p=pregen(list[k++],[],null,DEFAULT_LANGS);(vcJob.get(p.h)||Promise.resolve()).finally(()=>setTimeout(step,400))};step();console.log('vc warm',list.length,'numbers from',list[0])}catch(e){console.error('warm',e.message)}}
-setTimeout(warmNums,5000);
+// startup warm: tickets cycle 0-9999 (9999 -> 0). Warm the next numbers after the most recent call(s) and anything preparing,
+// modulo 10000, skipping the static range. Re-run every 10 min so a long day keeps the window ahead of the counter.
+const isStaticNum=i=>i>=NUM_MIN&&i<=NUM_MAX&&DEFAULT_LANGS==='ja,zh,en';
+function warmNums(){try{const num=x=>/^[0-9]{1,4}$/.test(String(x))?+x:null;
+ const bases=[num(st.current)].concat((st.history||[]).slice(0,2).map(num),(st.preparing||[]).map(x=>num(x.num))).filter(x=>x!==null);
+ const seen=new Set(),list=[];bases.forEach(b=>{for(let d=-2;d<=40;d++){const i=((b+d)%10000+10000)%10000;if(!seen.has(i)&&!isStaticNum(i)){seen.add(i);list.push(i)}}});
+ const todo=list.slice(0,120);todo.forEach(warmQ);console.log('vc warm',todo.length,'numbers from',todo[0])}catch(e){console.error('warm',e.message)}}
+// sequential warm queue (one clip at a time, low priority) so a burst never opens dozens of TTS sockets
+const wq=[],wqSet=new Set();let wqRun=false;
+function warmQ(i){if(isStaticNum(i)||wqSet.has(i))return;wqSet.add(i);wq.push(i);if(!wqRun)wqNext()}
+function wqNext(){const i=wq.shift();if(i===undefined){wqRun=false;return}wqRun=true;wqSet.delete(i);
+ let p;try{p=pregen(i,[],null,DEFAULT_LANGS)}catch(e){}Promise.resolve(p&&vcJob.get(p.h)).catch(()=>{}).finally(()=>setTimeout(wqNext,300))}
+function warmAfter(b){for(let d=1;d<=15;d++)warmQ((b+d)%10000)}
+setTimeout(warmNums,5000);setInterval(warmNums,10*60e3);
 async function voice(n,r,langQ,itemsQ,kind,fxQ){
  const fx=VT.parseFx(fxQ);kind=kind==='thanks'?'thanks':'call';
  const items=VT.parseItems(itemsQ);

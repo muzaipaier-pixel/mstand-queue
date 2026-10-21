@@ -94,7 +94,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-c
 #hs .c .s{font-size:.8em;overflow:hidden;text-overflow:ellipsis}
 #hs .sw{display:inline-block;width:1em;height:1em;border-radius:50%;border:2px solid #fff;vertical-align:-.15em;margin-right:.3em}
 #hs .k{display:inline-block;width:1em;color:#FFE600;font-weight:900}
-.calling #critter *,.calling .crf *,.calling #cbub,.calling #cbub *,.calling #cfx *{-webkit-animation-play-state:paused!important;animation-play-state:paused!important}</style><script src="/kcal.js?v=2"></script><script src="/critter.js?v=12"></script></head><body>
+.calling #critter *,.calling .crf *,.calling #cbub,.calling #cbub *,.calling #cfx *{-webkit-animation-play-state:paused!important;animation-play-state:paused!important}</style><script src="/kcal.js?v=2"></script><script src="/critter.js?v=13"></script></head><body>
 <img id="menu" src="/menu.jpg?v=7" alt="menu"><div id="kcmask"></div><div id="somask"></div><div id="hdr"><div id="hs"></div></div>
 <div id="q" class="qrA">
  <div class="t">お呼び出し番号<span>请取餐</span></div>
@@ -155,8 +155,8 @@ function pfSave(){try{localStorage.setItem('vpf1',JSON.stringify(PF))}catch(e){}
 try{if(navigator.serviceWorker&&window.caches&&location.protocol==='https:'){navigator.serviceWorker.register('/sw.js').then(function(){SWON=true;alog('sw registered')},function(er){alog('sw FAIL '+(er&&er.name))})}else alog('sw unavailable -> http cache')}catch(e){alog('sw EXC')}
 function getJ(u,cb){try{var x=new XMLHttpRequest();x.open('GET',u,true);x.onreadystatechange=function(){if(x.readyState===4){var j=null;if(x.status===200){try{j=JSON.parse(x.responseText)}catch(e){}}cb(j)}};x.send()}catch(e){cb(null)}}
 function prefetchAll(){var q=['/chime_marimba.mp3?v=1','/gap.mp3?v=1'],i=0,hit=0,miss=0,t1=+new Date();
- getJ('/voice/critter/manifest.json?v=1',function(m){var k,l;if(m)for(l in m){if(l!=='zh'&&l!=='ja')continue;for(k in m[l])if(m[l][k]&&m[l][k].f)q.push('/voice/critter/'+m[l][k].f+'?v=1')}
-  getJ('/voice/num/v1/manifest.json',function(n){if(n&&n.max&&LANGS===n.langs)for(var j=n.min;j<=n.max;j++)q.push('/voice/num/v1/'+j+'.mp3');alog('prefetch start '+q.length+' files');step()})});
+ getJ('/voice/critter/manifest.json?v=2',function(m){var k,l;if(m)for(l in m){if(l!=='zh'&&l!=='ja')continue;for(k in m[l])if(m[l][k]&&m[l][k].f)q.push('/voice/critter/'+m[l][k].f+'?v=1')}
+  getJ('/voice/num/v2/manifest.json',function(n){if(n&&n.max&&LANGS===n.langs)for(var j=n.min;j<=n.max;j++)q.push('/voice/num/v2/'+j+'.mp3');alog('prefetch start '+q.length+' files');step()})});
  function step(){if(i>=q.length){pfSave();alog('prefetch done hit='+hit+' miss='+miss+' '+Math.round((+new Date()-t1)/1000)+'s');return}
   var vo=$('vo');if((window.__callBusy||0)>+new Date()||(vo&&!vo.paused&&!vo.ended)){setTimeout(step,5000);return}
   var u=q[i++],s0=+new Date();try{var x=new XMLHttpRequest();x.open('GET',u,true);x.onreadystatechange=function(){if(x.readyState!==4)return;var ms=+new Date()-s0;
@@ -191,8 +191,8 @@ function thank(name,tries){if(!SOUND)return;tries=tries||0;try{var a=$('vo');
  a.onerror=null;a.src='/voice?v=2&t=thanks&n='+encodeURIComponent(n)+'&lang='+encodeURIComponent(LANGS);a.volume=1;if(a.load)a.load();var p=a.play();if(p&&p['catch'])p['catch'](function(){})}catch(e){}}
 function handle(s){
  // new call = callAt changed
- var isCall=lastCallAt!==null&&s.callAt&&s.callAt!==lastCallAt&&s.current;
- var nw=$('nw'),cur=String(s.current||'-');
+ var isCall=lastCallAt!==null&&s.callAt&&s.callAt!==lastCallAt&&(s.current||s.current===0);
+ var nw=$('nw'),cur=String(s.current||s.current===0?s.current:'-');
  curTxt=cur;
  var p=s.preparing||[],h='';for(var i=0;i<p.length&&i<12;i++)h+='<span>'+esc(p[i].num)+'</span>';$('prep').innerHTML=h||'—';
  var hs=s.history||[];h='';for(var j=1;j<hs.length&&j<7;j++)h+='<span>'+esc(hs[j])+'</span>';$('hist').innerHTML=h;

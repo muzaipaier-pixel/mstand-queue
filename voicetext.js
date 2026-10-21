@@ -50,7 +50,7 @@ function hanziEn(s){ // pinyin best effort; 2-4 char name: surname + given joine
 }
 function names(n){
  n=String(n||'').replace(/[<>&"'`\\]/g,'').trim().slice(0,24);
- if(/^[0-9]+$/.test(n))return {num:n};
+ if(/^[0-9]+$/.test(n))return {num:String(parseInt(n,10))};
  let en='';
  if(/^[A-Za-z][A-Za-z .'-]*$/.test(n))en=n;
  else if(hasKana(n)&&!hasHan(n))en=romaji(n);
@@ -91,6 +91,9 @@ function thanks(n,lang){
  return has?nm.ja+(/[A-Za-z]$/.test(nm.ja)?' さま':'さま')+'、ご注文ありがとうございます':'ご注文ありがとうございます';
 }
 // long lines (drink names) are spoken a bit faster to keep 3 languages within ~15s
+// Japanese: Nanami slightly slower and lower than default -> warmer, calmer, less shrill (v13). zh/en unchanged.
+const JA_VOICE_V=2;
+function prosody(t,lang){if(lang!=='ja')return {rate:rateFor(t,lang)};const L=t.length;return {rate:L>26?'+6%':L>18?'+2%':'-4%',pitch:'-4%'}}
 function rateFor(t,lang){const L=lang==='en'?t.length/2.2:t.length;return L>26?'+15%':L>18?'+8%':'+0%'}
 // fun extras appended to the call line: bday | ms<N> (today's Nth cup) | life<N> | reg<N> (Nth visit)
 function parseFx(q){const fx={};String(q||'').split(',').slice(0,4).forEach(x=>{if(x==='bday')fx.bday=1;let m=/^(ms|life|reg)(\d{1,6})$/.exec(x);if(m)fx[m[1]]=+m[2]});return fx}
@@ -103,4 +106,4 @@ function withFx(text,lang,fx){
  if(fx.reg)add.push(lang==='zh'?'谢谢你一直以来的支持！':lang==='en'?'Thank you for always coming!':'いつもありがとうございます！');
  return add.length?text+'。'.replace('。',lang==='en'?'. ':'。')+add.join(lang==='en'?' ':''):text;
 }
-module.exports={parseFx,fxKey,withFx,thanks,rateFor,phrase,parseItems,names,drink,MENU};
+module.exports={prosody,JA_VOICE_V,parseFx,fxKey,withFx,thanks,rateFor,phrase,parseItems,names,drink,MENU};

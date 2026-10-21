@@ -21,8 +21,8 @@ function unlock(){ctx=new (window.AudioContext||window.webkitAudioContext)();sta
 function tone(f,t,d){const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=f;o.connect(g);g.connect(ctx.destination);g.gain.setValueAtTime(0,ctx.currentTime+t);g.gain.linearRampToValueAtTime(.4,ctx.currentTime+t+.02);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+t+d);o.start(ctx.currentTime+t);o.stop(ctx.currentTime+t+d)}
 function chime(){if(!ctx)return;tone(880,0,1.2);tone(659,.45,1.5)}
 function speak(num){if(!voice.checked||!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance((/^[0-9]+$/.test(String(num))?num+'番のお客さま':num+'さま')+'、お待たせしました');u.lang='ja-JP';u.rate=.9;const v=speechSynthesis.getVoices().find(v=>v.lang.startsWith('ja'));if(v)u.voice=v;speechSynthesis.speak(u)}
-function render(s){{const L=String(s.current||'-').length;n.style.fontSize=L>12?'5vw':L>8?'6.5vw':L>5?'10vw':L>3?'16vw':''}prep.innerHTML=(s.preparing||[]).map(x=>`<span>${x.num}</span>`).join('');n.textContent=s.current||'-';hist.innerHTML=s.history.slice(1,6).map(x=>`<div>${x}</div>`).join('');
- if(lastSeq!==null&&s.seq!==lastSeq&&s.current&&s.event!=='reset'&&s.event!=='prep'){n.classList.remove('flash');void n.offsetWidth;n.classList.add('flash');chime();speak(s.current)}lastSeq=s.seq}
+function render(s){{const L=String(s.current||s.current===0?s.current:'-').length;n.style.fontSize=L>12?'5vw':L>8?'6.5vw':L>5?'10vw':L>3?'16vw':''}prep.innerHTML=(s.preparing||[]).map(x=>`<span>${x.num}</span>`).join('');n.textContent=s.current||s.current===0?s.current:'-';hist.innerHTML=s.history.slice(1,6).map(x=>`<div>${x}</div>`).join('');
+ if(lastSeq!==null&&s.seq!==lastSeq&&(s.current||s.current===0)&&s.event!=='reset'&&s.event!=='prep'){n.classList.remove('flash');void n.offsetWidth;n.classList.add('flash');chime();speak(s.current)}lastSeq=s.seq}
 const es=new EventSource('/events');es.onmessage=e=>render(JSON.parse(e.data));
 try{navigator.wakeLock&&navigator.wakeLock.request('screen')}catch(e){}
 </script></body></html>
