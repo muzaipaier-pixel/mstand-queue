@@ -328,7 +328,7 @@ async function menuBuild(){
  const img={},cat={};objs.forEach(o=>{if(o.type==='IMAGE')img[o.id]=o.image_data.url;if(o.type==='CATEGORY')cat[o.id]=o.category_data.name});
  const at0=o=>(o.present_at_all_locations||(o.present_at_location_ids||[]).includes(LOC))&&!(o.absent_at_location_ids||[]).includes(LOC);
  const ml={};objs.forEach(o=>{if(o.type!=='MODIFIER_LIST'||o.is_deleted||!at0(o))return;const d=o.modifier_list_data;
-  ml[o.id]={id:o.id,name:d.name||'',multi:d.selection_type!=='SINGLE',opts:(d.modifiers||[]).filter(m=>!m.is_deleted&&at0(m)).map(m=>({id:m.id,name:m.modifier_data.name||'',price:Number((m.modifier_data.price_money||{}).amount||0),so:(m.modifier_data.location_overrides||[]).some(l=>l.location_id===LOC&&l.sold_out)}))}});
+  ml[o.id]={id:o.id,name:d.name||'',multi:d.selection_type!=='SINGLE',opts:(d.modifiers||[]).filter(m=>!m.is_deleted&&at0(m)).map(m=>({id:m.id,name:m.modifier_data.name||'',price:Number((m.modifier_data.price_money||{}).amount||0),so:(m.modifier_data.location_overrides||[]).some(l=>l.location_id===LOC&&l.sold_out)||!!((st.ipad||{}).topSold||{})[m.id]}))}});
  const at=o=>(o.present_at_all_locations||(o.present_at_location_ids||[]).includes(LOC))&&!(o.absent_at_location_ids||[]).includes(LOC);
  const items=[];
  for(const o of objs){if(o.type!=='ITEM'||o.is_deleted||!at(o))continue;const d=o.item_data;

@@ -89,6 +89,19 @@ async function setSoldOut(itemId,sold,varIds){const only=Array.isArray(varIds)&&
  invalidateMenu();const bad=got.filter(g=>g.so!==!!sold);
  if(bad.length)return {ok:false,name:o.item_data.name,sold,vars:got,error:(sold?'Square 没有变成售罄：':'Square 仍是售罄（可能是在 POS 上手动设的，请在 POS 上恢复）：')+bad.map(b=>b.name).join('、')};
  return {ok:true,name:o.item_data.name,sold,n:targets.length,vars:got}}
+// ---- toppings (modifier list トッピング) ----
+// Square modifier location_overrides.sold_out and absent_at_location_ids are ignored by the API (tested 2026-10-22). Only hidden_online persists.
+// So: our own flag C.topSold[id] (drives /order page, landscape screen, Uber sync) + hidden_online on Square (hides it on Square Online). POS still shows it.
+const TOPN=/トッピング/;
+async function topList(){const d=await sq('/catalog/list?types=MODIFIER_LIST');const L=(d.objects||[]).find(o=>!o.is_deleted&&TOPN.test(o.modifier_list_data.name||''));return L}
+async function toppings(){const L=await topList();if(!L)return [];C.topSold=C.topSold||{};
+ return (L.modifier_list_data.modifiers||[]).filter(m=>!m.is_deleted).map(m=>({id:m.id,name:m.modifier_data.name||'',so:!!C.topSold[m.id],online:!m.modifier_data.hidden_online}))}
+async function setTopping(id,sold){const L=await topList();if(!L)return {ok:false,error:'Square 没有找到トッピング'};const m=(L.modifier_list_data.modifiers||[]).find(x=>x.id===id);if(!m)return {ok:false,error:'没有这个小料'};
+ C.topSold=C.topSold||{};if(sold)C.topSold[id]=Date.now();else delete C.topSold[id];save();invalidateMenu();
+ let online=null;try{const F=(await sq('/catalog/object/'+encodeURIComponent(L.id))).object;const fm=(F.modifier_list_data.modifiers||[]).find(x=>x.id===id);fm.modifier_data.hidden_online=!!sold;
+  await sq('/catalog/batch-upsert',{method:'POST',body:JSON.stringify({idempotency_key:uuid(),batches:[{objects:[F]}]})});
+  for(let k=0;k<6;k++){await new Promise(z=>setTimeout(z,700));const b=(await sq('/catalog/object/'+encodeURIComponent(L.id))).object;const bm=(b.modifier_list_data.modifiers||[]).find(x=>x.id===id);online=!(bm&&bm.modifier_data.hidden_online);if(online===!sold)break}}catch(e){}
+ return {ok:true,id,name:m.modifier_data.name,so:!!sold,squareOnline:online,squareOk:online===!sold}}
 // ---- http ----
 const send=(r,c,o)=>{r.writeHead(c,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});r.end(JSON.stringify(o))};
 const body=q=>new Promise(ok=>{let b='';q.on('data',c=>{b+=c;if(b.length>5e4)q.destroy()});q.on('end',()=>{try{ok(JSON.parse(b||'{}'))}catch(e){ok({})}})});
@@ -113,7 +126,7 @@ function uberStatus(){const a=C.uberAck,hb=C.uberHb,seq=C.chanSeq||0,now=Date.no
  return {state:st,text:txt+(mismatch?' ｜ 注意：Uber 现在是「'+(obs==='paused'?'暂停':'接单')+'」（可能在 Uber 里手动改过）':''),want,observed:obs,hbAt:hb&&hb.at||null}}
 return async function api(u,q,r){const j=q.method==='POST'?await body(q):{};
  const p=u.pathname.slice('/api/ipad/'.length);const pin=String(q.headers['x-pin']||j.pin||'');
- const wk=String(q.headers['x-worker-key']||'');const isW=/^uber(-desired|-ack|-hb)?$/.test(p)&&WKEY&&wk.length===WKEY.length&&require('crypto').timingSafeEqual(Buffer.from(wk),Buffer.from(WKEY));
+ const wk=String(q.headers['x-worker-key']||'');const isW=/^uber(-desired|-ack|-hb|-toppings)?$/.test(p)&&WKEY&&wk.length===WKEY.length&&require('crypto').timingSafeEqual(Buffer.from(wk),Buffer.from(WKEY));
  if(!isW&&(!PIN||pin!==PIN))return send(r,403,{error:'PIN'});
  try{
  if(p==='sales'){if(u.searchParams.get('refresh')==='1'||Date.now()-S.at>3*60e3)await refresh();return send(r,200,sales())}
@@ -121,6 +134,9 @@ return async function api(u,q,r){const j=q.method==='POST'?await body(q):{};
   C.uber={day,month:day.slice(0,7),today:n(j.today)||(C.uber&&C.uber.day===day?C.uber.today:null),mtd:n(j.mtd)||(C.uber&&C.uber.month===day.slice(0,7)?C.uber.mtd:null),at:Date.now()};save();return send(r,200,sales())}
  if(p==='menu'){const m=await menu();return send(r,200,m.map(i=>({id:i.id,name:i.name,cat:i.cat,img:i.img,so:i.so,vars:i.vars.map(v=>({id:v.id,name:v.name,so:v.so}))})))}
  if(p==='soldout'&&q.method==='POST'){if(j.confirm!==true)return send(r,400,{error:'confirm required'});return send(r,200,await setSoldOut(String(j.id||''),!!j.sold,j.vars))}
+ if(p==='toppings')return send(r,200,await toppings());
+ if(p==='topping'&&q.method==='POST'){if(j.confirm!==true)return send(r,400,{error:'confirm required'});return send(r,200,await setTopping(String(j.id||''),!!j.sold))}
+ if(p==='uber-toppings'){const t=await toppings();return send(r,200,{sold:t.filter(x=>x.so).map(x=>x.name)})}
  if(p==='restore-all'&&q.method==='POST'){if(j.confirm!==true)return send(r,400,{error:'confirm required'});const m=await menu();const out=[];for(const i of m.filter(i=>i.vars.some(v=>v.so))){try{const x=await setSoldOut(i.id,false);out.push(i.name+(x.ok?'':' ✗'))}catch(e){out.push(i.name+' ✗'+e.message)}}return send(r,200,{ok:true,restored:out})}
  if(p==='stock'){if(q.method==='POST'){
    if(j.items)C.stock.items=j.items.slice(0,30).map(i=>({k:String(i.k).replace(/\W/g,'').slice(0,20),name:String(i.name||i.k).slice(0,30),unit:String(i.unit||'').slice(0,6),start:+i.start||0,low:+i.low||0}));
