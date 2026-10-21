@@ -72,6 +72,7 @@ tr.low td{color:#d33;font-weight:800}
 .lock input{font-size:30px;height:64px;width:280px;text-align:center;border-radius:16px;border:2px solid #f1e4dc}
 #toast{display:none;position:fixed;left:50%;top:16px;-webkit-transform:translateX(-50%);transform:translateX(-50%);z-index:400;color:#fff;font-weight:800;font-size:18px;padding:14px 22px;border-radius:16px;box-shadow:0 4px 16px rgba(0,0,0,.25)}
 @media (orientation:portrait){.home{display:block}.c1{width:auto;margin-bottom:14px}.list{max-height:none}.mg{grid-template-columns:1fr}}
+.ub{flex:1;background:#eee;color:#333;font-size:18px;padding:16px 8px}.ub.on{background:#7a6cf0;color:#fff}
 </style></head><body>
 <div class="lock" id="lock"><h2 style="color:#ff5c8a">M Stand 店长</h2><input id="pin" type="password" inputmode="numeric" maxlength="8" placeholder="PIN"><button class="big" style="width:280px;margin-top:14px" onclick="login()">进入</button><div id="msg" style="color:#d33;margin-top:10px"></div></div>
 <div id="toast"></div>
@@ -168,8 +169,12 @@ function initDlg(){if(initDlg.d)return;initDlg.d=1;$('ov').onclick=function(e){i
   var r;try{r=fn()}catch(x){toast('出错：'+x.message,true);closeDlg();return}
   if(r&&r.then){r.then(function(){closeDlg()},function(){closeDlg()});setTimeout(function(){if(DLG_OPEN&&!PEND)closeDlg()},25000)}else closeDlg()}}
 var SHN={open:'营业中',prep:'准备中',shop:'采购中',closed:'营业结束'};
-function askShop(m){var mins=+$('shopM').value;askDo('切换为「'+SHN[m]+'」？',m==='open'?'横屏恢复菜单 · Uber 恢复接单':(m==='closed'?'横屏显示营业结束':'横屏显示等待 '+mins+' 分钟')+' · Uber 暂停接单',
- '确定',m==='open'?'#2fb36b':'#ff5c8a',function(){return api('screen',{shop:m,mins:mins}).then(function(r){toast('已切换为「'+SHN[m]+'」');loadOv()})})}
+var SHU=true;
+function pickU(v){SHU=v;var a=$('uY'),b=$('uN');if(a)a.className='big ub'+(v?' on':'');if(b)b.className='big ub'+(!v?' on':'')}
+function askShop(m){var mins=+$('shopM').value;SHU=true;
+ var s=m==='open'?'横屏恢复菜单 · Uber 恢复接单（如果之前暂停了）':m==='closed'?'横屏显示营业结束 · Uber 暂停接单':m==='prep'?'横屏显示等待 '+mins+' 分钟 · Uber 暂停接单':
+  '横屏显示等待 '+mins+' 分钟<div style="margin-top:12px">Uber 要不要一起暂停？</div><div style="display:flex;gap:10px;margin-top:8px"><button type="button" id="uY" class="big ub on" onclick="pickU(true)">同时暂停 Uber</button><button type="button" id="uN" class="big ub" onclick="pickU(false)">Uber 照常接单</button></div>';
+ askDo('切换为「'+SHN[m]+'」？',s,'确定',m==='open'?'#2fb36b':'#ff5c8a',function(){var u=SHU;return api('screen',{shop:m,mins:mins,uber:m==='shop'?u:true}).then(function(r){toast('已切换为「'+SHN[m]+'」'+(m==='shop'?(u?' · Uber 已暂停':' · Uber 照常接单'):''));loadOv()})})}
 function adjShop(d){api('screen',{shopAdj:d}).then(loadOv)}
 function act(a){post({action:a})}
 function setVol(v){$('volV').textContent=v+'%';api('screen',{vol:v/100}).then(loadOv)}

@@ -106,15 +106,18 @@ async function setTopping(id,sold){const L=await topList();if(!L)return {ok:fals
 const send=(r,c,o)=>{r.writeHead(c,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});r.end(JSON.stringify(o))};
 const body=q=>new Promise(ok=>{let b='';q.on('data',c=>{b+=c;if(b.length>5e4)q.destroy()});q.on('end',()=>{try{ok(JSON.parse(b||'{}'))}catch(e){ok({})}})});
 // shop status. chanSeq bumps only when the mode changes -> worker acts on changes only (never fights a manual change in Uber Manager)
-function setShop(m,mins){m=['open','prep','shop','closed'].includes(m)?m:'open';const cur=ST().shop?ST().shop.mode:'open';
+function shopWantsPause(sh){return !!(sh&&sh.mode&&sh.uber!==false)}
+function setShop(m,mins,uber){m=['open','prep','shop','closed'].includes(m)?m:'open';const prev=ST().shop||null,cur=prev?prev.mode:'open',wasP=shopWantsPause(prev);
  if(m==='open'){ST().shop=null}
- else{const until=m==='closed'?null:Date.now()+Math.min(180,parseInt(mins)>0?parseInt(mins):40)*60e3;ST().shop={mode:m,until,at:Date.now()}}
- if(m!==cur){C.chanSeq=(C.chanSeq||0)+1;C.chanAt=Date.now()}}
+ else{const until=m==='closed'?null:Date.now()+Math.min(180,parseInt(mins)>0?parseInt(mins):40)*60e3;ST().shop={mode:m,until,at:Date.now(),uber:m==='shop'?uber!==false:true}}
+ const isP=shopWantsPause(ST().shop);
+ // bump seq only when Uber's desired state changes (or pause reason changes while paused) -> resume only if we paused it
+ if(m!==cur&&(isP!==wasP||isP)){C.chanSeq=(C.chanSeq||0)+1;C.chanAt=Date.now()}}
 // countdown end -> back to 営業中 server-side (also after restart: state persisted, checked every second); bumps seq so the worker RESUMES Uber
 function shopExpire(){const sh=ST().shop;if(sh&&sh.until&&Date.now()>=sh.until){setShop('open');ST().seq++;save();push('screen');return true}return false}
 setInterval(shopExpire,1000);
 const WKEY=String(process.env.WORKER_KEY||'').trim();
-function uberStatus(){const a=C.uberAck,hb=C.uberHb,seq=C.chanSeq||0,now=Date.now();const sh=ST().shop;const want=sh?'paused':'open';
+function uberStatus(){const a=C.uberAck,hb=C.uberHb,seq=C.chanSeq||0,now=Date.now();const sh=ST().shop;const want=shopWantsPause(sh)?'paused':'open';
  const stale=!hb||now-hb.at>3*60e3;
  let st,txt;
  if(stale){st='offline';txt='状态未知：同步电脑离线'+(hb?Math.round((now-hb.at)/60e3)+'分钟':'')+'，请手动在 Uber Manager 操作'}
@@ -151,7 +154,7 @@ return async function api(u,q,r){const j=q.method==='POST'?await body(q):{};
  if(p==='health'){const G=global.SEEN||{},sh=ST().shop||null;return send(r,200,{now:Date.now(),screen:G.screen||null,orderVisit:G.orderVisit||null,orderVisitsToday:G.ovN||0,lastOrder:G.lastOrder||null,shop:sh?sh.mode:'open',orderGate:process.env.SHOP_GATE_ORDER!=='0',uberSync:G.uberSync||null,uberSales:C.uber&&C.uber.at||null,uberHb:C.uberHb&&C.uberHb.at||null})}
  if(p==='overview'){const prep=ST().preparing||[];return send(r,200,{now:Date.now(),cfg:C.cfg,open:prep.length,peak:prep.length>=C.cfg.peak,stockLow:stockView().items.filter(i=>i.low).map(i=>i.name),screen:{vol:ST().screenVol==null?1:ST().screenVol,ann:ST().ann||null,shop:ST().shop||null},chan:{seq:C.chanSeq||0,uber:uberStatus(),orderGate:process.env.SHOP_GATE_ORDER!=='0'},closedStale:!!(ST().shop&&ST().shop.mode==='closed'&&tokyoDay(ST().shop.at)!==tokyoDay()&&new Date(Date.now()+9*3600e3).getUTCHours()>=10)})}
  // box-side worker (uber-sync on the shop PC) polls desired Uber state and acks; Render cannot drive a browser
- if(p==='uber-desired'){shopExpire();const sh=ST().shop;return send(r,200,{seq:C.chanSeq||0,paused:!!(sh&&sh.mode),mode:sh?sh.mode:'open',until:sh&&sh.until||null,now:Date.now()})}
+ if(p==='uber-desired'){shopExpire();const sh=ST().shop;return send(r,200,{seq:C.chanSeq||0,paused:shopWantsPause(sh),mode:sh?sh.mode:'open',until:sh&&sh.until||null,now:Date.now()})}
  if(p==='uber-ack'&&q.method==='POST'){const sq_=parseInt(j.seq)||0;if(sq_<(C.chanSeq||0)&&sq_!==-1)return send(r,200,{ok:true,stale:true}); // ignore acks for superseded seqs
   C.uberAck={seq:sq_,paused:!!j.paused,ok:!!j.ok,dry:!!j.dry,observed:['open','paused','unknown'].includes(j.observed)?j.observed:'unknown',msg:String(j.msg||'').slice(0,120),at:Date.now()};C.uberHb=Object.assign(C.uberHb||{},{at:Date.now(),observed:C.uberAck.observed,trying:null});save();return send(r,200,{ok:true})}
  if(p==='uber-hb'&&q.method==='POST'){C.uberHb={at:Date.now(),observed:['open','paused','unknown'].includes(j.observed)?j.observed:(C.uberHb&&C.uberHb.observed)||'unknown',trying:j.trying?{n:parseInt(j.trying.n)||0,err:String(j.trying.err||'').slice(0,80)}:null,dry:!!j.dry};return send(r,200,{ok:true,seq:C.chanSeq||0})}
@@ -159,7 +162,7 @@ return async function api(u,q,r){const j=q.method==='POST'?await body(q):{};
  if(p==='screen'&&q.method==='POST'){
    if(j.vol!=null)ST().screenVol=Math.max(0,Math.min(1,+j.vol));
    if(j.ann!=null){const t=String(j.ann).replace(/[\u200d\ufe0f<>]/g,'').slice(0,60);ST().ann=t?{text:t,until:Date.now()+Math.max(1,Math.min(720,parseInt(j.mins)||60))*60e3}:null}
-   if(j.shop!=null)setShop(j.shop,j.mins)
+   if(j.shop!=null)setShop(j.shop,j.mins,j.uber)
    if(j.shopAdj&&ST().shop&&ST().shop.until){const sh=ST().shop;sh.until=Math.max(Date.now()+60e3,Math.min(Date.now()+180*60e3,sh.until+(parseInt(j.shopAdj)||0)*60e3))}
    ST().seq++;save();push('screen');return send(r,200,{vol:ST().screenVol,ann:ST().ann,shop:ST().shop||null})}
  return send(r,404,{error:'nf'})
