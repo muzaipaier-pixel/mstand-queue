@@ -121,7 +121,7 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 function fit(){try{var m=$('menu'),W=Math.floor(window.innerWidth*0.84),H=window.innerHeight,a=1612/1080,w=W,h=Math.round(W/a);
  if(h>H){h=H;w=Math.round(H*a)}
  m.style.width=w+'px';m.style.height=h+'px';m.style.left=Math.floor((W-w)/2)+'px';m.style.top=Math.floor((H-h)/2)+'px';
- var dpr=window.devicePixelRatio||1,want=(w*dpr>1700)?'/menu@2x.jpg?v=6':'/menu.jpg?v=7';
+ var dpr=window.devicePixelRatio||1,want=(w*dpr>1700)?'/menu@2x.jpg?v=7':'/menu.jpg?v=7';
  try{var hd=$('hdr');hd.style.left=m.style.left;hd.style.top=m.style.top;hd.style.width=w+'px';hd.style.height=h+'px';hd.style.fontSize=Math.max(11,Math.round(w/96))+'px'}catch(e){}
  try{var k=$('somask');k.style.left=m.style.left;k.style.top=m.style.top;k.style.width=w+'px';k.style.height=h+'px';var bs=k.getElementsByTagName('b');for(var i=0;i<bs.length;i++)bs[i].style.fontSize=Math.max(10,Math.round(w/115))+'px';var is=k.getElementsByTagName('i');for(i=0;i<is.length;i++)is[i].style.fontSize=Math.max(10,Math.round(w/95))+'px'}catch(e){}
  try{var kk=$('kcmask');kk.style.left=m.style.left;kk.style.top=m.style.top;kk.style.width=w+'px';kk.style.height=h+'px';kk.style.fontSize=(w*9/1612).toFixed(2)+'px'}catch(e){}
