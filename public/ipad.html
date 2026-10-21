@@ -1,5 +1,5 @@
 <!doctype html><html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>M Stand 店长 iPad</title><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#ff7a45">
+<title>M Stand 店长 iPad</title><link rel="manifest" href="/ipad.webmanifest"><meta name="theme-color" content="#ff7a45">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="M Stand店长"><link rel="apple-touch-icon" href="/icon-180.png">
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -27,9 +27,9 @@ button.b{border:0;border-radius:16px;font-size:18px;font-weight:800;padding:16px
 .it.so{border-color:#e33}.it.so img{filter:grayscale(1) opacity(.5)}.it.so:after{content:"售罄";position:absolute;top:36px;left:50%;transform:translateX(-50%) rotate(-10deg);background:#e33;color:#fff;font-weight:900;font-size:22px;padding:4px 14px;border-radius:10px}
 table{width:100%;border-collapse:collapse;font-size:15px}td,th{padding:8px;border-bottom:1px solid #f6e0d4;text-align:left}td input{width:70px;font-size:16px;padding:6px;border:1px solid #ffc2a8;border-radius:8px}
 .low td{background:#ffecec;color:#c22}.pill{border-radius:10px;padding:2px 8px;font-size:12px;font-weight:800}
-#modal{position:fixed;inset:0;background:#0006;display:none;align-items:center;justify-content:center;z-index:99}#modal div{background:#fff;border-radius:24px;padding:24px;width:420px;text-align:center}
+#modal{position:fixed;top:0;left:0;right:0;bottom:0;background:#0006;display:none;align-items:center;justify-content:center;z-index:99}#modal div{background:#fff;border-radius:24px;padding:24px;width:420px;text-align:center}
 #modal h3{margin:0 0 12px}#modal .row{display:flex;gap:10px;margin-top:16px}#modal button{flex:1}
-#lock{position:fixed;inset:0;background:#fff4ec;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:200}#lock input{font-size:28px;padding:12px;border-radius:14px;border:2px solid #ffc2a8;text-align:center;width:300px}
+#lock{position:fixed;top:0;left:0;right:0;bottom:0;background:#fff4ec;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:200}#lock input{font-size:28px;padding:12px;border-radius:14px;border:2px solid #ffc2a8;text-align:center;width:300px}
 input.t,textarea{font-size:18px;padding:12px;border-radius:14px;border:2px solid #ffc2a8;width:100%}
 .sb{flex:1;background:#e9d6cc;color:#7a5a4a;padding:12px;font-size:17px}.sb.on{background:linear-gradient(135deg,#ff8a3d,#ff5c8a);color:#fff;box-shadow:0 4px 12px #ff5c8a66}.sb small{font-size:12px}
 .note{font-size:12px;color:#a08070}
@@ -83,12 +83,14 @@ input.t,textarea{font-size:18px;padding:12px;border-radius:14px;border:2px solid
  <details style="margin-top:14px"><summary style="font-weight:800">配方用量（高级）</summary><textarea id="rcp" rows="8" style="font-family:monospace;font-size:14px;margin-top:8px"></textarea><div class="note">每行：饮品名关键字 = 材料:用量, 材料:用量（例：アボカド = avocado:1, milk:1）</div><button class="b" style="margin-top:8px" onclick="saveRecipe()">保存配方</button></details></div></section>
 
 <div class="tabs"><button class="on" data-t="sales" onclick="tab('sales')">📊 销售看板</button><button data-t="queue" onclick="tab('queue')">📣 叫号·公告</button><button data-t="sold" onclick="tab('sold')">🚫 一键售罄</button><button data-t="stock" onclick="tab('stock')">🥑 备料</button></div>
+<div id="toast" style="display:none;position:fixed;left:50%;top:20px;-webkit-transform:translateX(-50%);transform:translateX(-50%);z-index:300;color:#fff;font-weight:800;font-size:18px;padding:14px 22px;border-radius:16px;box-shadow:0 4px 16px #0004"></div>
 <div id="modal"><div><h3 id="mT"></h3><div id="mS" class="sub"></div><div class="row"><button class="b" style="background:#c9a99a" onclick="modal.style.display='none'">取消</button><button class="b" id="mOk">确定</button></div></div></div>
 <script>
 var PIN=localStorage.pin||'',ST={},CUST={},MENU=[];
 var $=function(i){return document.getElementById(i)};var yen=function(n){return n==null?'-':'¥'+Math.round(n).toLocaleString()};
 var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return '&#'+c.charCodeAt(0)+';'})};
-function api(p,b){return fetch('/api/ipad/'+p,{method:b?'POST':'GET',headers:{'Content-Type':'application/json','x-pin':PIN},body:b?JSON.stringify(b):undefined}).then(function(r){if(r.status===403){$('lock').style.display='flex';throw 0}return r.json()})}
+function toast(t,bad){var e=$('toast');e.textContent=t;e.style.background=bad?'#e33':'#3a3';e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display='none'},bad?6000:2500)}
+function api(p,b){return fetch('/api/ipad/'+p,{method:b?'POST':'GET',headers:{'Content-Type':'application/json','x-pin':PIN},body:b?JSON.stringify(b):undefined}).then(function(r){if(r.status===403){$('lock').style.display='flex';toast('PIN 已更改，请重新输入 PIN',true);throw 0}return r.json()})}
 function post(b){b.pin=PIN;return fetch('/api/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}).then(function(r){return r.json()})}
 function login(){PIN=$('pin').value;api('overview').then(function(){localStorage.pin=PIN;$('lock').style.display='none';boot()}).catch(function(){$('msg').textContent='PIN 错误 / PINが違います'})}
 function tab(t){[].forEach.call(document.querySelectorAll('.pg'),function(e){e.classList.toggle('on',e.id==='p-'+t)});[].forEach.call(document.querySelectorAll('.tabs button'),function(e){e.classList.toggle('on',e.dataset.t===t)});if(t==='sold')loadMenu();if(t==='stock')loadStock();location.hash=t}
@@ -128,7 +130,7 @@ function drawMenu(){var q=$('soQ').value.trim().toLowerCase(),c=$('soC').value,f
   (OPEN[ix]?'<div class="vb">'+i.vars.map(function(v,vi){return '<button class="'+(v.so?'so':'')+'" onclick="askVar('+ix+','+vi+')">'+esc(v.name)+'</button>'}).join('')+'</div>':'')+'</div>'+
   (n===t?'<button class="ab re" onclick="askSold('+ix+',false)">全部恢复</button>':'<button class="ab" onclick="askSold('+ix+',true)">全部售罄</button>')+'</div>'}).join('')+'</div>'}
 function confirmDo(title,sub,okTxt,color,fn){$('mT').textContent=title;$('mS').innerHTML=sub;$('mOk').style.background=color;$('mOk').textContent=okTxt;$('modal').style.display='flex';$('mOk').onclick=function(){$('mOk').onclick=null;$('modal').style.display='none';fn()}}
-function doSold(i,b){return api('soldout',b).then(function(r){if(r.error)alert('失败：'+r.error);loadMenu()}).catch(function(){alert('失败，请重试')})}
+function doSold(i,b){toast('正在更新 Square…');return api('soldout',b).then(function(r){if(r.error){toast('失败：'+r.error,true);return}(i.vars||[]).forEach(function(v){if(!b.vars||b.vars.indexOf(v.id)>=0)v.so=b.sold});i.so=i.vars.every(function(v){return v.so});drawMenu();toast((b.sold?'已售罄：':'已恢复：')+i.name+'（Uber 约1分钟内跟随）');setTimeout(loadMenu,4000)}).catch(function(e){toast(e===0?'PIN 错误，请重新输入':'网络错误，请重试',true)})}
 function askSold(ix,to){var i=MENU[ix];confirmDo((to?'全部售罄？':'全部恢复？'),'<b>'+esc(i.name)+'</b>（'+i.vars.length+' 个规格）<br>'+(to?'Square・Uber・横屏都显示售罄':'Square・Uber・横屏恢复可点'),to?'确定售罄':'确定恢复',to?'#e33':'#3a3',function(){doSold(i,{id:i.id,sold:to,confirm:true})})}
 function askVar(ix,vi){var i=MENU[ix],v=i.vars[vi],to=!v.so;confirmDo((to?'这个规格售罄？':'这个规格恢复？'),'<b>'+esc(i.name)+'</b><br>'+esc(v.name),to?'确定售罄':'确定恢复',to?'#e33':'#3a3',function(){doSold(i,{id:i.id,vars:[v.id],sold:to,confirm:true})})}
 function restoreAll(){var L=MENU.filter(function(i){return soN(i)>0});if(!L.length){alert('现在没有售罄的饮品');return}confirmDo('恢复全部售罄？',L.map(function(i){return esc(i.name)+'（'+soN(i)+'/'+i.vars.length+'）'}).join('<br>'),'全部恢复','#3a3',function(){api('restore-all',{confirm:true}).then(loadMenu)})}
