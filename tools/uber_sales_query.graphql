@@ -1,0 +1,365 @@
+query SalesOverTime($widgetTabbedInput: WidgetTabbedInput!) {
+  salesOverTime(widgetTabbedInput: $widgetTabbedInput) {
+    ...widgetTabbedSubWidgetFields
+    __typename
+  }
+}
+
+fragment widgetTabbedSubWidgetFields on WidgetTabbed {
+  tabs {
+    ...widgetTabbedTabFields
+    __typename
+  }
+  subWidgets {
+    header {
+      ...headerFields
+      __typename
+    }
+    insights {
+      ...insightFields
+      __typename
+    }
+    moreDetails {
+      ...moreDetailsFields
+      __typename
+    }
+    visualization {
+      ...visualizationFields
+      __typename
+    }
+    dateRangeAdjusted
+    aggregationMeta {
+      start
+      end
+      timeUnit
+      __typename
+    }
+    __typename
+  }
+  dateRangeAdjusted
+  lastUpdatedTimestamp
+  __typename
+}
+
+fragment widgetTabbedTabFields on WidgetTabbedTab {
+  cursor
+  label
+  hasCSV
+  __typename
+}
+
+fragment headerFields on WidgetHeader {
+  primaryHeader
+  subtitle
+  tooltipMarkdown
+  __typename
+}
+
+fragment insightFields on Insight {
+  header
+  body
+  secondaryCTA {
+    label
+    href
+    __typename
+  }
+  tertiaryCTA {
+    label
+    href
+    __typename
+  }
+  __typename
+}
+
+fragment moreDetailsFields on CTAButton {
+  label
+  href
+  __typename
+}
+
+fragment visualizationFields on Visualization {
+  __typename
+  ... on BigNumbers {
+    ...visualizationBigNumbersFields
+    __typename
+  }
+  ... on ConversionFunnel {
+    ...visualizationConversionFunnelFields
+    __typename
+  }
+  ... on HeatMap {
+    ...visualizationHeatMapFields
+    __typename
+  }
+  ... on PeriodComparisonSeries {
+    ...visualizationPeriodComparisonSeriesFields
+    __typename
+  }
+  ... on AreaSeries {
+    ...visualizationAreaSeriesFields
+    __typename
+  }
+  ... on BarSeries {
+    ...visualizationBarSeriesFields
+    __typename
+  }
+  ... on BarSeriesWithoutDateTime {
+    ...visualizationBarSeriesWithoutDateTimeFields
+    __typename
+  }
+}
+
+fragment visualizationBigNumbersFields on BigNumbers {
+  bigNumbers {
+    label
+    value
+    __typename
+  }
+  __typename
+}
+
+fragment visualizationConversionFunnelFields on ConversionFunnel {
+  steps {
+    value
+    legend {
+      ...legendItemFields
+      __typename
+    }
+    __typename
+  }
+  hero {
+    ...legendItemFields
+    __typename
+  }
+  __typename
+}
+
+fragment legendItemFields on LegendItem {
+  header
+  subheader
+  delta {
+    ...chartDeltaFields
+    __typename
+  }
+  description
+  tooltip
+  __typename
+}
+
+fragment chartDeltaFields on ChartDelta {
+  delta
+  sentiment
+  label
+  __typename
+}
+
+fragment heapMapBucket on HeatMapBucket {
+  intensity
+  label
+  __typename
+}
+
+fragment heatMapRowCell on HeatMapCell {
+  value
+  intensity
+  cellborder
+  tooltip {
+    header
+    subheader
+    rows {
+      key
+      label
+      value
+      delta {
+        delta
+        sentiment
+        label
+        __typename
+      }
+      __typename
+    }
+    __typename
+  }
+  __typename
+}
+
+fragment heatMapRow on HeatMapRow {
+  label
+  cells {
+    ...heatMapRowCell
+    __typename
+  }
+  __typename
+}
+
+fragment visualizationHeatMapFields on HeatMap {
+  buckets {
+    ...heapMapBucket
+    __typename
+  }
+  columnLabels
+  rows {
+    ...heatMapRow
+    __typename
+  }
+  sentiment
+  __typename
+}
+
+fragment visualizationPeriodComparisonSeriesFields on PeriodComparisonSeries {
+  xAxisFormat
+  unit
+  periods {
+    cost {
+      ...legendItemFields
+      __typename
+    }
+    start
+    end
+    legend {
+      ...legendItemFields
+      __typename
+    }
+    points {
+      dateTime
+      y
+      __typename
+    }
+    __typename
+  }
+  __typename
+}
+
+fragment visualizationAreaSeriesFields on AreaSeries {
+  xAxisFormat
+  unit
+  areas {
+    start
+    end
+    legend {
+      ...legendItemFields
+      __typename
+    }
+    points {
+      dateTime
+      y
+      __typename
+    }
+    __typename
+  }
+  annotations {
+    ...timeSeriesAnnotationYAxisLineFields
+    __typename
+  }
+  tooltips {
+    ...tooltipByDateTimeFields
+    __typename
+  }
+  __typename
+}
+
+fragment timeSeriesAnnotationYAxisLineFields on TimeSeriesAnnotationYAxisLine {
+  value
+  label
+  iconHref
+  tooltipMarkdown
+  __typename
+}
+
+fragment tooltipByDateTimeFieldsTooltipRows on ChartTooltipRow {
+  key
+  delta {
+    ...chartDeltaFields
+    __typename
+  }
+  label
+  value
+  value2
+  __typename
+}
+
+fragment tooltipByDateTimeFieldsTooltip on ChartTooltip {
+  header
+  header2
+  unit
+  subheader
+  rows {
+    ...tooltipByDateTimeFieldsTooltipRows
+    __typename
+  }
+  __typename
+}
+
+fragment tooltipByDateTimeFields on ChartTooltipByDateTime {
+  dateTime
+  prevDateTime
+  tooltip {
+    ...tooltipByDateTimeFieldsTooltip
+    __typename
+  }
+  __typename
+}
+
+fragment visualizationBarSeriesFields on BarSeries {
+  xAxisFormat
+  unit
+  sentiment
+  series {
+    key
+    start
+    end
+    legend {
+      ...legendItemFields
+      __typename
+    }
+    points {
+      dateTime
+      y
+      __typename
+    }
+    __typename
+  }
+  tooltips {
+    ...tooltipByDateTimeFields
+    __typename
+  }
+  hero {
+    ...legendItemFields
+    __typename
+  }
+  __typename
+}
+
+fragment visualizationBarSeriesWithoutDateTimeFields on BarSeriesWithoutDateTime {
+  xAxisFormat
+  unit
+  sentiment
+  series {
+    start
+    end
+    key
+    legend {
+      ...legendItemFields
+      __typename
+    }
+    points {
+      xLabel {
+        numbers
+        header
+        __typename
+      }
+      y
+      __typename
+    }
+    __typename
+  }
+  tooltips {
+    ...tooltipByDateTimeFields
+    __typename
+  }
+  hero {
+    ...legendItemFields
+    __typename
+  }
+  __typename
+}
