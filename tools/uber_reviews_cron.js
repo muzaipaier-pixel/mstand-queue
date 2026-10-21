@@ -1,4 +1,4 @@
-// Uber Eats rating overview (cookie, browserless) -> POST /api/ipad/uber-reviews. Env: UBER_COOKIE, WORKER_KEY, APP. Not scheduled yet.
+// Uber Eats rating overview (cookie, browserless) -> POST /api/ipad/uber-reviews. Env: UBER_COOKIE, WORKER_KEY, APP. Run twice daily from uber_sales_cron.js.
 const BASE=process.env.APP||'https://mstand-queue.onrender.com',STORE='b995d00f-e3a8-46de-99f2-72891a95b816';
 (async()=>{const r=await fetch('https://merchants.ubereats.com/manager/api/getFeedbackOverviewDataV2?localeCode=en',{method:'POST',redirect:'manual',signal:AbortSignal.timeout(30000),
   headers:{cookie:process.env.UBER_COOKIE||'','content-type':'application/json','x-csrf-token':'x',origin:'https://merchants.ubereats.com','user-agent':'Mozilla/5.0 Chrome/130.0'},

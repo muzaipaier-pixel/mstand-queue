@@ -124,9 +124,13 @@ tr.low td{color:#d33;font-weight:800}
   <div class="us" id="uNote"></div></div>
  <div class="card"><div class="ct">制作中（💗熟客）</div><div id="prep"></div></div>
  <div class="card"><div class="ct">横屏公告 · 音量</div>
-  <input class="tx" id="ann" maxlength="60" placeholder="例：今日芒果售罄 / 本日マンゴー売り切れ">
+  <div class="row"><input class="tx" id="ann" maxlength="60" placeholder="输入中文，例：今日芒果售罄" style="flex:1"><button class="big" style="flex:none;min-width:96px" onclick="trAnn()">翻译</button></div>
+  <div class="row"><span style="flex:none;width:44px;font-weight:800">日文</span><input class="tx" id="annJa" maxlength="90" placeholder="日本語（自动翻译，可修改）" style="flex:1"></div>
+  <div class="row"><span style="flex:none;width:44px;font-weight:800">英文</span><input class="tx" id="annEn" maxlength="140" placeholder="English (auto, editable)" style="flex:1"></div>
+  <div class="us" id="trSt"></div>
   <div class="row"><select id="annM"><option value="60">1小时</option><option value="180">3小时</option><option value="720">到打烊</option></select><button class="big b2" onclick="setAnn()">发布</button><button class="ghost" onclick="clearAnn()">撤下</button></div>
   <div class="us" id="annNow"></div>
+  <div style="font-weight:800;margin-top:6px">最近公告（点一下再用）</div><div id="annH"></div>
   <div class="row" style="align-items:center"><span style="flex:none;font-weight:800">公告底色 <span id="aopV"></span></span><input id="aop" type="range" min="20" max="100" step="10" style="height:40px" onchange="setAop(this.value)"></div>
   <div class="row" style="align-items:center"><span style="flex:none;font-weight:800">音量 <span id="volV"></span></span><input id="vol" type="range" min="0" max="100" step="10" style="height:40px" onchange="setVol(this.value)"></div>
   <div class="row" style="align-items:center"><span style="flex:1;font-weight:800">小动物语音<span style="font-weight:400;color:#8a6d60;font-size:13px">（下单感谢·闲聊，不影响叫号）</span></span><button class="ghost" id="cvB" style="flex:none;min-width:96px" onclick="setCrit('critVoice')"></button></div>
@@ -194,7 +198,15 @@ function critUi(){[['cvB','critVoice'],['csB','critShow']].forEach(function(p){v
 function setCrit(k){var b={};b[k]=!CRIT[k];CRIT[k]=b[k];critUi();api('screen',b).then(loadOv)}
 function setAop(v){$('aopV').textContent=v+'%';api('screen',{annOp:v/100}).then(loadOv)}
 function setVol(v){$('volV').textContent=v+'%';api('screen',{vol:v/100}).then(loadOv)}
-function setAnn(){var t=$('ann').value.replace(/^\s+|\s+$/g,'');if(!t)return;api('screen',{ann:t,mins:$('annM').value}).then(function(){toast('已发布到横屏');loadOv()})}
+var TRK='';function trim_(x){return String(x||'').replace(/^\s+|\s+$/g,'')}
+function trAnn(cb){var t=trim_($('ann').value);if(!t)return;$('trSt').textContent='翻译中…';api('translate',{text:t}).then(function(d){TRK=t;if(d.ja)$('annJa').value=d.ja;if(d.en)$('annEn').value=d.en;$('trSt').textContent=(d.ja&&d.en)?'已自动翻译，可以修改后再发布':'部分翻译失败，请手动填写';if(cb)cb()}).catch(function(){$('trSt').textContent='翻译失败，可手动填写';if(cb)cb()})}
+function setAnn(){var t=trim_($('ann').value);if(!t)return;var go=function(){api('screen',{ann:t,ja:trim_($('annJa').value),en:trim_($('annEn').value),mins:$('annM').value}).then(function(){toast('已发布到横屏');loadOv()})};
+ if(TRK!==t&&!trim_($('annJa').value)&&!trim_($('annEn').value))trAnn(go);else go()}
+var AH=[];function useAnn(i){var h=AH[i];if(!h)return;$('ann').value=h.text;$('annJa').value=h.ja||'';$('annEn').value=h.en||'';TRK=h.text;$('trSt').textContent='已填入，点「发布」即可';if($('ann').scrollIntoView)$('ann').scrollIntoView()}
+function delAnn(i){var h=AH[i];if(!h||!confirm('删除这条记录？\n'+h.text))return;api('ann-hist-del',{at:h.at}).then(loadOv)}
+function renderAH(l){AH=l||[];var e=$('annH');if(!AH.length){e.innerHTML='<div class="us">还没有记录</div>';return}
+ e.innerHTML=AH.map(function(h,i){return '<div style="display:flex;align-items:center;border-bottom:1px solid #f0e2da;padding:6px 0"><div style="flex:1;min-width:0" onclick="useAnn('+i+')"><div style="font-weight:800">'+esc_(h.text)+'</div><div style="font-size:12px;color:#8a6d60;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc_(h.ja||'')+' · '+esc_(h.en||'')+'</div></div><button class="ghost" style="flex:none;margin-left:6px" onclick="useAnn('+i+')">用</button><button class="ghost" style="flex:none;margin-left:6px;color:#d33" onclick="delAnn('+i+')">删</button></div>'}).join('')}
+function esc_(x){return String(x).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function clearAnn(){api('screen',{ann:''}).then(loadOv)}
 function loadSales(){api('sales').then(function(s){var t=s.today||{cups:0,rev:0,orders:0},u=s.uber||{};
  $('tRev').textContent=yen(t.rev+(u.today?u.today.rev:0));$('mGap').textContent=s.gap?yen(s.gap):'达成 🎉';
@@ -212,7 +224,7 @@ function loadOv(){api('overview').then(function(o){OV=o;try{var w=o.wait,e=docum
  var v=Math.round((o.screen.vol==null?1:o.screen.vol)*100);$('vol').value=v;$('volV').textContent=v+'%';
  var ao=Math.round((o.screen.annOp==null?0.62:o.screen.annOp)*100);$('aop').value=ao;$('aopV').textContent=ao+'%';
  CRIT.critVoice=o.screen.critVoice!==false;CRIT.critShow=o.screen.critShow!==false;critUi();
- var a=o.screen.ann;$('annNow').textContent=a&&a.until>new Date().getTime()?'正在显示：'+a.text:''}).catch(function(){})}
+ var a=o.screen.ann;$('annNow').textContent=a&&a.until>new Date().getTime()?'正在显示：'+a.text+(a.ja?' / '+a.ja:'')+(a.en?' / '+a.en:''):'';renderAH(o.screen.annHist)}).catch(function(){})}
 function hm(t){var d=new Date(t+9*3600e3);return ('0'+d.getUTCHours()).slice(-2)+':'+('0'+d.getUTCMinutes()).slice(-2)}
 function tickCd(){var sh=OV&&OV.screen.shop;if(!sh||!sh.until)return;var ms=Math.max(0,sh.until-(new Date().getTime()+CLK)),s=Math.ceil(ms/1000);
  $('cdT').textContent=('0'+Math.floor(s/60)).slice(-2)+':'+('0'+s%60).slice(-2);$('cdE').textContent='预计 '+hm(sh.until)+' 自动恢复营业';if(!ms)setTimeout(loadOv,2500)}

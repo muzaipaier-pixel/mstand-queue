@@ -8,6 +8,9 @@ const QUERY=fs.readFileSync(path.join(__dirname,'uber_sales_query.graphql'),'utf
 const jst=()=>new Date(Date.now()+9*3600e3);const bizDay=()=>new Date(Date.now()+5*3600e3).toISOString().slice(0,10);
 (async()=>{
  if(!COOKIE){console.log('ERR UBER_COOKIE missing');process.exit(2)}
+ // twice-daily Uber rating check piggybacks on this cron (first run 00:00 UTC, last run 15:30 UTC); --reviews forces it
+ {const n=new Date(),h=n.getUTCHours(),m=n.getUTCMinutes();if(process.argv.includes('--reviews')||(h===0&&m<30)||(h===15&&m>=30)){
+  try{const o=require('child_process').execFileSync(process.execPath,[path.join(__dirname,'uber_reviews_cron.js')].concat(process.argv.includes('--dry')?['--dry']:[]),{env:Object.assign({},process.env,{UBER_COOKIE:COOKIE}),timeout:45000,encoding:'utf8'});console.log('reviews',o.trim().slice(0,200))}catch(e){console.log('reviews ERR',String(e.stderr||e.message).trim().slice(0,150))}}}
  const day=bizDay(),start=day.slice(0,8)+'01',end=jst().toISOString().slice(0,10);
  const body={operationName:'SalesOverTime',query:QUERY,variables:{widgetTabbedInput:{dateRange:{start,end},locationConstraints:{countries:[],cities:[],locationUUIDs:[STORE]},displayCurrencyCode:'JPY',isMerchantsSelectedInCountry:true,previousRangeAlignment:'ALIGN_TO_WEEKDAY',useYearOnYearComparison:false}}};
  const r=await fetch('https://merchants.ubereats.com/manager/graphql?op=SalesOverTime',{method:'POST',redirect:'manual',signal:AbortSignal.timeout(30000),
