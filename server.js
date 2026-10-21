@@ -3,7 +3,7 @@ const crypto=require('crypto');
 const http=require('http'),fs=require('fs'),path=require('path');
 const PORT=process.env.PORT||8787, PIN=String(process.env.PIN||(()=>{try{return fs.readFileSync(__dirname+'/pin.txt','utf8')}catch(e){return ''}})()).trim();
 if(!PIN)console.warn('WARNING: no PIN set');
-const SF=__dirname+'/state.json';
+const SF=(process.env.DATA_DIR||__dirname)+'/state.json';
 let st={current:0,history:[],seq:0};
 try{st=JSON.parse(fs.readFileSync(SF))}catch(e){}
 st.preparing=st.preparing||[];st.seenPay=st.seenPay||[];
