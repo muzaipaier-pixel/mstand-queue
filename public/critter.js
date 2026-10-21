@@ -131,7 +131,7 @@ function poseK(r,key,f,stop){var o=HIP;HIP=hipFor(key);try{pose(r,key,f,stop)}ca
 /* ---- voice: pre-generated Edge neural TTS clips (public/voice/critter); never overlaps queue calls ---- */
 var VM=null,ca=null,clog=window.__critterLog=[];
 try{var xr=new XMLHttpRequest();xr.open('GET','/voice/critter/manifest.json?v=2',true);xr.onreadystatechange=function(){if(xr.readyState===4&&xr.status===200){try{VM=JSON.parse(xr.responseText)}catch(e){}}};xr.send()}catch(e){}
-function vbusy(){var ids=['vo','chime'],i,a;for(i=0;i<ids.length;i++){a=document.getElementById(ids[i]);if(a&&!a.paused&&!a.ended&&a.volume>0)return true}return false}
+function vbusy(){var ids=['vo','chime','nv'],i,a;for(i=0;i<ids.length;i++){a=document.getElementById(ids[i]);if(a&&!a.paused&&!a.ended&&a.volume>0)return true}return false}
 function ventry(lang,key){if(!VM||!VM[lang])return null;return VM[lang][key]||VM[lang]['']||null}
 function vdur(lang,key){var e=ventry(lang,key);return e?e.d:0}
 function vplay(lang,key){var e=ventry(lang,key);if(!e||!ca)return;if(window.SOUND===false||vbusy()){clog.push('skip '+e.f);return}
@@ -270,7 +270,7 @@ function scPose(now){var t=(now-SC.t0)/1000;if(t>=SC.D){scEnd();return null}SC.t
 
 function hideBub(){vstop();try{bub.style.opacity='0';spk.style.display='none'}catch(e){}}
 function reset(){mode=0;q=[];tg=null;trip=0;stay=0;talk=0;pause=0;nextI=30;lmv=+new Date();hideBub()}
-function showBub(c0,jp){var c={x:c0.x,y:c0.y,w:c0.w,h:c0.h,mw:c0.mw,n:jp?c0.jn:c0.n,s:jp?c0.js:c0.s},fs=Math.max(22,Math.round(c.mw/60)),i,h='';bub.style.fontSize=fs+'px';
+function showBub(c0,jp){if(window.__nvBusy){try{bub.style.opacity='0'}catch(e){}return}var c={x:c0.x,y:c0.y,w:c0.w,h:c0.h,mw:c0.mw,n:jp?c0.jn:c0.n,s:jp?c0.js:c0.s},fs=Math.max(22,Math.round(c.mw/60)),i,h='';bub.style.fontSize=fs+'px';
  for(i=0;i<c.s.length;i++)h+='<span>'+rbw(c.s[i],i*3)+'</span>';bub.className='';bub.innerHTML='<div class="gw"><div class="gl"></div></div>'+(c.n?'<b>'+rbw(c.n,0)+'</b>':'')+h+CS;var bh=bub.offsetHeight,bw=bub.offsetWidth,lx=Math.max(4,Math.min(c.x,window.innerWidth-bw-4)),ty=c.y-bh-6,cl='up';
  if(ty<4){ty=c.y+c.h+14;cl='dn'}bub.style.left=lx+'px';bub.style.top=ty+'px';void bub.offsetWidth;bub.className=cl+(jp?' flip':' pop');bub.style.opacity='1';
  var sx2=c.x+c.w*0.75,sy2=c.y+c.h*0.6;spk.style.left=sx2+'px';spk.style.top=sy2+'px';spk.style.display='block'}

@@ -2,7 +2,7 @@
 var C='mstand-audio-v2';
 self.addEventListener('install',function(e){self.skipWaiting()});
 self.addEventListener('activate',function(e){e.waitUntil(caches.keys().then(function(ks){return Promise.all(ks.filter(function(k){return k.indexOf('mstand-audio-')===0&&k!==C}).map(function(k){return caches['delete'](k)}))}).then(function(){return self.clients.claim()}))});
-function audioUrl(u){return /\/voice\/num\/v\d+\/\d+\.mp3$/.test(u.pathname)||/\/voice\/critter\/[^\/]+\.mp3$/.test(u.pathname)||/^\/vc\/[0-9a-f]{20}\.mp3$/.test(u.pathname)||(/^\/(chime_marimba\.mp3|chime\.wav|gap\.mp3)$/.test(u.pathname)&&u.search.indexOf('v=')>=0)}
+function audioUrl(u){return /\/voice\/num\/v\d+\/\d+\.mp3$/.test(u.pathname)||/\/voice\/critter\/[^\/]+\.mp3$/.test(u.pathname)||/\/voice\/notice\/[^\/]+\.mp3$/.test(u.pathname)||/^\/vc\/[0-9a-f]{20}\.mp3$/.test(u.pathname)||(/^\/(chime_marimba\.mp3|chime\.wav|gap\.mp3)$/.test(u.pathname)&&u.search.indexOf('v=')>=0)}
 var vcN=0;
 function trimVc(c){c.keys().then(function(ks){var v=ks.filter(function(r){return r.url.indexOf('/vc/')>=0});if(v.length>200)for(var i=0;i<v.length-150;i++)c['delete'](v[i])})}
 self.addEventListener('fetch',function(e){var r=e.request;if(r.method!=='GET')return;var u=new URL(r.url);if(u.origin!==self.location.origin||!audioUrl(u))return;

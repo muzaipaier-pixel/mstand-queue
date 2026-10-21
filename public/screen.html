@@ -94,7 +94,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-c
 #hs .c .s{font-size:.8em;overflow:hidden;text-overflow:ellipsis}
 #hs .sw{display:inline-block;width:1em;height:1em;border-radius:50%;border:2px solid #fff;vertical-align:-.15em;margin-right:.3em}
 #hs .k{display:inline-block;width:1em;color:#FFE600;font-weight:900}
-.calling #critter *,.calling .crf *,.calling #cbub,.calling #cbub *,.calling #cfx *{-webkit-animation-play-state:paused!important;animation-play-state:paused!important}</style><script src="/kcal.js?v=2"></script><script src="/critter.js?v=14"></script></head><body>
+.calling #critter *,.calling .crf *,.calling #cbub,.calling #cbub *,.calling #cfx *{-webkit-animation-play-state:paused!important;animation-play-state:paused!important}</style><script src="/kcal.js?v=2"></script><script src="/critter.js?v=15"></script></head><body>
 <img id="menu" src="/menu.jpg?v=7" alt="menu"><div id="kcmask"></div><div id="shopb" style="display:none;position:fixed;left:50%;bottom:4vw;-webkit-transform:translateX(-50%);transform:translateX(-50%);z-index:8999;background:rgba(255,250,244,.94);border:.5vw solid #ff8fb1;border-radius:3vw;padding:1.4vw 3vw;text-align:center;box-shadow:0 1vw 3vw rgba(0,0,0,.25);font-family:-apple-system,'Hiragino Sans','PingFang SC',sans-serif;color:#5a2a1a;white-space:nowrap"></div><div id="annb" style="display:none;position:fixed;left:0;right:0;top:0;z-index:9000;background:#ff4f7b;color:#fff;font:900 3.4vw/1.5 -apple-system,'Hiragino Sans','PingFang SC',sans-serif;text-align:center;padding:.5vw 2vw;box-shadow:0 .4vw 1.5vw rgba(0,0,0,.3)"></div><div id="somask"></div><div id="hdr"><div id="hs"></div></div>
 <div id="q" class="qrA">
  <div class="t">お呼び出し番号<span>请取餐</span></div>
@@ -185,10 +185,7 @@ function fitAll(){try{var W=window.innerWidth;fitText($('nt'),$('n'),W*0.08,10,t
 if(window.addEventListener)window.addEventListener('resize',fitAll,false);
 var lastTxt=null,curTxt='-',seenPrep=null;
 // new order (not completion): short trilingual thank-you, waits if a call is playing
-function thank(name,tries){if(!SOUND)return;tries=tries||0;try{var a=$('vo');
- if(!a.paused&&!a.ended&&tries<8){setTimeout(function(){thank(name,tries+1)},2000);return}
- var n=/^[0-9]+$/.test(String(name))?'':String(name);
- a.onerror=null;a.src='/voice?v=2&t=thanks&n='+encodeURIComponent(n)+'&lang='+encodeURIComponent(LANGS);a.volume=SVOL;if(a.load)a.load();var p=a.play();if(p&&p['catch'])p['catch'](function(){})}catch(e){}}
+function thank(name){try{if(SOUND&&window.noticeThanks)window.noticeThanks()}catch(e){}}
 var SVOL=1,annTxt='',shopK='',shopEnd=0,clkOff=0,shopTm=null;
 function shopTick(){try{var e=$('shopcd');if(!e||!shopEnd)return;var ms=shopEnd-(new Date().getTime()+clkOff);if(ms<0)ms=0;var sec=Math.ceil(ms/1000),mm=Math.floor(sec/60),ss=sec%60,t=(mm<10?'0':'')+mm+':'+(ss<10?'0':'')+ss;e.innerHTML='\u8fd8\u9700 '+t+' / \u3042\u3068 '+t;if(ms<=0){$('shopb').style.display='none';shopK=''}}catch(x){}}
 function shopUpd(s){try{if(typeof s.now==='number')clkOff=s.now-new Date().getTime();var m=s.shop,b=$('shopb'),k='';if(m&&m.mode){var tm='';if(m.until){var d=new Date(m.until+9*3600e3);tm=('0'+d.getUTCHours()).slice(-2)+':'+('0'+d.getUTCMinutes()).slice(-2)}k=m.mode+tm}
@@ -204,7 +201,7 @@ function handle(s){annUpd(s);shopUpd(s);
  var p=s.preparing||[],h='';for(var i=0;i<p.length&&i<12;i++)h+='<span>'+esc(p[i].num)+'</span>';$('prep').innerHTML=h||'—';
  var hs=s.history||[];h='';for(var j=1;j<hs.length&&j<7;j++)h+='<span>'+esc(hs[j])+'</span>';$('hist').innerHTML=h;
  var txt=cur+'|'+$('prep').innerHTML+'|'+h;if(txt!==lastTxt){lastTxt=txt;fitAll()}
- if(isCall){nw.className='';void nw.offsetWidth;setTimeout(function(){nw.className='call'},20);
+ if(isCall){try{if(window.noticeCalled)window.noticeCalled()}catch(e){}nw.className='';void nw.offsetWidth;setTimeout(function(){nw.className='call'},20);
   if(nw._t)clearTimeout(nw._t);nw._t=setTimeout(function(){nw.className=''},5000);chime();var fx=(s.callFx&&typeof s.callFx==='object')?s.callFx:null;speak(s.current,s.callItems,fxParam(fx),s.callClip);if(!celebrate(fx)){if(TH)confetti(TH);else callBurst()}}
  var pp=s.preparing||[],fresh=[];
  if(seenPrep===null){seenPrep={};for(var k=0;k<pp.length;k++)seenPrep[pp[k].id]=1}
@@ -378,4 +375,5 @@ soPoll();setInterval(soPoll,15000);
 }catch(e){}
 })();
 </script>
+<script src="/chat.js?v=1"></script>
 </body></html>
