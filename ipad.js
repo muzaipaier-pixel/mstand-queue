@@ -129,7 +129,7 @@ function uberStatus(){const a=C.uberAck,hb=C.uberHb,seq=C.chanSeq||0,now=Date.no
  return {state:st,text:txt+(mismatch?' ｜ 注意：Uber 现在是「'+(obs==='paused'?'暂停':'接单')+'」（可能在 Uber 里手动改过）':''),want,observed:obs,hbAt:hb&&hb.at||null}}
 return async function api(u,q,r){const j=q.method==='POST'?await body(q):{};
  const p=u.pathname.slice('/api/ipad/'.length);const pin=String(q.headers['x-pin']||j.pin||'');
- const wk=String(q.headers['x-worker-key']||'');const isW=/^uber(-desired|-ack|-hb|-toppings|-hot)?$/.test(p)&&WKEY&&wk.length===WKEY.length&&require('crypto').timingSafeEqual(Buffer.from(wk),Buffer.from(WKEY));
+ const wk=String(q.headers['x-worker-key']||'');const isW=/^uber(-desired|-ack|-hb|-toppings|-hot|-status)?$/.test(p)&&WKEY&&wk.length===WKEY.length&&require('crypto').timingSafeEqual(Buffer.from(wk),Buffer.from(WKEY));
  if(!isW&&(!PIN||pin!==PIN))return send(r,403,{error:'PIN'});
  try{
  if(p==='sales'){if(u.searchParams.get('refresh')==='1'||Date.now()-S.at>3*60e3)await refresh();return send(r,200,sales())}
@@ -151,12 +151,14 @@ return async function api(u,q,r){const j=q.method==='POST'?await body(q):{};
    if(j.adj){if(C.stock.adjDay!==tokyoDay()){C.stock.adj={};C.stock.adjDay=tokyoDay()}for(const k in j.adj)C.stock.adj[k]=(C.stock.adj[k]||0)+(+j.adj[k]||0)}
    save()}return send(r,200,stockView())}
  if(p==='cfg'&&q.method==='POST'){if(j.peak)C.cfg.peak=Math.max(1,Math.min(50,parseInt(j.peak)||6));save();return send(r,200,C.cfg)}
- if(p==='health'){const G=global.SEEN||{},sh=ST().shop||null;return send(r,200,{now:Date.now(),screen:G.screen||null,orderVisit:G.orderVisit||null,orderVisitsToday:G.ovN||0,lastOrder:G.lastOrder||null,shop:sh?sh.mode:'open',orderGate:process.env.SHOP_GATE_ORDER!=='0',uberSync:G.uberSync||null,uberSales:C.uber&&C.uber.at||null,uberHb:C.uberHb&&C.uberHb.at||null})}
+ if(p==='health'){const G=global.SEEN||{},sh=ST().shop||null;return send(r,200,{now:Date.now(),screen:G.screen||null,orderVisit:G.orderVisit||null,orderVisitsToday:G.ovN||0,lastOrder:G.lastOrder||null,shop:sh?sh.mode:'open',orderGate:process.env.SHOP_GATE_ORDER!=='0',uberSync:G.uberSync||null,uberSales:C.uber&&C.uber.at||null,uberHb:C.uberHb&&C.uberHb.at||null,uberStore:C.uberStore||null,uberWant:shopWantsPause(sh)?'paused':'open'})}
  if(p==='overview'){const prep=ST().preparing||[];return send(r,200,{now:Date.now(),cfg:C.cfg,open:prep.length,peak:prep.length>=C.cfg.peak,stockLow:stockView().items.filter(i=>i.low).map(i=>i.name),screen:{vol:ST().screenVol==null?1:ST().screenVol,ann:ST().ann||null,shop:ST().shop||null},chan:{seq:C.chanSeq||0,uber:uberStatus(),orderGate:process.env.SHOP_GATE_ORDER!=='0'},closedStale:!!(ST().shop&&ST().shop.mode==='closed'&&tokyoDay(ST().shop.at)!==tokyoDay()&&new Date(Date.now()+9*3600e3).getUTCHours()>=10)})}
  // box-side worker (uber-sync on the shop PC) polls desired Uber state and acks; Render cannot drive a browser
  if(p==='uber-desired'){shopExpire();const sh=ST().shop;return send(r,200,{seq:C.chanSeq||0,paused:shopWantsPause(sh),mode:sh?sh.mode:'open',until:sh&&sh.until||null,now:Date.now()})}
  if(p==='uber-ack'&&q.method==='POST'){const sq_=parseInt(j.seq)||0;if(sq_<(C.chanSeq||0)&&sq_!==-1)return send(r,200,{ok:true,stale:true}); // ignore acks for superseded seqs
   C.uberAck={seq:sq_,paused:!!j.paused,ok:!!j.ok,dry:!!j.dry,observed:['open','paused','unknown'].includes(j.observed)?j.observed:'unknown',msg:String(j.msg||'').slice(0,120),at:Date.now()};C.uberHb=Object.assign(C.uberHb||{},{at:Date.now(),observed:C.uberAck.observed,trying:null});save();return send(r,200,{ok:true})}
+ if(p==='uber-status'&&q.method==='POST'){const ok=['online','paused','offline','closed','unknown'];const t=x=>{x=+x||0;return x>0?x:null};
+  C.uberStore={state:ok.includes(j.state)?j.state:'unknown',raw:String(j.raw||'').slice(0,30),reason:String(j.reason||'').slice(0,40),pauseUntil:t(j.pauseUntil),busyUntil:t(j.busyUntil),nextOpen:t(j.nextOpen),nextClose:t(j.nextClose),since:t(j.since),err:j.err?String(j.err).slice(0,20):null,at:Date.now()};save();return send(r,200,{ok:true})}
  if(p==='uber-hb'&&q.method==='POST'){C.uberHb={at:Date.now(),observed:['open','paused','unknown'].includes(j.observed)?j.observed:(C.uberHb&&C.uberHb.observed)||'unknown',trying:j.trying?{n:parseInt(j.trying.n)||0,err:String(j.trying.err||'').slice(0,80)}:null,dry:!!j.dry};return send(r,200,{ok:true,seq:C.chanSeq||0})}
  if(p==='customer'){return send(r,200,await customer(u.searchParams.get('order')||''))}
  if(p==='screen'&&q.method==='POST'){
