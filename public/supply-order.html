@@ -58,7 +58,7 @@ label{font-size:15px;color:#8a6a5a;display:block}label>input,label>select,label>
 </style>
 <div class="lock" id="lock"><h2 style="color:#2fb36b">🛒 订货</h2><input id="pin" type="password" inputmode="numeric" maxlength="8" placeholder="PIN"><button style="width:280px;margin-top:14px" onclick="login()">进入</button><div id="msg" style="color:#d33;margin-top:10px"></div></div>
 <div class="hd"><div class="hr"><a class="bk" href="/ipad">‹ 店长</a><h1>🛒 订货</h1><a class="bk" href="/ipad/costs">📦 原料进价</a></div>
-<div class="hr" style="margin-top:8px"><select id="sup" onchange="draw()"></select></div></div>
+<div class="hr" style="margin-top:8px"><select id="sup" onchange="Q={};S().items.forEach(function(i){if(i.active)Q[i.id]=i.defQty||0});draw()"></select></div></div>
 <div class="info">助手会先放好购物车、发确认页给你，你确认后才下单</div>
 <div class="sum" id="sinfo"></div>
 <div class="list" id="items"></div>
@@ -85,26 +85,26 @@ function S(){var id=$('sup').value;for(var i=0;i<D.suppliers.length;i++)if(D.sup
 function draw(){if(!D)return;var s=S();$('sinfo').innerHTML=esc(s.name)+' · 付款：'+esc(s.payment)+' · 送到：'+esc(s.deliveryAddress||'池袋店')+' · 到货：'+esc(s.deliveryDate||'最早')+' · '+esc(s.note||'')+(s.url?' · <a href="'+esc(s.url)+'" target="_blank" style="color:#ff5c8a">商品列表</a>':'');
  var G={},GO=[];s.items.filter(function(i){return i.active}).forEach(function(i){var c=i.category||'其他';if(!G[c]){G[c]=[];GO.push(c)}G[c].push(i)});
  $('items').innerHTML=GO.map(function(c){return '<h3 style="grid-column:1/-1;margin:8px 0 0;font-size:19px;color:#ff5c8a">'+esc(c)+'</h3>'+G[c].map(function(i){var q=Q[i.id]||0;
-  return '<div class="it"><div class="x"><div class="t" style="font-size:18px;font-weight:700">'+esc(i.cn||i.name)+'</div><div class="s" style="font-size:13px;color:#a08676">'+esc(i.name)+' '+esc(i.code)+' · '+(i.price!=null?yen(i.price):'—')+'/'+esc(i.unit)+'（不含税）</div>'+
+  return '<div class="it"><div class="x"><div class="t" style="font-size:18px;font-weight:700">'+esc(i.cn||i.name)+'</div><div class="s" style="font-size:13px;color:#a08676">'+esc(i.name)+' '+esc(i.code)+' · '+(i.price!=null?yen(i.price):'—')+'/'+esc(i.unit)+(S().taxIncluded?'（含税）':'（不含税）')+'</div>'+
   '<div class="s" style="font-size:13px;color:#a08676">上次下单：'+(i.lastOrder?esc(i.lastOrder)+'（'+i.daysSince+' 天前）':'无记录')+(i.due?' <span class="due">⏰ 该补货了</span>':'')+'</div></div>'+
   '<div class="qt"><button class="g" onclick="dq(\''+i.id+'\',-1)">−</button><input inputmode="numeric" value="'+q+'" onchange="Q[\''+i.id+'\']=Math.max(0,parseInt(this.value,10)||0);tot()"><button class="g" onclick="dq(\''+i.id+'\',1)">＋</button></div></div>'}).join('')}).join('');
  tot();hist()}
 function dq(id,d){Q[id]=Math.max(0,(Q[id]||0)+d);draw()}
 function lines(){var s=S(),L=[];s.items.forEach(function(i){if(i.active&&Q[i.id]>0)L.push({itemId:i.id,qty:Q[i.id],price:i.price||0})});return L}
-function tot(){var st=0;lines().forEach(function(l){st+=l.price*l.qty});$('tot').innerHTML='小计（不含税）'+yen(st)+'<br>预计合计（含 8% 税）'+yen(st+Math.round(st*.08))+' <span style="font-size:13px;font-weight:400">代引手续费另计</span>'}
+function tot(){var st=0;lines().forEach(function(l){st+=l.price*l.qty});if(S().taxIncluded){$('tot').innerHTML='合计（含税）'+yen(st)+' <span style="font-size:13px;font-weight:400">'+(st>=10000?'满 ¥10,000 免运费/手续费':'未满 ¥10,000 需运费/手续费')+'</span>';return}$('tot').innerHTML='小计（不含税）'+yen(st)+'<br>预计合计（含 8% 税）'+yen(st+Math.round(st*.08))+' <span style="font-size:13px;font-weight:400">代引手续费另计</span>'}
 function prep(past){var L=lines();if(!L.length)return toast('请至少选一样',1);var b={supplierId:S().id,lines:L,deliveryDate:$('dd').value,comment:$('cm').value};
  if(past){var d=prompt('这是过去已经下过的订单吗？请输入下单日期（YYYY-MM-DD）',new Date(Date.now()+9*36e5).toISOString().slice(0,10));if(!d)return;b.past=true;b.orderDate=d}
  req('POST','',b,function(e){if(e)return toast(e,1);$('cm').value='';$('dd').value='';toast(past?'已登记过去的订单':'已提交，状态：待处理');load()})}
 var SC={'待处理':'s0','已放购物车待确认':'s1','已下单':'s2','已取消':'s3'};
 function hist(){$('hist').innerHTML=D.orders.length?D.orders.map(function(o){return '<div class="box"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><span class="st '+SC[o.status]+'">'+esc(o.status)+'</span><span style="font-size:14px;color:#a08676">'+esc(o.supplierName||'')+' · '+(o.orderDate?'下单 '+esc(o.orderDate):'提交 '+esc(new Date(o.createdAt).toLocaleString('zh-CN',{timeZone:'Asia/Tokyo'})))+(o.past?' · 补登记':'')+'</span></div>'+
  '<div style="margin-top:8px;font-size:16px">'+o.lines.map(function(l){return esc(l.cn||l.name)+' × '+l.qty+esc(l.unit)}).join('<br>')+'</div>'+
- '<div style="font-size:14px;color:#8a6a5a;margin-top:6px">'+yen(o.subtotal)+'（不含税）· 约 '+yen(o.totalEst)+'（含税）'+(o.supplierOrderNo?' · 订单号 '+esc(o.supplierOrderNo):'')+(o.deliveryDate?' · 到货 '+esc(o.deliveryDate):'')+(o.comment?' · '+esc(o.comment):'')+(o.assistantNote?'<br>助手：'+esc(o.assistantNote):'')+'</div>'+
+ '<div style="font-size:14px;color:#8a6a5a;margin-top:6px">'+(o.taxIncluded?yen(o.subtotal)+'（含税）'+(o.points?' · 积分 '+o.points+' · 实付 '+yen(o.totalEst):''):yen(o.subtotal)+'（不含税）· 约 '+yen(o.totalEst)+'（含税）')+(o.supplierOrderNo?' · 订单号 '+esc(o.supplierOrderNo):'')+(o.deliveryDate?' · 到货 '+esc(o.deliveryDate):'')+(o.comment?' · '+esc(o.comment):'')+(o.assistantNote?'<br>助手：'+esc(o.assistantNote):'')+'</div>'+
  (o.status==='待处理'?'<div class="btns"><button class="r" onclick="cancelO(\''+o.id+'\')">取消这个订单</button></div>':'')+'</div>'}).join(''):'<div class="box">还没有订单</div>'}
 function cancelO(id){if(!confirm('确定取消这个订单吗？'))return;req('POST','/'+id+'/status',{status:'已取消',by:'page'},function(e){if(e)return toast(e,1);toast('已取消');draw()})}
 var ER=[];
 function openEdit(){ER=JSON.parse(JSON.stringify(S().items));drawEd();$('ov').style.display='flex'}
 function drawEd(){$('ed').innerHTML=ER.map(function(i,k){function f(n,l,t){return '<label>'+l+'<input data-k="'+k+'" data-f="'+n+'" '+(t?'inputmode="numeric"':'')+' value="'+esc(i[n]==null?'':i[n])+'"></label>'}
- return '<div style="border-bottom:1px solid #f0dcd0;padding:10px 0"><div class="fg">'+f('cn','中文名')+f('name','日文商品名')+f('code','商品编号')+f('price','单价（不含税）',1)+f('unit','单位')+f('defQty','默认数量',1)+f('remindDays','提醒间隔（距上次下单天数，可空）',1)+f('category','分类')+f('costName','对应原料进价名')+'</div><div class="btns"><label class="sw" style="flex:1"><input type="checkbox" data-k="'+k+'" data-f="active" '+(i.active?'checked':'')+'> 显示</label><button class="r" onclick="ER.splice('+k+',1);drawEd()">删除</button></div></div>'}).join('')}
+ return '<div style="border-bottom:1px solid #f0dcd0;padding:10px 0"><div class="fg">'+f('cn','中文名')+f('name','日文商品名')+f('code','商品编号')+f('price',S().taxIncluded?'单价（含税）':'单价（不含税）',1)+f('unit','单位')+f('defQty','默认数量',1)+f('remindDays','提醒间隔（距上次下单天数，可空）',1)+f('category','分类')+f('costName','对应原料进价名')+'</div><div class="btns"><label class="sw" style="flex:1"><input type="checkbox" data-k="'+k+'" data-f="active" '+(i.active?'checked':'')+'> 显示</label><button class="r" onclick="ER.splice('+k+',1);drawEd()">删除</button></div></div>'}).join('')}
 function addRow(){rd();ER.push({name:'',cn:'',code:'',price:null,unit:'箱',defQty:1,remindDays:null,costName:'',active:true});drawEd()}
 function rd(){var a=$('ed').querySelectorAll('input');for(var i=0;i<a.length;i++){var e=a[i],k=+e.getAttribute('data-k'),f=e.getAttribute('data-f');ER[k][f]=f==='active'?e.checked:e.value}}
 function saveEdit(){rd();req('POST','/supplier',{id:S().id,items:ER},function(e){if(e)return toast(e,1);$('ov').style.display='none';toast('已保存');load()})}
