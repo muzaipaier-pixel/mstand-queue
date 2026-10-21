@@ -38,7 +38,7 @@ if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r,u.searchParams.get
  if(u.pathname==='/api/checkout'&&q.method==='POST'){let b='';q.on('data',c=>{b+=c;if(b.length>2e4)q.destroy()});q.on('end',()=>checkout(b,q,r));return;}
  if(u.pathname==='/api/order-status'){orderStatus(u.searchParams.get('id')||'',r);return;}
  if(u.pathname.startsWith('/api/kds')){kdsApi(u,q,r);return;}
- if(u.pathname.startsWith('/api/ipad/')){IPAD(u,q,r);return;}
+ if(u.pathname.startsWith('/api/ipad/')){const t0=Date.now();r.on('finish',()=>{if(/worker|uber-(desired|hb)/.test(u.pathname)&&r.statusCode===200)return;ALOG.push(new Date().toISOString().slice(11,19)+' ipad '+q.method+' '+u.pathname.slice(10)+' '+r.statusCode+' '+(Date.now()-t0)+'ms ua='+String(q.headers['user-agent']||'').replace(/^Mozilla\/5\.0 /,'').slice(0,90));if(ALOG.length>200)ALOG.shift()});IPAD(u,q,r);return;}
  if(u.pathname==='/api/fun')return jres(r,200,funState());
  if(u.pathname==='/api/state')return r.end(JSON.stringify(pub()));
  if(u.pathname==='/api/action'&&q.method==='POST'){let b='';q.on('data',c=>b+=c);q.on('end',()=>{let j={};try{j=JSON.parse(b)}catch(e){}

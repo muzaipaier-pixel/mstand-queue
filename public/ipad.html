@@ -117,17 +117,31 @@ tr.low td{color:#d33;font-weight:800}
   </div>
 </div></div>
 
+<div id="dbg" style="text-align:center;font-size:11px;color:#b9a296;margin-top:14px"></div>
 <div class="nav"><button class="on" id="nHome" onclick="nav('home')">首页</button><button id="nMore" onclick="nav('more')">更多</button></div>
 <div class="ov" id="ov"><div class="dlg"><h3 id="dT"></h3><p id="dS"></p><div class="row"><button class="ghost" onclick="$('ov').style.display='none'">取消</button><button class="big" id="dOk" style="height:52px;font-size:20px">确定</button></div></div></div>
 <script>
-var PIN=localStorage.pin||'',ST={},CUST={},MENU=[],OPEN={},CAT='',OV=null,CLK=0;
+var PIN=sget('pin'),ST={},CUST={},MENU=[],OPEN={},CAT='',OV=null,CLK=0;
 function $(i){return document.getElementById(i)}
 function yen(n){return n==null?'-':'¥'+Math.round(n).toLocaleString()}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return '&#'+c.charCodeAt(0)+';'})}
 function toast(t,bad){var e=$('toast');e.textContent=t;e.style.background=bad?'#ef4b4b':'#2fb36b';e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display='none'},bad?6000:2500)}
-function api(p,b){return fetch('/api/ipad/'+p,{method:b?'POST':'GET',headers:{'Content-Type':'application/json','x-pin':PIN},body:b?JSON.stringify(b):undefined}).then(function(r){if(r.status===403){$('lock').style.display='flex';toast('PIN 错误或已更改',true);throw 0}return r.json()})}
-function post(b){b.pin=PIN;return fetch('/api/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}).then(function(r){return r.json()})}
-function login(){PIN=$('pin').value;api('overview').then(function(){localStorage.pin=PIN;$('lock').style.display='none';boot()}).catch(function(){$('msg').textContent='PIN 错误'})}
+var VER='v3',LAST='-';
+function dbg(){var e=$('dbg');if(e)e.textContent='iPad '+VER+' · 上次请求 '+LAST}
+function T(){var ok=[],er=[],st=0,val,o={then:function(f,e){if(f)ok.push(f);if(e)er.push(e);fl();return o},'catch':function(e){er.push(e);fl();return o},
+ _r:function(v){st=1;val=v;fl()},_j:function(v){st=2;val=v;fl()}};function fl(){var L;if(st===1){L=ok;ok=[];for(var i=0;i<L.length;i++){try{L[i](val)}catch(x){st=2;val=x;rep('cb '+x.message)}}}if(st===2){L=er;er=[];for(var j=0;j<L.length;j++){try{L[j](val)}catch(x){}}}}return o}
+function rep(m){try{var x=new XMLHttpRequest();x.open('POST','/alog',true);x.send('ipad '+VER+' '+m)}catch(e){}}
+window.onerror=function(m,u,l){rep('JSERR '+m+' @'+l);LAST='JS错误 '+m;dbg()};
+function xhr(meth,url,body,hdr){var t=T();try{var x=new XMLHttpRequest();x.open(meth,url,true);x.setRequestHeader('Content-Type','application/json');for(var k in hdr)x.setRequestHeader(k,hdr[k]);
+ x.timeout=20000;x.onreadystatechange=function(){if(x.readyState!==4)return;LAST=url.replace('/api/ipad/','').split('?')[0]+' → '+(x.status||'网络错误')+' '+new Date().toTimeString().slice(0,8);dbg();
+  if(x.status===403){$('lock').style.display='flex';toast('PIN 错误或已更改，请重新输入',true);return t._j(0)}
+  if(!x.status)return t._j(1);var j=null;try{j=JSON.parse(x.responseText)}catch(e){}if(x.status>=500&&j&&j.error)toast('服务器错误：'+j.error,true);t._r(j||{})};
+ x.send(body?JSON.stringify(body):null)}catch(e){LAST='发送失败 '+e.message;dbg();t._j(1)}return t}
+function api(p,b){return xhr(b?'POST':'GET','/api/ipad/'+p,b,{'x-pin':PIN})}
+function post(b){b.pin=PIN;return xhr('POST','/api/action',b,{})}
+function sget(k){try{return localStorage.getItem(k)||''}catch(e){return ''}}
+function sset(k,v){try{if(v)localStorage.setItem(k,v);else localStorage.removeItem(k)}catch(e){}}
+function login(){PIN=$('pin').value;api('overview').then(function(){sset('pin',PIN);$('lock').style.display='none';boot()}).catch(function(){$('msg').textContent='PIN 错误'})}
 function nav(t){$('home').className='home'+(t==='home'?'':' off');$('more').className='more'+(t==='more'?' on':'');$('nHome').className=t==='home'?'on':'';$('nMore').className=t==='more'?'on':'';if(t==='more'){loadStock();loadSales()}}
 function askDo(t,s,ok,col,fn){$('dT').textContent=t;$('dS').innerHTML=s;$('dOk').textContent=ok;$('dOk').style.background=col;$('ov').style.display='flex';$('dOk').onclick=function(){$('dOk').onclick=null;$('ov').style.display='none';fn()}}
 var SHN={open:'营业中',prep:'准备中',shop:'采购中',closed:'营业结束'};
@@ -152,7 +166,7 @@ function loadOv(){api('overview').then(function(o){OV=o;CLK=o.now?o.now-new Date
  $('aLow').className='al org'+(o.stockLow.length?' on':'');$('aLowT').textContent='快用完：'+o.stockLow.join('、');
  $('aClosed').className='al org'+(o.closedStale?' on':'');
  var v=Math.round((o.screen.vol==null?1:o.screen.vol)*100);$('vol').value=v;$('volV').textContent=v+'%';
- var a=o.screen.ann;$('annNow').textContent=a&&a.until>Date.now()?'正在显示：'+a.text:''}).catch(function(){})}
+ var a=o.screen.ann;$('annNow').textContent=a&&a.until>new Date().getTime()?'正在显示：'+a.text:''}).catch(function(){})}
 function hm(t){var d=new Date(t+9*3600e3);return ('0'+d.getUTCHours()).slice(-2)+':'+('0'+d.getUTCMinutes()).slice(-2)}
 function tickCd(){var sh=OV&&OV.screen.shop;if(!sh||!sh.until)return;var ms=Math.max(0,sh.until-(new Date().getTime()+CLK)),s=Math.ceil(ms/1000);
  $('cdT').textContent=('0'+Math.floor(s/60)).slice(-2)+':'+('0'+s%60).slice(-2);$('cdE').textContent='预计 '+hm(sh.until)+' 自动恢复营业';if(!ms)setTimeout(loadOv,2500)}
