@@ -137,7 +137,7 @@ return async function api(u,q,r){const j=q.method==='POST'?await body(q):{};
  if(p==='soldout'&&q.method==='POST'){if(j.confirm!==true)return send(r,400,{error:'confirm required'});return send(r,200,await setSoldOut(String(j.id||''),!!j.sold,j.vars))}
  if(p==='toppings')return send(r,200,await toppings());
  if(p==='topping'&&q.method==='POST'){if(j.confirm!==true)return send(r,400,{error:'confirm required'});return send(r,200,await setTopping(String(j.id||''),!!j.sold))}
- if(p==='uber-toppings'){const t=await toppings();return send(r,200,{sold:t.filter(x=>x.so).map(x=>x.name)})}
+ if(p==='uber-toppings'){(global.SEEN||(global.SEEN={})).uberSync=Date.now();const t=await toppings();return send(r,200,{sold:t.filter(x=>x.so).map(x=>x.name)})}
  if(p==='restore-all'&&q.method==='POST'){if(j.confirm!==true)return send(r,400,{error:'confirm required'});const m=await menu();const out=[];for(const i of m.filter(i=>i.vars.some(v=>v.so))){try{const x=await setSoldOut(i.id,false);out.push(i.name+(x.ok?'':' ✗'))}catch(e){out.push(i.name+' ✗'+e.message)}}return send(r,200,{ok:true,restored:out})}
  if(p==='stock'){if(q.method==='POST'){
    if(j.items)C.stock.items=j.items.slice(0,30).map(i=>({k:String(i.k).replace(/\W/g,'').slice(0,20),name:String(i.name||i.k).slice(0,30),unit:String(i.unit||'').slice(0,6),start:+i.start||0,low:+i.low||0}));
@@ -146,6 +146,7 @@ return async function api(u,q,r){const j=q.method==='POST'?await body(q):{};
    if(j.adj){if(C.stock.adjDay!==tokyoDay()){C.stock.adj={};C.stock.adjDay=tokyoDay()}for(const k in j.adj)C.stock.adj[k]=(C.stock.adj[k]||0)+(+j.adj[k]||0)}
    save()}return send(r,200,stockView())}
  if(p==='cfg'&&q.method==='POST'){if(j.peak)C.cfg.peak=Math.max(1,Math.min(50,parseInt(j.peak)||6));save();return send(r,200,C.cfg)}
+ if(p==='health'){const G=global.SEEN||{},sh=ST().shop||null;return send(r,200,{now:Date.now(),screen:G.screen||null,orderVisit:G.orderVisit||null,orderVisitsToday:G.ovN||0,lastOrder:G.lastOrder||null,shop:sh?sh.mode:'open',orderGate:process.env.SHOP_GATE_ORDER!=='0',uberSync:G.uberSync||null,uberSales:C.uber&&C.uber.at||null,uberHb:C.uberHb&&C.uberHb.at||null})}
  if(p==='overview'){const prep=ST().preparing||[];return send(r,200,{now:Date.now(),cfg:C.cfg,open:prep.length,peak:prep.length>=C.cfg.peak,stockLow:stockView().items.filter(i=>i.low).map(i=>i.name),screen:{vol:ST().screenVol==null?1:ST().screenVol,ann:ST().ann||null,shop:ST().shop||null},chan:{seq:C.chanSeq||0,uber:uberStatus(),orderGate:process.env.SHOP_GATE_ORDER!=='0'},closedStale:!!(ST().shop&&ST().shop.mode==='closed'&&tokyoDay(ST().shop.at)!==tokyoDay()&&new Date(Date.now()+9*3600e3).getUTCHours()>=10)})}
  // box-side worker (uber-sync on the shop PC) polls desired Uber state and acks; Render cannot drive a browser
  if(p==='uber-desired'){shopExpire();const sh=ST().shop;return send(r,200,{seq:C.chanSeq||0,paused:!!(sh&&sh.mode),mode:sh?sh.mode:'open',until:sh&&sh.until||null,now:Date.now()})}

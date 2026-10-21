@@ -28,6 +28,9 @@ const types={'.html':'text/html; charset=utf-8','.js':'text/javascript','.json':
 http.createServer((q,r)=>{
  const u=new URL(q.url,'http://x');
  if(u.pathname.length>1&&u.pathname.endsWith('/'))u.pathname=u.pathname.replace(/\/+$/,'')||'/'; // /order/ -> /order
+ try{const rf=String(q.headers.referer||'');const S_=global.SEEN||(global.SEEN={});
+  if(/\/screen(\?|$)/.test(rf.replace(/^https?:\/\/[^/]+/,''))||u.pathname==='/screen'){S_.screen=Date.now();S_.screenUa=String(q.headers['user-agent']||'').slice(0,60)}
+  if(u.pathname==='/order'&&q.method==='GET'){S_.orderVisit=Date.now();const d=new Date(Date.now()+5*3600e3).toISOString().slice(0,10);if(S_.ovDay!==d){S_.ovDay=d;S_.ovN=0}S_.ovN++}}catch(e){}
  if(u.pathname==='/events'){r.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive','X-Accel-Buffering':'no'});r.write(`data: ${JSON.stringify({...pub(),event:'init'})}\n\n`);clients.add(r);const k=setInterval(()=>{if(clients.has(r))sseWrite(r,':k\n\n');else clearInterval(k)},20000);const rm=()=>{clients.delete(r);clearInterval(k)};q.on('close',rm);r.on('close',rm);r.on('error',rm);q.on('error',rm);return;}
 if(u.pathname==='/alog'){if(q.method==='POST'){let d='';q.on('data',c=>{if(d.length<400)d+=c});q.on('end',()=>{ALOG.push(new Date().toISOString().slice(11,19)+' '+d.slice(0,300));if(ALOG.length>200)ALOG.shift();r.writeHead(204);r.end()})}else{r.writeHead(200,{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store'});r.end(ALOG.join('\n'))}return;}
 if(u.pathname.startsWith('/vc/')){vcServe(u.pathname.slice(4).replace(/\.mp3$/,''),r);return;}
@@ -385,7 +388,7 @@ async function checkout(b,q,r){
   const no=shortNo(o.id);webRecent.push({id:o.id,ip,dev,at:Date.now()});
   // Unpaid API orders are NOT visible in Square POS, so list it on the queue right away (marked unpaid)
   if(!st.preparing.some(x=>x.order===o.id)){st.preparing.push({id:'web-'+o.id,order:o.id,num:name,no,unpaid:true,web:true,items:(o.line_items||[]).map(l=>l.name+(l.variation_name?'('+l.variation_name+')':'')+(l.quantity!=='1'?'×'+l.quantity:'')).join('、'),total:Number((o.total_money||{}).amount||0),at:Date.now()});st.seq++;save();push('prep')}
-  r.writeHead(200,{'Content-Type':'application/json'});r.end(JSON.stringify({order_id:o.id,no}));
+  (global.SEEN||(global.SEEN={})).lastOrder=Date.now();r.writeHead(200,{'Content-Type':'application/json'});r.end(JSON.stringify({order_id:o.id,no}));
  }catch(e){console.error('checkout',e.message);bad(502,'square')}
 }
 const shortNo=id=>'W'+String(id||'').replace(/[^A-Z0-9]/gi,'').slice(-4).toUpperCase();

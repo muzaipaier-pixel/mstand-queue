@@ -81,6 +81,8 @@ tr.low td{color:#d33;font-weight:800}
 <div class="al org" id="aClosed"><span>还是「营业结束」— 开店了吗？</span><a href="#" onclick="askShop('open');return false">切回营业中</a></div>
 <div class="al org" id="aLow"><span id="aLowT"></span><a href="#" onclick="nav('more');return false">备料</a></div>
 
+<div id="hl" onclick="hlTap()" style="display:flex;gap:14px;align-items:center;padding:6px 12px;font-size:14px;font-weight:700;color:#5a4035;cursor:pointer"></div>
+<div id="hlD" style="display:none;margin:0 12px 8px;padding:10px 14px;background:#fff;border-radius:14px;font-size:14px;line-height:1.9"></div>
 <div class="home" id="home">
  <div class="col c1">
   <div class="card"><div class="ct" style="display:flex;align-items:center">店铺状态<span style="margin-left:auto;font-weight:700">等待时长 <select id="shopM" style="width:96px;height:36px;font-size:15px;display:inline-block"><option value="10">10分</option><option value="20">20分</option><option value="30">30分</option><option value="40" selected>40分</option><option value="60">60分</option></select></span></div>
@@ -136,7 +138,7 @@ function $(i){return document.getElementById(i)}
 function yen(n){return n==null?'-':'¥'+Math.round(n).toLocaleString()}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return '&#'+c.charCodeAt(0)+';'})}
 function toast(t,bad){var e=$('toast');e.textContent=t;e.style.background=bad?'#ef4b4b':'#2fb36b';e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display='none'},bad?6000:2500)}
-var VER='v7',LAST='-';
+var VER='v8',LAST='-';
 function dbg(){var e=$('dbg');if(e)e.textContent='iPad '+VER+' · 上次请求 '+LAST}
 function T(){var ok=[],er=[],st=0,val,o={then:function(f,e){if(f)ok.push(f);if(e)er.push(e);fl();return o},'catch':function(e){er.push(e);fl();return o},
  _r:function(v){st=1;val=v;fl()},_j:function(v){st=2;val=v;fl()}};function fl(){var L;if(st===1){L=ok;ok=[];for(var i=0;i<L.length;i++){try{L[i](val)}catch(x){st=2;val=x;rep('cb '+x.message)}}}if(st===2){L=er;er=[];for(var j=0;j<L.length;j++){try{L[j](val)}catch(x){}}}}return o}
@@ -217,6 +219,13 @@ function drawStock(s){STK=s;$('stk').innerHTML='<tr style="color:#a08070;font-si
 function stockPost(b){api('stock',b).then(function(s){drawStock(s);loadOv();toast('已保存')})}
 function saveStock(){stockPost({items:STK.items.map(function(i,ix){return {k:i.k,name:i.name,unit:i.unit,start:+$('st'+ix).value,low:+$('lw'+ix).value}})})}
 function sse(){var es=new EventSource('/events');es.onmessage=function(e){$('conn').style.background='#2fb36b';var s=JSON.parse(e.data);render(s);if(s.event==='screen')loadOv()};es.onerror=function(){$('conn').style.background='#ef4b4b'}}
-var booted=0;function boot(){if(booted++)return;initDlg();sse();loadOv();loadSales();loadMenu();loadTops();setInterval(loadTops,60000);setInterval(loadOv,15000);setInterval(loadSales,60000);setInterval(loadMenu,60000);setInterval(tickCd,1000)}
+var HL=null;function ago(t,now){if(!t)return '无记录';var s=Math.round((now-t)/1000);return hm(t)+'（'+(s<60?s+'秒前':s<3600?Math.round(s/60)+'分钟前':Math.round(s/3600)+'小时前')+'）'}
+function dot(c,t){return '<span><i style="display:inline-block;width:11px;height:11px;border-radius:6px;margin-right:5px;background:'+c+'"></i>'+t+'</span>'}
+function loadHl(){api('health').then(function(h){HL=h;var n=h.now,G='#2fb36b',Y='#e0a000',R='#ef4b4b';
+ var sc=h.screen&&n-h.screen<60000,od=h.shop==='open'&&h.orderGate,us=h.uberSync&&n-h.uberSync<10*60000,up=h.uberSales&&n-h.uberSales<45*60000,hb=h.uberHb&&n-h.uberHb<3*60000;
+ $('hl').innerHTML=dot(sc?G:R,'横屏'+(sc?'在线':'离线'))+dot(od?G:Y,'手机点单'+(od?'接单中':'暂停'))+dot(us&&hb?G:(us||hb?Y:R),'Uber同步')+dot(up?G:Y,'Uber数据')+'<span style="margin-left:auto;color:#a08070;font-weight:400">点这里看详情</span>';
+ $('hlD').innerHTML='横屏最后连接：'+ago(h.screen,n)+'<br>手机点单：'+(od?'接单中':'暂停（店铺状态「'+(SHN[h.shop]||h.shop)+'」）')+' · 今日打开 '+h.orderVisitsToday+' 次 · 最后打开 '+ago(h.orderVisit,n)+' · 最后下单 '+ago(h.lastOrder,n)+'<br>Uber 售罄同步最后运行：'+ago(h.uberSync,n)+'<br>Uber 暂停同步最后心跳：'+ago(h.uberHb,n)+'<br>Uber 营业数据最后推送：'+ago(h.uberSales,n)+'<br><span style="color:#a08070">重新上线后记录会清空，几分钟内恢复</span>'}).catch(function(){})}
+function hlTap(){var d=$('hlD');d.style.display=d.style.display==='none'?'block':'none';loadHl()}
+var booted=0;function boot(){if(booted++)return;initDlg();sse();loadOv();loadSales();loadMenu();loadTops();loadHl();setInterval(loadHl,20000);setInterval(loadTops,60000);setInterval(loadOv,15000);setInterval(loadSales,60000);setInterval(loadMenu,60000);setInterval(tickCd,1000)}
 initDlg();if(PIN)api('overview').then(function(){$('lock').style.display='none';boot()}).catch(function(){});
 </script></body></html>
