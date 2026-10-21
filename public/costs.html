@@ -1,0 +1,126 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="原料进价">
+<link rel="apple-touch-icon" href="/icon-180.png"><meta name="theme-color" content="#fff7f2">
+<title>原料进价 · M Stand</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,"PingFang SC","Hiragino Sans",sans-serif;background:#fff7f2;color:#3a2a22;font-size:18px;padding:env(safe-area-inset-top) env(safe-area-inset-right) 90px env(safe-area-inset-left)}
+.hd{position:sticky;top:0;z-index:5;background:#fff7f2;padding:12px 14px;border-bottom:1px solid #f0dcd0}
+.hr{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+h1{font-size:24px;margin:0;color:#ff5c8a;flex:1}
+a.bk{font-size:18px;color:#ff5c8a;text-decoration:none;padding:10px 4px}
+input,select,textarea{font:inherit;font-size:18px;padding:12px;border:1.5px solid #e6cfc2;border-radius:12px;background:#fff;width:100%;color:inherit;-webkit-appearance:none}
+textarea{min-height:70px}
+button{font:inherit;font-size:18px;min-height:54px;padding:0 18px;border:0;border-radius:14px;background:#ff5c8a;color:#fff;font-weight:600}
+button.g{background:#fff;color:#ff5c8a;border:1.5px solid #ff5c8a}button.r{background:#ef4b4b}
+#q{flex:1 1 200px}
+.cats{display:flex;gap:8px;overflow-x:auto;padding:10px 14px 0;-webkit-overflow-scrolling:touch}
+.cats button{min-height:44px;font-size:16px;white-space:nowrap;background:#fff;color:#8a6a5a;border:1.5px solid #e6cfc2}
+.cats button.on{background:#ff5c8a;color:#fff;border-color:#ff5c8a}
+.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px;padding:14px}
+.card{background:#fff;border-radius:16px;padding:14px 16px;box-shadow:0 2px 8px rgba(120,60,30,.08);min-height:96px}
+.card .t{font-size:20px;font-weight:700}.card .ja{font-size:14px;color:#a08676}
+.card .m{display:flex;justify-content:space-between;align-items:flex-end;margin-top:8px;gap:8px}
+.card .p{font-size:22px;font-weight:700}.card .p.e{color:#d9a2b5;font-size:17px}
+.card .u{font-size:17px;color:#2f8f5b;font-weight:600;text-align:right}
+.card .s{font-size:14px;color:#a08676;margin-top:4px}
+.tag{display:inline-block;font-size:13px;padding:2px 8px;border-radius:8px;background:#ffe6ee;color:#ff5c8a;margin-right:6px}
+.ov{position:fixed;inset:0;background:rgba(40,20,10,.45);display:none;z-index:20;align-items:flex-start;justify-content:center;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 10px}
+.dlg{background:#fff;border-radius:20px;padding:20px;width:100%;max-width:640px}
+.dlg h3{margin:0 0 12px;font-size:22px}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}.fg .w{grid-column:1/-1}
+label{font-size:15px;color:#8a6a5a;display:block}label>input,label>select,label>textarea{margin-top:4px}
+.uc{background:#eefaf3;color:#2f8f5b;border-radius:12px;padding:12px;font-size:19px;font-weight:700}
+.sw{display:flex;align-items:center;gap:10px;min-height:54px}.sw input{width:28px;height:28px;-webkit-appearance:checkbox}
+.btns{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}.btns button{flex:1}
+.hist{font-size:15px;color:#8a6a5a;max-height:160px;overflow-y:auto;background:#faf3ee;border-radius:12px;padding:8px 12px}
+.fab{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));width:auto;min-height:64px;font-size:20px;border-radius:32px;padding:0 26px;box-shadow:0 6px 16px rgba(255,92,138,.4);z-index:10}
+.lock{position:fixed;inset:0;background:#fff7f2;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:30;padding:20px}
+.lock input{max-width:280px;text-align:center;font-size:26px}
+.tools{display:flex;gap:8px;flex-wrap:wrap;padding:0 14px}.tools button{min-height:46px;font-size:16px}
+.warn{margin:10px 14px 0;padding:10px 14px;border-radius:12px;background:#fff1d6;color:#8a5a00;font-size:15px;display:none}
+#toast{position:fixed;left:50%;top:20px;transform:translateX(-50%);color:#fff;padding:12px 20px;border-radius:12px;display:none;z-index:40;font-size:17px;max-width:90%}
+.sum{padding:8px 14px 0;font-size:15px;color:#8a6a5a}
+@media (max-width:600px){.list{grid-template-columns:1fr;padding:10px}.fg{grid-template-columns:1fr}h1{font-size:21px}.dlg{padding:16px;border-radius:16px}.ov{padding:8px 6px}}
+</style></head><body>
+<div class="lock" id="lock"><h2 style="color:#ff5c8a">原料进价</h2><input id="pin" type="password" inputmode="numeric" maxlength="8" placeholder="PIN"><button style="width:280px;margin-top:14px" onclick="login()">进入</button><div id="msg" style="color:#d33;margin-top:10px"></div></div>
+<div class="hd"><div class="hr"><a class="bk" href="/ipad">‹ 店长</a><h1>原料进价</h1></div>
+<div class="hr" style="margin-top:8px"><input id="q" type="search" placeholder="搜索 名称 / 日文 / 供应商" oninput="draw()"></div></div>
+<div class="cats" id="cats"></div>
+<div class="warn" id="warn"></div>
+<div class="sum" id="sum"></div>
+<div class="list" id="list"></div>
+<div class="tools"><button class="g" onclick="dl('json')">导出 JSON</button><button class="g" onclick="dl('csv')">导出 CSV (Excel)</button><button class="g" onclick="$('imp').click()">导入 JSON</button><input type="file" id="imp" accept=".json,application/json" style="display:none" onchange="imp(this)"></div>
+<button class="fab" onclick="edit(null)">＋ 新增原料</button>
+<div class="ov" id="ov"><div class="dlg">
+<h3 id="eT">编辑</h3>
+<div class="fg">
+<label class="w">名称（中文）*<input id="f_name"></label>
+<label>日文名（可选）<input id="f_ja"></label>
+<label>分类<input id="f_cat" list="catl"><datalist id="catl"></datalist></label>
+<label>规格（例：1个 / 1kg / 1箱=24个）<input id="f_spec" oninput="uc()"></label>
+<label>每个规格的数量<input id="f_qty" type="number" inputmode="decimal" step="any" min="0" oninput="uc()"></label>
+<label>单位<select id="f_unit" onchange="uc()"><option>个</option><option>g</option><option>ml</option><option>根</option><option>张</option><option>袋</option><option>包</option><option>盒</option><option>箱</option></select></label>
+<label>价格 ¥<input id="f_price" type="number" inputmode="decimal" step="any" min="0" placeholder="例 298" oninput="uc()"></label>
+<div class="sw w"><input type="checkbox" id="f_tax" onchange="uc()"><label for="f_tax" style="font-size:18px;color:inherit">含税价格</label></div>
+<div class="uc w" id="f_uc">单价：-</div>
+<label>供应商（可选）<input id="f_sup"></label>
+<label>更新日期<input id="f_date" type="date"></label>
+<label class="w">备注<textarea id="f_note"></textarea></label>
+<div class="w" id="f_hw"><label>价格历史</label><div class="hist" id="f_hist"></div></div>
+</div>
+<div class="btns"><button class="g" onclick="closeE()">取消</button><button onclick="saveE()">保存</button></div>
+<div class="btns" id="f_delw"><button class="r" onclick="delE()">删除这个原料</button></div>
+</div></div>
+<div id="toast"></div>
+<script>
+var PIN=sget('pin'),D={items:[]},CAT='全部',CUR=null;
+function $(i){return document.getElementById(i)}
+function sget(k){try{return localStorage.getItem(k)||''}catch(e){return ''}}
+function sset(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return '&#'+c.charCodeAt(0)+';'})}
+function toast(t,bad){var e=$('toast');e.textContent=t;e.style.background=bad?'#ef4b4b':'#2fb36b';e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display='none'},bad?5000:2200)}
+function req(m,p,b,cb,raw){var x=new XMLHttpRequest();x.open(m,'/api/costs'+p,true);x.setRequestHeader('Content-Type','application/json');x.setRequestHeader('x-pin',PIN);x.timeout=20000;
+ x.onreadystatechange=function(){if(x.readyState!==4)return;if(x.status===403){$('lock').style.display='flex';return cb('PIN')}
+  if(!x.status)return cb('网络错误，请重试');if(raw)return cb(null,x.responseText);var j=null;try{j=JSON.parse(x.responseText)}catch(e){}
+  if(x.status!==200)return cb((j&&j.error)||('错误 '+x.status));cb(null,j)};x.send(b?JSON.stringify(b):null)}
+function login(){PIN=$('pin').value;load(function(e){if(e){$('msg').textContent='PIN 错误';return}sset('pin',PIN);$('lock').style.display='none'})}
+function keep(j){D=j;if(!j.seeded)sset('costs_backup',JSON.stringify(j));draw()}
+function load(cb){req('GET','',null,function(e,j){if(e){cb&&cb(e);return}cb&&cb();
+ var bk=null;try{bk=JSON.parse(sget('costs_backup')||'null')}catch(x){}
+ // server disk wiped (seed again / older) but this device has a newer copy → offer restore
+ if(bk&&bk.items&&(j.seeded||bk.updatedAt>j.updatedAt)&&bk.updatedAt!==j.updatedAt){D=j;draw();
+  var w=$('warn');w.style.display='block';w.innerHTML='⚠️ 服务器上的数据比这台设备上保存的旧（可能服务器重启丢失了）。<br>本机备份：'+esc(bk.updatedAt.slice(0,16).replace('T',' '))+' · '+bk.items.length+' 项 <button style="min-height:44px;margin-top:8px" onclick="restore()">用本机备份恢复</button>';return}
+ keep(j)})}
+function restore(){if(!confirm('用这台设备上的备份覆盖服务器数据？'))return;var bk=JSON.parse(sget('costs_backup'));
+ req('POST','/import',{confirm:true,items:bk.items},function(e,j){if(e)return toast(e,true);$('warn').style.display='none';keep(j);toast('已恢复')})}
+function ucs(i){if(i.price==null||!(i.qty>0))return '';var v=i.price/i.qty;return '¥'+(v>=100?v.toFixed(0):v>=1?v.toFixed(2):v.toFixed(3))+'/'+i.unit}
+function cats(){var c=['全部'],s={};D.items.forEach(function(i){if(!s[i.cat]){s[i.cat]=1;c.push(i.cat)}});return c}
+function draw(){var c=cats(),h='';for(var k=0;k<c.length;k++)h+='<button class="'+(c[k]===CAT?'on':'')+'" onclick="CAT=this.textContent;draw()">'+esc(c[k])+'</button>';$('cats').innerHTML=h;
+ $('catl').innerHTML=c.slice(1).map(function(x){return '<option value="'+esc(x)+'">'}).join('');
+ var q=$('q').value.trim().toLowerCase(),L=D.items.filter(function(i){return (CAT==='全部'||i.cat===CAT)&&(!q||(i.name+' '+i.ja+' '+i.supplier+' '+i.note+' '+i.cat).toLowerCase().indexOf(q)>=0)});
+ var filled=D.items.filter(function(i){return i.price!=null}).length;$('sum').textContent='共 '+D.items.length+' 项 · 已填价格 '+filled+' 项'+(q||CAT!=='全部'?' · 显示 '+L.length+' 项':'');
+ $('list').innerHTML=L.map(function(i){var ix=D.items.indexOf(i);return '<div class="card" onclick="edit('+ix+')"><div class="t">'+esc(i.name)+'</div><div class="ja">'+esc(i.ja)+'</div>'+
+  '<div class="m"><div class="p'+(i.price==null?' e':'')+'">'+(i.price==null?'未填价格':'¥'+i.price.toLocaleString()+' <span style="font-size:14px;font-weight:400">/'+esc(i.spec)+(i.taxIncl?' 含税':' 税抜')+'</span>')+'</div><div class="u">'+ucs(i)+'</div></div>'+
+  '<div class="s"><span class="tag">'+esc(i.cat)+'</span>'+esc(i.supplier)+(i.date?' · '+esc(i.date):'')+(i.history&&i.history.length>1?' · 改价'+(i.history.length-1)+'次':'')+'</div></div>'}).join('')||'<div style="padding:20px;color:#a08676">没有找到</div>'}
+function uc(){var p=parseFloat($('f_price').value),q=parseFloat($('f_qty').value),u=$('f_unit').value;
+ $('f_uc').textContent=(p>=0&&q>0)?'单价：'+ucs({price:p,qty:q,unit:u})+($('f_tax').checked?'（含税）':'（税抜）'):'单价：填好价格和数量后自动计算'}
+function edit(ix){var i=ix==null?{cat:CAT==='全部'?'':CAT,name:'',ja:'',spec:'1个',qty:1,unit:'个',price:null,taxIncl:true,supplier:'',date:'',note:'',history:[]}:D.items[ix];CUR=ix==null?null:i.id;
+ $('eT').textContent=ix==null?'新增原料':'编辑：'+i.name;$('f_name').value=i.name;$('f_ja').value=i.ja;$('f_cat').value=i.cat;$('f_spec').value=i.spec;$('f_qty').value=i.qty==null?'':i.qty;
+ $('f_unit').value=i.unit;if($('f_unit').value!==i.unit){var o=document.createElement('option');o.textContent=i.unit;$('f_unit').appendChild(o);$('f_unit').value=i.unit}
+ $('f_price').value=i.price==null?'':i.price;$('f_tax').checked=i.taxIncl!==false;$('f_sup').value=i.supplier;$('f_date').value=i.date||new Date(Date.now()+9*3600e3).toISOString().slice(0,10);$('f_note').value=i.note;
+ var h=(i.history||[]).slice().reverse();$('f_hw').style.display=h.length?'block':'none';$('f_hist').innerHTML=h.map(function(x){return esc(x.date)+'　¥'+x.price.toLocaleString()+' / '+esc(x.spec||'')+(x.taxIncl?' 含税':' 税抜')}).join('<br>');
+ $('f_delw').style.display=ix==null?'none':'flex';uc();$('ov').style.display='flex';$('ov').scrollTop=0}
+function closeE(){$('ov').style.display='none'}
+function saveE(){var b={id:CUR,name:$('f_name').value,ja:$('f_ja').value,cat:$('f_cat').value,spec:$('f_spec').value,qty:$('f_qty').value,unit:$('f_unit').value,price:$('f_price').value,taxIncl:$('f_tax').checked,supplier:$('f_sup').value,date:$('f_date').value,note:$('f_note').value};
+ if(!b.name.trim())return toast('请填写名称',true);req('POST','/save',b,function(e,j){if(e)return toast(e,true);keep(j);closeE();toast('已保存')})}
+function delE(){var i=D.items.filter(function(x){return x.id===CUR})[0];if(!i||!confirm('确定删除「'+i.name+'」？价格历史也会一起删除。'))return;
+ req('POST','/delete',{id:CUR,confirm:true},function(e,j){if(e)return toast(e,true);keep(j);closeE();toast('已删除')})}
+function dl(f){req('GET','/export.'+f,null,function(e,t){if(e)return toast(e,true);var n='mstand_costs_'+new Date().toISOString().slice(0,10)+'.'+f;
+ var bl=new Blob([t],{type:f==='csv'?'text/csv':'application/json'}),u=URL.createObjectURL(bl),a=document.createElement('a');a.href=u;a.download=n;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(u);a.remove()},2000)},true)}
+function imp(el){var f=el.files[0];if(!f)return;var r=new FileReader();r.onload=function(){var j;try{j=JSON.parse(r.result)}catch(e){return toast('文件不是 JSON',true)}
+ if(!j.items||!confirm('导入 '+j.items.length+' 项，覆盖现在的全部数据？'))return;req('POST','/import',{confirm:true,items:j.items},function(e,d){if(e)return toast(e,true);keep(d);toast('已导入')})};r.readAsText(f);el.value=''}
+if(PIN){load(function(e){if(!e)$('lock').style.display='none'})}
+</script></body></html>
