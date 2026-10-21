@@ -126,7 +126,7 @@ function uberStatus(){const a=C.uberAck,hb=C.uberHb,seq=C.chanSeq||0,now=Date.no
  return {state:st,text:txt+(mismatch?' ｜ 注意：Uber 现在是「'+(obs==='paused'?'暂停':'接单')+'」（可能在 Uber 里手动改过）':''),want,observed:obs,hbAt:hb&&hb.at||null}}
 return async function api(u,q,r){const j=q.method==='POST'?await body(q):{};
  const p=u.pathname.slice('/api/ipad/'.length);const pin=String(q.headers['x-pin']||j.pin||'');
- const wk=String(q.headers['x-worker-key']||'');const isW=/^uber(-desired|-ack|-hb|-toppings)?$/.test(p)&&WKEY&&wk.length===WKEY.length&&require('crypto').timingSafeEqual(Buffer.from(wk),Buffer.from(WKEY));
+ const wk=String(q.headers['x-worker-key']||'');const isW=/^uber(-desired|-ack|-hb|-toppings|-hot)?$/.test(p)&&WKEY&&wk.length===WKEY.length&&require('crypto').timingSafeEqual(Buffer.from(wk),Buffer.from(WKEY));
  if(!isW&&(!PIN||pin!==PIN))return send(r,403,{error:'PIN'});
  try{
  if(p==='sales'){if(u.searchParams.get('refresh')==='1'||Date.now()-S.at>3*60e3)await refresh();return send(r,200,sales())}
@@ -137,6 +137,8 @@ return async function api(u,q,r){const j=q.method==='POST'?await body(q):{};
  if(p==='soldout'&&q.method==='POST'){if(j.confirm!==true)return send(r,400,{error:'confirm required'});return send(r,200,await setSoldOut(String(j.id||''),!!j.sold,j.vars))}
  if(p==='toppings')return send(r,200,await toppings());
  if(p==='topping'&&q.method==='POST'){if(j.confirm!==true)return send(r,400,{error:'confirm required'});return send(r,200,await setTopping(String(j.id||''),!!j.sold))}
+ if(p==='uber-hot'){(global.SEEN||(global.SEEN={})).uberSync=Date.now();return send(r,200,{off:!!C.uberHotOff,at:C.uberHotOff||null})}
+ if(p==='hot-off'){if(q.method==='POST'){if(j.confirm!==true)return send(r,400,{error:'confirm required'});C.uberHotOff=j.off?Date.now():null;save()}return send(r,200,{ok:true,off:!!C.uberHotOff,at:C.uberHotOff||null})}
  if(p==='uber-toppings'){(global.SEEN||(global.SEEN={})).uberSync=Date.now();const t=await toppings();return send(r,200,{sold:t.filter(x=>x.so).map(x=>x.name)})}
  if(p==='restore-all'&&q.method==='POST'){if(j.confirm!==true)return send(r,400,{error:'confirm required'});const m=await menu();const out=[];for(const i of m.filter(i=>i.vars.some(v=>v.so))){try{const x=await setSoldOut(i.id,false);out.push(i.name+(x.ok?'':' ✗'))}catch(e){out.push(i.name+' ✗'+e.message)}}return send(r,200,{ok:true,restored:out})}
  if(p==='stock'){if(q.method==='POST'){
