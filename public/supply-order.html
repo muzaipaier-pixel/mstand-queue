@@ -1,0 +1,111 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="订货">
+<link rel="apple-touch-icon" href="/icon-180.png"><meta name="theme-color" content="#fff7f2">
+<title>订货 · M Stand</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,"PingFang SC","Hiragino Sans",sans-serif;background:#fff7f2;color:#3a2a22;font-size:18px;padding:env(safe-area-inset-top) env(safe-area-inset-right) 90px env(safe-area-inset-left)}
+.hd{position:sticky;top:0;z-index:5;background:#fff7f2;padding:12px 14px;border-bottom:1px solid #f0dcd0}
+.hr{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+h1{font-size:24px;margin:0;color:#ff5c8a;flex:1}
+a.bk{font-size:18px;color:#ff5c8a;text-decoration:none;padding:10px 4px}
+input,select,textarea{font:inherit;font-size:18px;padding:12px;border:1.5px solid #e6cfc2;border-radius:12px;background:#fff;width:100%;color:inherit;-webkit-appearance:none}
+textarea{min-height:70px}
+button{font:inherit;font-size:18px;min-height:54px;padding:0 18px;border:0;border-radius:14px;background:#ff5c8a;color:#fff;font-weight:600}
+button.g{background:#fff;color:#ff5c8a;border:1.5px solid #ff5c8a}button.r{background:#ef4b4b}
+#q{flex:1 1 200px}
+.cats{display:flex;gap:8px;overflow-x:auto;padding:10px 14px 0;-webkit-overflow-scrolling:touch}
+.cats button{min-height:44px;font-size:16px;white-space:nowrap;background:#fff;color:#8a6a5a;border:1.5px solid #e6cfc2}
+.cats button.on{background:#ff5c8a;color:#fff;border-color:#ff5c8a}
+.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px;padding:14px}
+.card{background:#fff;border-radius:16px;padding:14px 16px;box-shadow:0 2px 8px rgba(120,60,30,.08);min-height:96px}
+.card .t{font-size:20px;font-weight:700}.card .ja{font-size:14px;color:#a08676}
+.card .m{display:flex;justify-content:space-between;align-items:flex-end;margin-top:8px;gap:8px}
+.card .p{font-size:22px;font-weight:700}.card .p.e{color:#d9a2b5;font-size:17px}
+.card .u{font-size:17px;color:#2f8f5b;font-weight:600;text-align:right}
+.card .s{font-size:14px;color:#a08676;margin-top:4px}
+.tag{display:inline-block;font-size:13px;padding:2px 8px;border-radius:8px;background:#ffe6ee;color:#ff5c8a;margin-right:6px}
+.ov{position:fixed;inset:0;background:rgba(40,20,10,.45);display:none;z-index:20;align-items:flex-start;justify-content:center;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 10px}
+.dlg{background:#fff;border-radius:20px;padding:20px;width:100%;max-width:640px}
+.dlg h3{margin:0 0 12px;font-size:22px}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}.fg .w{grid-column:1/-1}
+label{font-size:15px;color:#8a6a5a;display:block}label>input,label>select,label>textarea{margin-top:4px}
+.uc{background:#eefaf3;color:#2f8f5b;border-radius:12px;padding:12px;font-size:19px;font-weight:700}
+.sw{display:flex;align-items:center;gap:10px;min-height:54px}.sw input{width:28px;height:28px;-webkit-appearance:checkbox}
+.btns{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}.btns button{flex:1}
+.hist{font-size:15px;color:#8a6a5a;max-height:160px;overflow-y:auto;background:#faf3ee;border-radius:12px;padding:8px 12px}
+.fab{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));width:auto;min-height:64px;font-size:20px;border-radius:32px;padding:0 26px;box-shadow:0 6px 16px rgba(255,92,138,.4);z-index:10}
+.lock{position:fixed;inset:0;background:#fff7f2;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:30;padding:20px}
+.lock input{max-width:280px;text-align:center;font-size:26px}
+.tools{display:flex;gap:8px;flex-wrap:wrap;padding:0 14px}.tools button{min-height:46px;font-size:16px}
+.warn{margin:10px 14px 0;padding:10px 14px;border-radius:12px;background:#fff1d6;color:#8a5a00;font-size:15px;display:none}
+#toast{position:fixed;left:50%;top:20px;transform:translateX(-50%);color:#fff;padding:12px 20px;border-radius:12px;display:none;z-index:40;font-size:17px;max-width:90%}
+.sum{padding:8px 14px 0;font-size:15px;color:#8a6a5a}
+@media (max-width:600px){.list{grid-template-columns:1fr;padding:10px}.fg{grid-template-columns:1fr}h1{font-size:21px}.dlg{padding:16px;border-radius:16px}.ov{padding:8px 6px}}
+</style></head><body>
+<style>
+.it{display:flex;align-items:center;gap:10px;background:#fff;border-radius:16px;padding:12px 14px;box-shadow:0 2px 8px rgba(120,60,30,.08)}
+.it .x{flex:1;min-width:0}.qt{display:flex;align-items:center;gap:6px}.qt button{min-height:48px;width:48px;padding:0;font-size:24px}.qt input{width:64px;text-align:center;padding:10px 4px}
+.box{background:#fff;border-radius:16px;padding:14px 16px;margin:0 14px 12px;box-shadow:0 2px 8px rgba(120,60,30,.08)}
+.info{margin:12px 14px;padding:12px 14px;border-radius:12px;background:#eefaf3;color:#2f6f4b;font-size:16px;font-weight:600}
+.st{display:inline-block;font-size:14px;padding:3px 10px;border-radius:10px;font-weight:700}
+.s0{background:#fff1d6;color:#8a5a00}.s1{background:#e6f0ff;color:#2a5bb8}.s2{background:#e3f7ea;color:#2f8f5b}.s3{background:#eee;color:#888}
+.due{color:#ef4b4b;font-weight:700}
+.list{grid-template-columns:repeat(auto-fill,minmax(440px,1fr))}
+@media (max-width:600px){.list{grid-template-columns:1fr}.box{margin:0 10px 10px}.info{margin:10px}}
+</style>
+<div class="lock" id="lock"><h2 style="color:#2fb36b">🛒 订货</h2><input id="pin" type="password" inputmode="numeric" maxlength="8" placeholder="PIN"><button style="width:280px;margin-top:14px" onclick="login()">进入</button><div id="msg" style="color:#d33;margin-top:10px"></div></div>
+<div class="hd"><div class="hr"><a class="bk" href="/ipad">‹ 店长</a><h1>🛒 订货</h1><a class="bk" href="/ipad/costs">📦 原料进价</a></div>
+<div class="hr" style="margin-top:8px"><select id="sup" onchange="draw()"></select></div></div>
+<div class="info">助手会先放好购物车、发确认页给你，你确认后才下单</div>
+<div class="sum" id="sinfo"></div>
+<div class="list" id="items"></div>
+<div class="box"><div class="fg"><label>希望到货日（可不填）<input id="dd" type="date"></label><label class="w">备注（可不填）<textarea id="cm" placeholder="例如：上午到货"></textarea></label></div>
+<div class="uc" id="tot" style="margin-top:12px"></div>
+<div class="btns"><button onclick="prep(false)">准备订单</button><button class="g" onclick="prep(true)">登记过去的订单</button><button class="g" onclick="openEdit()">编辑品项</button></div></div>
+<h2 style="margin:18px 14px 8px;font-size:21px">订单记录</h2><div id="hist" style="padding:0 0 20px"></div>
+<div class="ov" id="ov"><div class="dlg"><h3>编辑品项</h3><div id="ed"></div><div class="btns"><button class="g" onclick="addRow()">＋ 加一样</button><button class="g" onclick="$('ov').style.display='none'">取消</button><button onclick="saveEdit()">保存</button></div></div></div>
+<div id="toast"></div>
+<script>
+var PIN=sget('pin'),D=null,Q={};
+function $(i){return document.getElementById(i)}
+function sget(k){try{return localStorage.getItem(k)||''}catch(e){return ''}}
+function sset(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return '&#'+c.charCodeAt(0)+';'})}
+function yen(n){return '¥'+Math.round(n||0).toLocaleString()}
+function toast(t,bad){var e=$('toast');e.textContent=t;e.style.background=bad?'#ef4b4b':'#2fb36b';e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display='none'},bad?5000:2500)}
+function req(m,p,b,cb){var x=new XMLHttpRequest();x.open(m,'/api/orders'+p,true);x.setRequestHeader('Content-Type','application/json');x.setRequestHeader('x-pin',PIN);x.timeout=20000;
+ x.onreadystatechange=function(){if(x.readyState!==4)return;if(x.status===403){$('lock').style.display='flex';return cb('PIN')}var j={};try{j=JSON.parse(x.responseText)}catch(e){}
+ if(x.status!==200)return cb(j.error||('错误 '+x.status));D=j;cb(null,j)};x.ontimeout=function(){cb('网络超时')};x.send(b?JSON.stringify(b):null)}
+function login(){PIN=$('pin').value;load(function(e){if(e){$('msg').textContent='PIN 错误';return}sset('pin',PIN);$('lock').style.display='none'})}
+function load(cb){req('GET','',null,function(e){if(!e){if(!$('sup').options.length)$('sup').innerHTML=D.suppliers.map(function(s){return '<option value="'+s.id+'">'+esc(s.name)+'</option>'}).join('');Q={};S().items.forEach(function(i){if(i.active)Q[i.id]=i.defQty||0});draw()}cb&&cb(e)})}
+function S(){var id=$('sup').value;for(var i=0;i<D.suppliers.length;i++)if(D.suppliers[i].id===id)return D.suppliers[i];return D.suppliers[0]}
+function draw(){if(!D)return;var s=S();$('sinfo').innerHTML=esc(s.name)+' · 付款：'+esc(s.payment)+' · '+esc(s.note||'')+(s.url?' · <a href="'+esc(s.url)+'" target="_blank" style="color:#ff5c8a">商品列表</a>':'');
+ $('items').innerHTML=s.items.filter(function(i){return i.active}).map(function(i){var q=Q[i.id]||0;
+  return '<div class="it"><div class="x"><div class="t" style="font-size:18px;font-weight:700">'+esc(i.cn||i.name)+'</div><div class="s" style="font-size:13px;color:#a08676">'+esc(i.name)+' '+esc(i.code)+' · '+(i.price!=null?yen(i.price):'—')+'/'+esc(i.unit)+'（不含税）</div>'+
+  '<div class="s" style="font-size:13px;color:#a08676">上次下单：'+(i.lastOrder?esc(i.lastOrder)+'（'+i.daysSince+' 天前）':'无记录')+(i.due?' <span class="due">⏰ 该补货了</span>':'')+'</div></div>'+
+  '<div class="qt"><button class="g" onclick="dq(\''+i.id+'\',-1)">−</button><input inputmode="numeric" value="'+q+'" onchange="Q[\''+i.id+'\']=Math.max(0,parseInt(this.value,10)||0);tot()"><button class="g" onclick="dq(\''+i.id+'\',1)">＋</button></div></div>'}).join('');
+ tot();hist()}
+function dq(id,d){Q[id]=Math.max(0,(Q[id]||0)+d);draw()}
+function lines(){var s=S(),L=[];s.items.forEach(function(i){if(i.active&&Q[i.id]>0)L.push({itemId:i.id,qty:Q[i.id],price:i.price||0})});return L}
+function tot(){var st=0;lines().forEach(function(l){st+=l.price*l.qty});$('tot').innerHTML='小计（不含税）'+yen(st)+'<br>预计合计（含 8% 税）'+yen(st+Math.round(st*.08))+' <span style="font-size:13px;font-weight:400">代引手续费另计</span>'}
+function prep(past){var L=lines();if(!L.length)return toast('请至少选一样',1);var b={supplierId:S().id,lines:L,deliveryDate:$('dd').value,comment:$('cm').value};
+ if(past){var d=prompt('这是过去已经下过的订单吗？请输入下单日期（YYYY-MM-DD）',new Date(Date.now()+9*36e5).toISOString().slice(0,10));if(!d)return;b.past=true;b.orderDate=d}
+ req('POST','',b,function(e){if(e)return toast(e,1);$('cm').value='';$('dd').value='';toast(past?'已登记过去的订单':'已提交，状态：待处理');load()})}
+var SC={'待处理':'s0','已放购物车待确认':'s1','已下单':'s2','已取消':'s3'};
+function hist(){$('hist').innerHTML=D.orders.length?D.orders.map(function(o){return '<div class="box"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><span class="st '+SC[o.status]+'">'+esc(o.status)+'</span><span style="font-size:14px;color:#a08676">'+esc(o.supplierName||'')+' · '+(o.orderDate?'下单 '+esc(o.orderDate):'提交 '+esc(new Date(o.createdAt).toLocaleString('zh-CN',{timeZone:'Asia/Tokyo'})))+(o.past?' · 补登记':'')+'</span></div>'+
+ '<div style="margin-top:8px;font-size:16px">'+o.lines.map(function(l){return esc(l.cn||l.name)+' × '+l.qty+esc(l.unit)}).join('<br>')+'</div>'+
+ '<div style="font-size:14px;color:#8a6a5a;margin-top:6px">'+yen(o.subtotal)+'（不含税）· 约 '+yen(o.totalEst)+'（含税）'+(o.deliveryDate?' · 希望到货 '+esc(o.deliveryDate):'')+(o.comment?' · '+esc(o.comment):'')+(o.assistantNote?'<br>助手：'+esc(o.assistantNote):'')+'</div>'+
+ (o.status==='待处理'?'<div class="btns"><button class="r" onclick="cancelO(\''+o.id+'\')">取消这个订单</button></div>':'')+'</div>'}).join(''):'<div class="box">还没有订单</div>'}
+function cancelO(id){if(!confirm('确定取消这个订单吗？'))return;req('POST','/'+id+'/status',{status:'已取消',by:'page'},function(e){if(e)return toast(e,1);toast('已取消');draw()})}
+var ER=[];
+function openEdit(){ER=JSON.parse(JSON.stringify(S().items));drawEd();$('ov').style.display='flex'}
+function drawEd(){$('ed').innerHTML=ER.map(function(i,k){function f(n,l,t){return '<label>'+l+'<input data-k="'+k+'" data-f="'+n+'" '+(t?'inputmode="numeric"':'')+' value="'+esc(i[n]==null?'':i[n])+'"></label>'}
+ return '<div style="border-bottom:1px solid #f0dcd0;padding:10px 0"><div class="fg">'+f('cn','中文名')+f('name','日文商品名')+f('code','商品编号')+f('price','单价（不含税）',1)+f('unit','单位')+f('defQty','默认数量',1)+f('remindDays','提醒间隔（距上次下单天数，可空）',1)+f('costName','对应原料进价名')+'</div><div class="btns"><label class="sw" style="flex:1"><input type="checkbox" data-k="'+k+'" data-f="active" '+(i.active?'checked':'')+'> 显示</label><button class="r" onclick="ER.splice('+k+',1);drawEd()">删除</button></div></div>'}).join('')}
+function addRow(){rd();ER.push({name:'',cn:'',code:'',price:null,unit:'箱',defQty:1,remindDays:null,costName:'',active:true});drawEd()}
+function rd(){var a=$('ed').querySelectorAll('input');for(var i=0;i<a.length;i++){var e=a[i],k=+e.getAttribute('data-k'),f=e.getAttribute('data-f');ER[k][f]=f==='active'?e.checked:e.value}}
+function saveEdit(){rd();req('POST','/supplier',{id:S().id,items:ER},function(e){if(e)return toast(e,1);$('ov').style.display='none';toast('已保存');load()})}
+if(PIN){load(function(e){if(!e)$('lock').style.display='none'})}
+</script></body></html>
