@@ -17,8 +17,9 @@ async function read(ck){const r=await fetch('https://merchants.ubereats.com/mana
  if(!so){const e=new Error('UBER_LOGIN_EXPIRED status='+r.status);e.code=3;throw e}
  const n=x=>+x||0,now=Date.now(),raw=so.status.replace('STORE_STATUS_',''),reason=(so.reason&&so.reason.value)||'';
  const pu=n(so.pauseUntilTimestamp),bu=n(so.busyUntilTimestamp);
- let state=/PAUSE/.test(raw)||pu>now?'paused':/ONLINE|OPEN|BUSY/.test(raw)?'online':/OFFLINE|CLOSED/.test(raw)?(/HOURS|CLOSED|SCHEDULE/i.test(reason+raw)?'closed':'offline'):'unknown';
- return {state,raw,reason,pauseUntil:pu>now?pu:null,busyUntil:bu>now?bu:null,nextOpen:n(so.nextOpenTimestamp)||null,nextClose:n(so.nextCloseTimestamp)||null,since:n(so.statusUpdatedAt)||null}}
+ const until=Math.max(pu||0,bu||0);
+ let state=/PAUSE|BUSY/.test(raw)||until>now?'paused':/ONLINE|OPEN/.test(raw)?'online':/OFFLINE|CLOSED/.test(raw)?(/HOURS|CLOSED|SCHEDULE/i.test(reason+raw)?'closed':'offline'):'unknown';
+ return {state,raw,reason,pauseUntil:until>now?until:null,busyUntil:bu>now?bu:null,nextOpen:n(so.nextOpenTimestamp)||null,nextClose:n(so.nextCloseTimestamp)||null,since:n(so.statusUpdatedAt)||null}}
 async function push(s){const p=await fetch(APP+'/api/ipad/uber-status',{method:'POST',headers:{'content-type':'application/json','x-worker-key':(process.env.WORKER_KEY||rd(path.join(process.env.UBER_SYNC_DIR||'/workspace/uber-sync','worker.key')))},body:JSON.stringify(s),signal:AbortSignal.timeout(20000)});return p.status}
 module.exports={read,cookie,push};
 if(require.main===module)(async()=>{const dry=process.argv.includes('--dry');let s,code=0;
