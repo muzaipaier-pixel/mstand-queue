@@ -66,16 +66,28 @@ async function customer(orderId){const o=(await sq('/orders/'+encodeURIComponent
  const v={name,visits:os.length,top:Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([n,q])=>({n,q})),last:os.length>1?last:null};
  custC.set(id,{at:Date.now(),v});if(custC.size>300)custC.delete(custC.keys().next().value);return v}
 // ---- sold out toggle (Square catalog location_overrides.sold_out, same field uber-sync reads) ----
-async function setSoldOut(itemId,sold,varIds){const only=Array.isArray(varIds)&&varIds.length?new Set(varIds.map(String)):null;const o=(await sq('/catalog/object/'+encodeURIComponent(itemId))).object;
- if(!o||o.type!=='ITEM')throw new Error('not item');
- const before=JSON.stringify((o.item_data.variations||[]).map(v=>v.item_variation_data.price_money));
- let touched=0;for(const v of o.item_data.variations||[]){if(only&&!only.has(v.id))continue;touched++;const d=v.item_variation_data;let L=(d.location_overrides||[]).filter(l=>l.location_id!==LOC);
-  const mine=(d.location_overrides||[]).find(l=>l.location_id===LOC)||{location_id:LOC};
-  if(sold){mine.sold_out=true}else{delete mine.sold_out}
-  if(Object.keys(mine).length>1)L.push(mine);d.location_overrides=L}
- if(!touched)throw new Error('no variation');if(JSON.stringify((o.item_data.variations||[]).map(v=>v.item_variation_data.price_money))!==before)throw new Error('price guard');
- await sq('/catalog/object',{method:'POST',body:JSON.stringify({idempotency_key:require('crypto').randomUUID(),object:o})});
- invalidateMenu();return {ok:true,name:o.item_data.name,sold,n:touched}}
+// Square's location_overrides.sold_out is READ-ONLY via API (silently ignored on upsert).
+// Supported way: enable inventory tracking for the variation at this location + set count 0 -> Square marks it sold_out itself.
+// Restore: turn tracking off at this location -> sold_out clears. Manual sold-outs made on Square POS can't be cleared by API.
+// Prices are never touched (guarded). Result is read back from Square and returned per variation.
+const uuid=()=>require('crypto').randomUUID();
+const soOf=v=>((v.item_variation_data.location_overrides||[]).some(l=>l.location_id===LOC&&l.sold_out));
+async function setSoldOut(itemId,sold,varIds){const only=Array.isArray(varIds)&&varIds.length?new Set(varIds.map(String)):null;
+ const o=(await sq('/catalog/object/'+encodeURIComponent(itemId))).object;if(!o||o.type!=='ITEM')throw new Error('not item');
+ const targets=(o.item_data.variations||[]).filter(v=>!only||only.has(v.id));if(!targets.length)throw new Error('no variation');
+ const before=JSON.stringify(targets.map(v=>v.item_variation_data.price_money));
+ for(const v of targets){const d=v.item_variation_data;const L=d.location_overrides||[];let m=L.find(l=>l.location_id===LOC);if(!m){m={location_id:LOC};L.push(m)}
+  m.track_inventory=!!sold;delete m.sold_out;delete m.sold_out_valid_until;d.location_overrides=L}
+ if(JSON.stringify(targets.map(v=>v.item_variation_data.price_money))!==before)throw new Error('price guard');
+ await sq('/catalog/batch-upsert',{method:'POST',body:JSON.stringify({idempotency_key:uuid(),batches:[{objects:targets}]})});
+ if(sold)await sq('/inventory/changes/batch-create',{method:'POST',body:JSON.stringify({idempotency_key:uuid(),ignore_unchanged_counts:false,changes:targets.map(v=>({type:'PHYSICAL_COUNT',physical_count:{catalog_object_id:v.id,location_id:LOC,state:'IN_STOCK',quantity:'0',occurred_at:new Date().toISOString()}}))})});
+ // read back (Square applies sold_out asynchronously; retry briefly)
+ let got=[];for(let k=0;k<4;k++){await new Promise(r=>setTimeout(r,k?1200:600));
+  const rb=await sq('/catalog/batch-retrieve',{method:'POST',body:JSON.stringify({object_ids:targets.map(v=>v.id)})});got=(rb.objects||[]).map(v=>({id:v.id,name:v.item_variation_data.name,so:soOf(v)}));
+  if(got.length&&got.every(g=>g.so===!!sold))break}
+ invalidateMenu();const bad=got.filter(g=>g.so!==!!sold);
+ if(bad.length)return {ok:false,name:o.item_data.name,sold,vars:got,error:(sold?'Square 没有变成售罄：':'Square 仍是售罄（可能是在 POS 上手动设的，请在 POS 上恢复）：')+bad.map(b=>b.name).join('、')};
+ return {ok:true,name:o.item_data.name,sold,n:targets.length,vars:got}}
 // ---- http ----
 const send=(r,c,o)=>{r.writeHead(c,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});r.end(JSON.stringify(o))};
 const body=q=>new Promise(ok=>{let b='';q.on('data',c=>{b+=c;if(b.length>5e4)q.destroy()});q.on('end',()=>{try{ok(JSON.parse(b||'{}'))}catch(e){ok({})}})});
@@ -108,7 +120,7 @@ return async function api(u,q,r){const j=q.method==='POST'?await body(q):{};
   C.uber={day,month:day.slice(0,7),today:n(j.today)||(C.uber&&C.uber.day===day?C.uber.today:null),mtd:n(j.mtd)||(C.uber&&C.uber.month===day.slice(0,7)?C.uber.mtd:null),at:Date.now()};save();return send(r,200,sales())}
  if(p==='menu'){const m=await menu();return send(r,200,m.map(i=>({id:i.id,name:i.name,cat:i.cat,img:i.img,so:i.so,vars:i.vars.map(v=>({id:v.id,name:v.name,so:v.so}))})))}
  if(p==='soldout'&&q.method==='POST'){if(j.confirm!==true)return send(r,400,{error:'confirm required'});return send(r,200,await setSoldOut(String(j.id||''),!!j.sold,j.vars))}
- if(p==='restore-all'&&q.method==='POST'){if(j.confirm!==true)return send(r,400,{error:'confirm required'});const m=await menu();const out=[];for(const i of m.filter(i=>i.vars.some(v=>v.so))){try{await setSoldOut(i.id,false);out.push(i.name)}catch(e){out.push(i.name+' ✗'+e.message)}}return send(r,200,{ok:true,restored:out})}
+ if(p==='restore-all'&&q.method==='POST'){if(j.confirm!==true)return send(r,400,{error:'confirm required'});const m=await menu();const out=[];for(const i of m.filter(i=>i.vars.some(v=>v.so))){try{const x=await setSoldOut(i.id,false);out.push(i.name+(x.ok?'':' ✗'))}catch(e){out.push(i.name+' ✗'+e.message)}}return send(r,200,{ok:true,restored:out})}
  if(p==='stock'){if(q.method==='POST'){
    if(j.items)C.stock.items=j.items.slice(0,30).map(i=>({k:String(i.k).replace(/\W/g,'').slice(0,20),name:String(i.name||i.k).slice(0,30),unit:String(i.unit||'').slice(0,6),start:+i.start||0,low:+i.low||0}));
    if(j.recipe)C.recipe=j.recipe.slice(0,60).map(x=>({re:String(x.re).slice(0,60),use:Object.fromEntries(Object.entries(x.use||{}).map(([k,v])=>[k,+v||0]))}));
