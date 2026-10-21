@@ -88,6 +88,7 @@ tr.low td{color:#d33;font-weight:800}
 <div class="home" id="home">
  <div class="col c1">
   <div class="card"><div class="ct" style="display:flex;align-items:center">店铺状态<span style="margin-left:auto;font-weight:700">等待时长 <select id="shopM" style="width:96px;height:36px;font-size:15px;display:inline-block"><option value="10">10分</option><option value="20">20分</option><option value="30">30分</option><option value="40" selected>40分</option><option value="60">60分</option></select></span></div>
+   <div id="waitL" style="font-size:14px;color:#666;margin:2px 0 6px"></div>
    <div class="g2">
     <button class="sb" data-m="open" onclick="askShop('open')">营业中<small>営業中</small></button>
     <button class="sb" data-m="prep" onclick="askShop('prep')">准备中<small>準備中</small></button>
@@ -185,7 +186,7 @@ function loadSales(){api('sales').then(function(s){var t=s.today||{cups:0,rev:0,
  var ut=u.today||{},um=u.mtd||{},uc=function(x){return (x.orders!=null?' · '+x.orders+'单':'')+(x.cups!=null?' · '+x.cups+'杯':'')};$('sCups').textContent=(t.cups+(ut.cups||0))+' 杯'+(ut.cups!=null?'（店内 '+t.cups+' + Uber '+ut.cups+'）':'')+' · '+(t.orders+(ut.orders||0))+' 单';$('sRev').textContent=yen(t.rev)+' · '+t.orders+'单 · '+t.cups+'杯';$('uRev').textContent=u.today?yen(ut.rev)+uc(ut):'—';
  $('mTot').textContent=yen(s.total)+' / '+yen(s.target);$('mShop').textContent=yen(s.mtd?s.mtd.rev:0)+(s.mtd?' · '+s.mtd.orders+'单 · '+s.mtd.cups+'杯':'');$('mUber').textContent=u.mtd?yen(um.rev)+uc(um):'未接入';$('mGap2').textContent=s.gap?yen(s.gap):'达成';$('mDays').textContent=s.daysLeft;$('mBar').style.width=Math.min(100,s.total/s.target*100)+'%';$('mPer').textContent=yen(s.perDay);
  $('uNote').textContent=u.src==='none'?'Uber 本月数据未接入，只算店内':(u.pushedAt?'Uber 数据更新于 '+hm(u.pushedAt):'');if(s.err)$('uNote').textContent+=' Square: '+s.err}).catch(function(){})}
-function loadOv(){api('overview').then(function(o){OV=o;CLK=o.now?o.now-new Date().getTime():CLK;
+function loadOv(){api('overview').then(function(o){OV=o;try{var w=o.wait,e=document.getElementById('waitL');e.textContent=!w||w.hidden?'预计等待：暂停营业中不显示':w.min?'预计等待约 '+w.min+' 分钟（'+w.orders+' 单 '+w.cups+' 杯）':'预计等待：即刻取餐';}catch(x){}CLK=o.now?o.now-new Date().getTime():CLK;
  var sh=o.screen.shop,m=sh?sh.mode:'open',b=document.querySelectorAll('.sb'),i;for(i=0;i<b.length;i++)b[i].className='sb'+(b[i].getAttribute('data-m')===m?' on':'');
  $('cd').className='cd'+(sh&&sh.until?' on':'');tickCd();
  var U=o.chan.uber,bad=U.state==='fail'||U.state==='offline';$('uSt').textContent='Uber：'+U.text;$('uSt').style.color=bad?'#d33':U.state==='pending'?'#c57700':'#239457';

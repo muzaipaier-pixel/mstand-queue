@@ -32,6 +32,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-c
 .box h2{margin:0 0 .5vh 0;font-size:.95vw}
 #prepb{top:52%;height:22%;overflow:hidden}
 #histb{top:76%;height:14%;overflow:hidden}
+#wait{font-size:.85vw;font-weight:800;margin:0 0 .4vh 0;color:#ffe066}
 #prep,#hist{word-wrap:break-word;overflow-wrap:break-word;line-height:1.15}
 #prep span,#hist span{display:inline-block;max-width:96%;margin:0 .4vw;font-weight:bold;word-wrap:break-word;overflow-wrap:break-word}
 .brand{position:absolute;left:0;width:100%;bottom:2%;font-size:.9vw;font-weight:bold}
@@ -104,7 +105,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-c
  <div id="cel"></div>
  <div id="fun"></div>
 <div id="qrc"><div class="h1">扫码手机点单</div><div class="h2">スマホで注文 / Scan to order</div><img src="/qr_order.svg" alt="QR"><div class="st">📱扫码 → 🥤选饮品 → 💴收银台付款<br><b>🔔叫号取饮</b> / レジでお支払い</div></div>
- <div class="box" id="prepb"><h2>制作中 / Preparing</h2><div id="prep"></div></div>
+ <div class="box" id="prepb"><h2>制作中 / Preparing</h2><div id="wait" style="display:none"></div><div id="prep"></div></div>
  <div class="box" id="histb"><h2>最近の番号 / 最近叫号</h2><div id="hist"></div></div>
  <div class="brand">M Stand 池袋</div>
 </div>
@@ -193,7 +194,8 @@ function shopUpd(s){try{if(typeof s.now==='number')clkOff=s.now-new Date().getTi
  b.innerHTML='<div style="font-size:4.4vw;font-weight:900;color:#ff4f7b">'+P[0]+' '+P[1]+'</div><div style="font-size:2.6vw;font-weight:800;margin-top:.4vw">'+P[2]+'</div>'+(tm?'<div id="shopcd" style="font-size:5vw;font-weight:900;margin-top:.4vw;color:#e2552b"></div><div style="font-size:2.2vw;font-weight:800;color:#a0604a">\u9884\u8ba1 / \u4e88\u5b9a '+tm+'</div>':'');b.style.display='block';shopTick()}catch(e){}}
 function annUpd(s){try{var v=(typeof s.screenVol==='number')?s.screenVol:1;if(v!==SVOL){SVOL=v;var ids=['chime','vo'];for(var i=0;i<ids.length;i++){var e=$(ids[i]);if(e&&e.volume>0)e.volume=SVOL}}
  var a=s.ann,t=(a&&a.text&&a.until>new Date().getTime())?a.text:'';if(t!==annTxt){annTxt=t;var b=$('annb');b.innerHTML='\u2605 '+esc(t)+' \u2605';b.style.display=t?'block':'none'}}catch(e){}}
-function handle(s){annUpd(s);shopUpd(s);
+function waitUpd(s){try{var e=$('wait'),w=s.wait;if(!e)return;if(!w||w.hidden||w.min==null){e.style.display='none';return}e.innerHTML=w.min?'预计等待约 '+w.min+' 分钟<br>お待ち時間 約'+w.min+'分':'即刻取餐<br>すぐお渡し';e.style.display='block'}catch(x){}}
+function handle(s){annUpd(s);shopUpd(s);waitUpd(s);
  // new call = callAt changed
  var isCall=lastCallAt!==null&&s.callAt&&s.callAt!==lastCallAt&&(s.current||s.current===0);
  var nw=$('nw'),cur=String(s.current||s.current===0?s.current:'-');
@@ -314,7 +316,7 @@ function poll(){
 }
 if(DEMO&&/birthday|milestone|regular|halloween|christmas|call/.test(DEMO)){setTimeout(function(){try{var fx={};if(demoHas('birthday'))fx.bday=1;if(demoHas('milestone'))fx.ms=100;if(demoHas('regular'))fx.reg=20;
  handle({current:'陳美玲',callAt:2,callItems:[{n:'アボカドスムージー',q:1}],callFx:fx,preparing:[{id:'a',num:'田中'},{id:'b',num:'Emma'},{id:'c',num:'25'}],history:['陳美玲','佐藤','12','Lee']})}catch(e){}},1500)}
-if(DEMO)handle({current:'佐藤',callAt:1,preparing:[{id:'a',num:'田中'},{id:'b',num:'Emma'},{id:'c',num:'25'}],history:['佐藤','12','Lee']});else poll();
+if(DEMO)handle({wait:{min:15,cups:7,orders:3},current:'佐藤',callAt:1,preparing:[{id:'a',num:'田中'},{id:'b',num:'Emma'},{id:'c',num:'25'}],history:['佐藤','12','Lee']});else poll();
 setTimeout(function(){location.reload()},30*60*1000);
 /* reload when a new deploy goes live */
 (function(){var cur=null;function chk(){try{var x=new XMLHttpRequest();x.open('GET','/api/version?_='+Date.now(),true);x.timeout=10000;x.onreadystatechange=function(){if(x.readyState!==4||x.status!==200)return;try{var v=JSON.parse(x.responseText).v;if(cur===null)cur=v;else if(v&&v!==cur){location.replace(location.pathname+location.search+(location.search?'&':'?')+'_r='+Date.now())}}catch(e){}};x.send()}catch(e){}}chk();setInterval(chk,60000)})();

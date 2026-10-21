@@ -18,7 +18,18 @@ const saveSync=()=>{if(sTimer){clearTimeout(sTimer);sTimer=null}if(!sDirty)retur
 process.on('beforeExit',saveSync);
 ['SIGTERM','SIGINT'].forEach(sig=>process.on(sig,()=>{saveSync();process.exit(0)}));
 const clients=new Set();
-const pub=()=>{const{seenPay,sqSince,rdySince,calledOrders,kdsLocal,ipad,...o}=st;o.now=Date.now();return o};
+const pub=()=>{const{seenPay,sqSince,rdySince,calledOrders,kdsLocal,ipad,...o}=st;o.now=Date.now();try{o.wait=waitEst()}catch(e){o.wait=null}return o};
+// estimated wait. Calibrated 2026-10-22 from 3 weeks of Square in-store orders (placed_at -> prepared_at, n=109):
+// median 2.0 min @1 cup, 4.2 @2, 4.4 @3, ~13 @4-6 (single staff) -> base 1 + 2 min/cup.
+global.WAIT_EST=()=>waitEst();
+const WAIT_BASE=+process.env.WAIT_BASE||1, WAIT_PER_CUP=+process.env.WAIT_PER_CUP||2;
+function cupsOfItems(s){let n=0;String(s||'').split('、').forEach(x=>{if(!x.trim())return;const m=/×(\d+)$/.exec(x);n+=m?+m[1]:1});return n}
+function waitEst(){if(st.shop&&st.shop.mode)return {hidden:true};const now=Date.now();let cups=0,orders=0;const seen=new Set();
+ (st.preparing||[]).forEach(p=>{if(p.unpaid||now-p.at>90*60e3)return;const k=typeof kds!=='undefined'&&kds.get(p.paidOrder||p.order);seen.add(p.paidOrder||p.order);
+  const c=k&&k.items?k.items.reduce((a,i)=>a+(+i.qty||1),0):cupsOfItems(p.items);cups+=Math.max(1,c);orders++});
+ if(typeof kds!=='undefined')kds.forEach(x=>{if(x.source!=='Uber'||x.state!=='OPEN'||seen.has(x.id)||now-Date.parse(x.created_at)>60*60e3)return;cups+=Math.max(1,x.items.reduce((a,i)=>a+(+i.qty||1),0));orders++});
+ if(!cups)return {min:0,cups:0,orders:0};
+ let m=Math.ceil(WAIT_BASE+cups*WAIT_PER_CUP);m=Math.max(3,Math.min(40,m));if(m>10)m=Math.min(40,Math.ceil(m/5)*5);return {min:m,cups,orders}}
 const SSE_MAX=1<<20;
 const dropClient=(c)=>{clients.delete(c);try{c.end()}catch(e){}try{c.destroy&&c.destroy()}catch(e){}};
 const sseWrite=(c,d)=>{try{const so=c.socket||c.connection;if(c.destroyed||c.writableEnded||(so&&so.destroyed)){clients.delete(c);return}
@@ -36,6 +47,7 @@ if(u.pathname==='/alog'){if(q.method==='POST'){let d='';q.on('data',c=>{if(d.len
 if(u.pathname.startsWith('/vc/')){vcServe(u.pathname.slice(4).replace(/\.mp3$/,''),r);return;}
 if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r,u.searchParams.get('lang'),u.searchParams.get('i'),u.searchParams.get('t'),u.searchParams.get('fx'));return;}
  if(u.pathname==='/api/version'){r.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});return r.end(JSON.stringify({v:APP_VER}))}
+ if(u.pathname==='/api/wait'){let w=null;try{w=waitEst()}catch(e){}return jres(r,200,w||{})}
  if(u.pathname==='/api/menu'){menu().then(m=>{r.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-cache'});r.end(JSON.stringify(m))}).catch(e=>{console.error('menu',e.message);r.writeHead(502);r.end('{"error":"menu"}')});return;}
  if(u.pathname==='/square/webhook'&&q.method==='POST'){webhook(q,r);return;}
  if(u.pathname==='/api/checkout'&&q.method==='POST'){let b='';q.on('data',c=>{b+=c;if(b.length>2e4)q.destroy()});q.on('end',()=>checkout(b,q,r));return;}
