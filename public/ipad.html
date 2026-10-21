@@ -127,6 +127,7 @@ tr.low td{color:#d33;font-weight:800}
   <input class="tx" id="ann" maxlength="60" placeholder="例：今日芒果售罄 / 本日マンゴー売り切れ">
   <div class="row"><select id="annM"><option value="60">1小时</option><option value="180">3小时</option><option value="720">到打烊</option></select><button class="big b2" onclick="setAnn()">发布</button><button class="ghost" onclick="clearAnn()">撤下</button></div>
   <div class="us" id="annNow"></div>
+  <div class="row" style="align-items:center"><span style="flex:none;font-weight:800">公告底色 <span id="aopV"></span></span><input id="aop" type="range" min="20" max="100" step="10" style="height:40px" onchange="setAop(this.value)"></div>
   <div class="row" style="align-items:center"><span style="flex:none;font-weight:800">音量 <span id="volV"></span></span><input id="vol" type="range" min="0" max="100" step="10" style="height:40px" onchange="setVol(this.value)"></div>
   <div class="row" style="align-items:center"><span style="flex:1;font-weight:800">小动物语音<span style="font-weight:400;color:#8a6d60;font-size:13px">（下单感谢·闲聊，不影响叫号）</span></span><button class="ghost" id="cvB" style="flex:none;min-width:96px" onclick="setCrit('critVoice')"></button></div>
   <div class="row" style="align-items:center"><span style="flex:1;font-weight:800">横屏显示小动物</span><button class="ghost" id="csB" style="flex:none;min-width:96px" onclick="setCrit('critShow')"></button></div></div>
@@ -183,6 +184,7 @@ function act(a){post({action:a})}
 var CRIT={critVoice:true,critShow:true};
 function critUi(){[['cvB','critVoice'],['csB','critShow']].forEach(function(p){var b=$(p[0]),on=CRIT[p[1]];b.textContent=on?'开':'关';b.style.background=on?'#2ec95c':'#ddd';b.style.color=on?'#fff':'#666'})}
 function setCrit(k){var b={};b[k]=!CRIT[k];CRIT[k]=b[k];critUi();api('screen',b).then(loadOv)}
+function setAop(v){$('aopV').textContent=v+'%';api('screen',{annOp:v/100}).then(loadOv)}
 function setVol(v){$('volV').textContent=v+'%';api('screen',{vol:v/100}).then(loadOv)}
 function setAnn(){var t=$('ann').value.replace(/^\s+|\s+$/g,'');if(!t)return;api('screen',{ann:t,mins:$('annM').value}).then(function(){toast('已发布到横屏');loadOv()})}
 function clearAnn(){api('screen',{ann:''}).then(loadOv)}
@@ -200,6 +202,7 @@ function loadOv(){api('overview').then(function(o){OV=o;try{var w=o.wait,e=docum
  $('aLow').className='al org'+(o.stockLow.length?' on':'');$('aLowT').textContent='快用完：'+o.stockLow.join('、');
  $('aClosed').className='al org'+(o.closedStale?' on':'');
  var v=Math.round((o.screen.vol==null?1:o.screen.vol)*100);$('vol').value=v;$('volV').textContent=v+'%';
+ var ao=Math.round((o.screen.annOp==null?0.62:o.screen.annOp)*100);$('aop').value=ao;$('aopV').textContent=ao+'%';
  CRIT.critVoice=o.screen.critVoice!==false;CRIT.critShow=o.screen.critShow!==false;critUi();
  var a=o.screen.ann;$('annNow').textContent=a&&a.until>new Date().getTime()?'正在显示：'+a.text:''}).catch(function(){})}
 function hm(t){var d=new Date(t+9*3600e3);return ('0'+d.getUTCHours()).slice(-2)+':'+('0'+d.getUTCMinutes()).slice(-2)}
