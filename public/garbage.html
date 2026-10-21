@@ -1,0 +1,22 @@
+<!doctype html><html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><title>垃圾日历 · M Stand</title>
+<style>body{margin:0;font-family:-apple-system,"PingFang SC",sans-serif;background:#f6f7f9;color:#222;padding:12px calc(12px + env(safe-area-inset-right)) 40px calc(12px + env(safe-area-inset-left))}
+a.b{display:inline-block;padding:8px 12px;border-radius:10px;background:#333;color:#fff;text-decoration:none;font-weight:700}
+.nav{display:flex;justify-content:space-between;align-items:center;margin:12px 0}.nav button{font-size:20px;padding:6px 14px;border:0;border-radius:10px;background:#fff}
+table{width:100%;border-collapse:collapse;table-layout:fixed;background:#fff;border-radius:12px;overflow:hidden}th{padding:6px 0;font-size:13px}td{vertical-align:top;height:64px;border:1px solid #eee;padding:2px;font-size:11px}
+td.t{background:#fff6d6}.d{font-weight:700}.s{color:#e33}.i{display:block;border-radius:5px;color:#fff;padding:1px 2px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lg div{margin:4px 0}.off{color:#999}</style></head><body>
+<a class="b" href="/ipad">← 返回</a> <a class="b" style="background:#2f9bff" id="off" target="_blank">官网日历 ↗</a>
+<h2 style="margin:12px 0 4px">🗑 垃圾回收日历（池袋店）</h2><div>⏰ <b id="tm"></b></div>
+<div class="nav"><button id="p">‹</button><b id="ym" style="font-size:20px"></b><button id="n">›</button></div>
+<table><thead><tr><th class="s">日</th><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th></tr></thead><tbody id="cal"></tbody></table>
+<div class="lg" id="lg" style="margin-top:12px"></div>
+<p style="font-size:12px;color:#888">按丰岛区规则推算；年末年始（12/31–1/3）停收，节假日变动请以官网为准。</p>
+<script src="/garbage.js"></script><script>
+var G=Garbage,c=new Date(),y=c.getFullYear(),m=c.getMonth();off.href=G.url;tm.textContent=G.time;
+function r(){ym.textContent=y+'年'+(m+1)+'月';var f=new Date(y,m,1).getDay(),L=new Date(y,m+1,0).getDate(),h='<tr>',k;
+for(k=0;k<f;k++)h+='<td></td>';for(var d=1;d<=L;d++){var D=new Date(y,m,d),g=G.get(D),t=D.toDateString()==c.toDateString();
+h+='<td class="'+(t?'t':'')+'"><span class="d'+(D.getDay()==0?' s':'')+'">'+d+'</span>'+(g.off?'<span class="off">停收</span>':g.items.map(function(x){return '<span class="i" style="background:'+x.c+'">'+x.ic+x.zh+'</span>'}).join(''))+'</td>';
+if((f+d)%7==0&&d<L)h+='</tr><tr>';}cal.innerHTML=h+'</tr>';}
+p.onclick=function(){if(--m<0){m=11;y--}r()};n.onclick=function(){if(++m>11){m=0;y++}r()};r();
+lg.innerHTML=Object.keys(G.types).map(function(k){var x=G.types[k];return '<div>'+x.ic+' <b style="color:'+x.c+'">'+x.zh+'</b> '+x.ja+'</div>'}).join('');
+</script></body></html>
