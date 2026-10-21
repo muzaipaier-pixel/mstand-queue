@@ -68,6 +68,7 @@ label{font-size:15px;color:#8a6a5a;display:block}label>input,label>select,label>
 <h2 style="margin:18px 14px 8px;font-size:21px">订单记录</h2><div id="hist" style="padding:0 0 20px"></div>
 <div class="ov" id="ov"><div class="dlg"><h3>编辑品项</h3><div id="ed"></div><div class="btns"><button class="g" onclick="addRow()">＋ 加一样</button><button class="g" onclick="$('ov').style.display='none'">取消</button><button onclick="saveEdit()">保存</button></div></div></div>
 <div id="toast"></div>
+<div id="rcpt" style="max-width:900px;margin:0 auto;padding:0 12px"></div>
 <script>
 var PIN=sget('pin'),D=null,Q={};
 function $(i){return document.getElementById(i)}
@@ -79,7 +80,7 @@ function toast(t,bad){var e=$('toast');e.textContent=t;e.style.background=bad?'#
 function req(m,p,b,cb){var x=new XMLHttpRequest();x.open(m,'/api/orders'+p,true);x.setRequestHeader('Content-Type','application/json');x.setRequestHeader('x-pin',PIN);x.timeout=20000;
  x.onreadystatechange=function(){if(x.readyState!==4)return;if(x.status===403){$('lock').style.display='flex';return cb('PIN')}var j={};try{j=JSON.parse(x.responseText)}catch(e){}
  if(x.status!==200)return cb(j.error||('错误 '+x.status));D=j;cb(null,j)};x.ontimeout=function(){cb('网络超时')};x.send(b?JSON.stringify(b):null)}
-function login(){PIN=$('pin').value;load(function(e){if(e){$('msg').textContent='PIN 错误';return}sset('pin',PIN);$('lock').style.display='none'})}
+function login(){PIN=$('pin').value;load(function(e){if(e){$('msg').textContent='PIN 错误';return}sset('pin',PIN);$('lock').style.display='none';window.rcptList&&rcptList()})}
 function load(cb){req('GET','',null,function(e){if(!e){if(!$('sup').options.length)$('sup').innerHTML=D.suppliers.map(function(s){return '<option value="'+s.id+'">'+esc(s.name)+'</option>'}).join('');Q={};S().items.forEach(function(i){if(i.active)Q[i.id]=i.defQty||0});draw()}cb&&cb(e)})}
 function OU(s){return s?(s.orderUrl||s.url||''):''}
 function SB(id){for(var i=0;i<D.suppliers.length;i++)if(D.suppliers[i].id===id)return D.suppliers[i]}
@@ -112,4 +113,4 @@ function addRow(){rd();ER.push({name:'',cn:'',code:'',price:null,unit:'箱',defQ
 function rd(){var a=$('ed').querySelectorAll('input');for(var i=0;i<a.length;i++){var e=a[i],k=+e.getAttribute('data-k'),f=e.getAttribute('data-f');ER[k][f]=f==='active'?e.checked:e.value}}
 function saveEdit(){rd();req('POST','/supplier',{id:S().id,items:ER},function(e){if(e)return toast(e,1);$('ov').style.display='none';toast('已保存');load()})}
 if(PIN){load(function(e){if(!e)$('lock').style.display='none'})}
-</script></body></html>
+</script><script src="/receipts.js"></script></body></html>

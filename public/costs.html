@@ -75,6 +75,7 @@ label{font-size:15px;color:#8a6a5a;display:block}label>input,label>select,label>
 <div class="btns" id="f_delw"><button class="r" onclick="delE()">删除这个原料</button></div>
 </div></div>
 <div id="toast"></div>
+<div id="rcpt" style="max-width:900px;margin:0 auto;padding:0 12px"></div>
 <script>
 var PIN=sget('pin'),D={items:[]},CAT='全部',CUR=null;
 function $(i){return document.getElementById(i)}
@@ -86,7 +87,7 @@ function req(m,p,b,cb,raw){var x=new XMLHttpRequest();x.open(m,'/api/costs'+p,tr
  x.onreadystatechange=function(){if(x.readyState!==4)return;if(x.status===403){$('lock').style.display='flex';return cb('PIN')}
   if(!x.status)return cb('网络错误，请重试');if(raw)return cb(null,x.responseText);var j=null;try{j=JSON.parse(x.responseText)}catch(e){}
   if(x.status!==200)return cb((j&&j.error)||('错误 '+x.status));cb(null,j)};x.send(b?JSON.stringify(b):null)}
-function login(){PIN=$('pin').value;load(function(e){if(e){$('msg').textContent='PIN 错误';return}sset('pin',PIN);$('lock').style.display='none'})}
+function login(){PIN=$('pin').value;load(function(e){if(e){$('msg').textContent='PIN 错误';return}sset('pin',PIN);$('lock').style.display='none';window.rcptList&&rcptList()})}
 function keep(j){D=j;if(!j.seeded)sset('costs_backup',JSON.stringify(j));draw()}
 function load(cb){req('GET','',null,function(e,j){if(e){cb&&cb(e);return}cb&&cb();
  var bk=null;try{bk=JSON.parse(sget('costs_backup')||'null')}catch(x){}
@@ -123,4 +124,4 @@ function dl(f){req('GET','/export.'+f,null,function(e,t){if(e)return toast(e,tru
 function imp(el){var f=el.files[0];if(!f)return;var r=new FileReader();r.onload=function(){var j;try{j=JSON.parse(r.result)}catch(e){return toast('文件不是 JSON',true)}
  if(!j.items||!confirm('导入 '+j.items.length+' 项，覆盖现在的全部数据？'))return;req('POST','/import',{confirm:true,items:j.items},function(e,d){if(e)return toast(e,true);keep(d);toast('已导入')})};r.readAsText(f);el.value=''}
 if(PIN){load(function(e){if(!e)$('lock').style.display='none'})}
-</script></body></html>
+</script><script src="/receipts.js"></script></body></html>
