@@ -54,7 +54,7 @@ button{font-family:inherit;cursor:pointer}
 .vs button.so{border-color:#f5b5b5;background:#fdeeee;color:#d33;text-decoration:line-through}
 .more{display:none}.more.on{display:block}.home.off{display:none}
 .mg{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.kv{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f6ece6}.kv b{font-size:18px}
+.kvt{width:100%;border-collapse:collapse;table-layout:fixed}.kvt td{padding:9px 0;border-bottom:1px solid #f6ece6;vertical-align:middle;font-size:15px}.kvt td.v{text-align:right;font-weight:900;font-size:18px;white-space:nowrap}.kvt td.l{width:42%;color:#5a4035}
 .bar{height:14px;background:#ffe9dc;border-radius:7px;overflow:hidden;margin:10px 0}.bar i{display:block;height:100%;background:#ff5c8a}
 .pr{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f6ece6}.pr b{font-size:24px;color:#e2552b;min-width:56px}.pr .nm{-webkit-box-flex:1;flex:1;font-size:14px}
 .vip{display:block;color:#d6336c;font-size:12px;margin-top:2px}
@@ -103,9 +103,16 @@ tr.low td{color:#d33;font-weight:800}
 
 <div class="more" id="more"><div class="mg">
  <div class="card"><div class="ct">销售</div>
-  <div class="kv"><span>今日杯数</span><b id="sCups">-</b></div><div class="kv"><span>今日店内</span><b id="sRev">-</b></div><div class="kv"><span>今日 Uber</span><b id="uRev">-</b></div>
-  <div class="kv"><span>本月合计</span><b id="mTot">-</b></div><div class="bar"><i id="mBar" style="width:0"></i></div>
-  <div class="kv"><span>还差 / 每天需</span><b id="mPer">-</b></div><div class="us" id="uNote"></div></div>
+  <table class="kvt">
+  <tr><td class="l">今日杯数</td><td class="v" id="sCups">-</td></tr>
+  <tr><td class="l">今日店内</td><td class="v" id="sRev">-</td></tr>
+  <tr><td class="l">今日 Uber</td><td class="v" id="uRev">-</td></tr>
+  <tr><td class="l">本月店内</td><td class="v" id="mShop">-</td></tr>
+  <tr><td class="l">本月 Uber</td><td class="v" id="mUber">-</td></tr>
+  <tr><td class="l">本月合计</td><td class="v" id="mTot">-</td></tr></table>
+  <div class="bar"><i id="mBar" style="width:0"></i></div>
+  <table class="kvt"><tr><td class="l">还差</td><td class="v" id="mGap2">-</td></tr><tr><td class="l">每天需（剩 <span id="mDays">-</span> 天）</td><td class="v" id="mPer">-</td></tr></table>
+  <div class="us" id="uNote"></div></div>
  <div class="card"><div class="ct">制作中（💗熟客）</div><div id="prep"></div></div>
  <div class="card"><div class="ct">横屏公告 · 音量</div>
   <input class="tx" id="ann" maxlength="60" placeholder="例：今日芒果售罄 / 本日マンゴー売り切れ">
@@ -126,7 +133,7 @@ function $(i){return document.getElementById(i)}
 function yen(n){return n==null?'-':'¥'+Math.round(n).toLocaleString()}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return '&#'+c.charCodeAt(0)+';'})}
 function toast(t,bad){var e=$('toast');e.textContent=t;e.style.background=bad?'#ef4b4b':'#2fb36b';e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display='none'},bad?6000:2500)}
-var VER='v5',LAST='-';
+var VER='v6',LAST='-';
 function dbg(){var e=$('dbg');if(e)e.textContent='iPad '+VER+' · 上次请求 '+LAST}
 function T(){var ok=[],er=[],st=0,val,o={then:function(f,e){if(f)ok.push(f);if(e)er.push(e);fl();return o},'catch':function(e){er.push(e);fl();return o},
  _r:function(v){st=1;val=v;fl()},_j:function(v){st=2;val=v;fl()}};function fl(){var L;if(st===1){L=ok;ok=[];for(var i=0;i<L.length;i++){try{L[i](val)}catch(x){st=2;val=x;rep('cb '+x.message)}}}if(st===2){L=er;er=[];for(var j=0;j<L.length;j++){try{L[j](val)}catch(x){}}}}return o}
@@ -164,8 +171,8 @@ function clearAnn(){api('screen',{ann:''}).then(loadOv)}
 function loadSales(){api('sales').then(function(s){var t=s.today||{cups:0,rev:0,orders:0},u=s.uber||{};
  $('tRev').textContent=yen(t.rev+(u.today?u.today.rev:0));$('mGap').textContent=s.gap?yen(s.gap):'达成 🎉';
  $('sCups').textContent=t.cups+' 杯 · '+t.orders+' 单';$('sRev').textContent=yen(t.rev);$('uRev').textContent=u.today?yen(u.today.rev):'—';
- $('mTot').textContent=yen(s.total)+' / '+yen(s.target);$('mBar').style.width=Math.min(100,s.total/s.target*100)+'%';$('mPer').textContent=yen(s.gap)+' / '+yen(s.perDay);
- $('uNote').textContent=u.src==='none'?'Uber 本月数据未接入，只算店内':'';if(s.err)$('uNote').textContent+=' Square: '+s.err}).catch(function(){})}
+ $('mTot').textContent=yen(s.total)+' / '+yen(s.target);$('mShop').textContent=yen(s.mtd?s.mtd.rev:0);$('mUber').textContent=u.mtd?yen(u.mtd.rev):'未接入';$('mGap2').textContent=s.gap?yen(s.gap):'达成';$('mDays').textContent=s.daysLeft;$('mBar').style.width=Math.min(100,s.total/s.target*100)+'%';$('mPer').textContent=yen(s.perDay);
+ $('uNote').textContent=u.src==='none'?'Uber 本月数据未接入，只算店内':(u.pushedAt?'Uber 数据更新于 '+hm(u.pushedAt):'');if(s.err)$('uNote').textContent+=' Square: '+s.err}).catch(function(){})}
 function loadOv(){api('overview').then(function(o){OV=o;CLK=o.now?o.now-new Date().getTime():CLK;
  var sh=o.screen.shop,m=sh?sh.mode:'open',b=document.querySelectorAll('.sb'),i;for(i=0;i<b.length;i++)b[i].className='sb'+(b[i].getAttribute('data-m')===m?' on':'');
  $('cd').className='cd'+(sh&&sh.until?' on':'');tickCd();

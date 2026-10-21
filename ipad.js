@@ -10,7 +10,8 @@ const dayStart=d=>Date.parse(d+'T'+String(BIZ_H).padStart(2,'0')+':00:00+09:00')
 const NONCUP=/ギフト|gift|袋|bag/i;
 const cupsOf=o=>((o&&o.line_items)||[]).reduce((a,l)=>a+(NONCUP.test(l.name||'')?0:(parseInt(l.quantity)||0)),0);
 const isUber=o=>/uber/i.test((o.source&&o.source.name)||'');
-const amt=o=>Number(((o.net_amounts&&o.net_amounts.total_money)||o.total_money||{}).amount||0);
+// money actually taken = non-gift-card tenders (gift card SALES count, REDEMPTIONS don't) — matches daily summary (Oct 1-20: ¥675,736 vs ¥674,194)
+const amt=o=>(o.tenders||[]).filter(t=>t.type!=='SQUARE_GIFT_CARD').reduce((a,t)=>a+Number((t.amount_money||{}).amount||0),0);
 const ST=ctx.st;ST().ipad=ST().ipad||{};const C=ST().ipad;
 C.cfg=Object.assign({peak:6},C.cfg||{});
 C.stock=C.stock||{day:'',items:[
@@ -26,8 +27,8 @@ C.recipe=C.recipe||[
  {re:'抹茶ミルク|黒糖|ミルクティー',use:{milk:1}}];
 // ---- Square aggregation (read-only) ----
 async function ordersSince(startIso,maxPages){let out=[],cur,p=0;
- do{const d=await sq('/orders/search',{method:'POST',body:JSON.stringify({location_ids:[LOC],limit:500,cursor:cur,query:{filter:{date_time_filter:{created_at:{start_at:startIso}},state_filter:{states:['COMPLETED']}},sort:{sort_field:'CREATED_AT',sort_order:'ASC'}}})});
-  out=out.concat(d.orders||[]);cur=d.cursor;p++}while(cur&&p<maxPages);return out.filter(o=>!/giftcard/i.test((o.source&&o.source.name)||''))}
+ do{const d=await sq('/orders/search',{method:'POST',body:JSON.stringify({location_ids:[LOC],limit:500,cursor:cur,query:{filter:{date_time_filter:{created_at:{start_at:startIso}},state_filter:{states:['OPEN','COMPLETED']}},sort:{sort_field:'CREATED_AT',sort_order:'ASC'}}})});
+  out=out.concat(d.orders||[]);cur=d.cursor;p++}while(cur&&p<maxPages);return out.filter(o=>(o.tenders||[]).length>0)} // paid orders only (kiosk orders can stay OPEN)
 const agg=os=>{const a={cups:0,rev:0,orders:0};os.forEach(o=>{a.cups+=cupsOf(o);a.rev+=amt(o);a.orders++});return a};
 let S={at:0,err:null,day:'',today:null,mtd:null,uberSqToday:null,uberSqMtd:null,todayOrders:[],hourly:[]};
 async function refresh(){if(!TOK){S.err='no Square token';return}
@@ -112,7 +113,7 @@ function uberStatus(){const a=C.uberAck,hb=C.uberHb,seq=C.chanSeq||0,now=Date.no
  return {state:st,text:txt+(mismatch?' ｜ 注意：Uber 现在是「'+(obs==='paused'?'暂停':'接单')+'」（可能在 Uber 里手动改过）':''),want,observed:obs,hbAt:hb&&hb.at||null}}
 return async function api(u,q,r){const j=q.method==='POST'?await body(q):{};
  const p=u.pathname.slice('/api/ipad/'.length);const pin=String(q.headers['x-pin']||j.pin||'');
- const wk=String(q.headers['x-worker-key']||'');const isW=/^uber-(desired|ack|hb)$/.test(p)&&WKEY&&wk.length===WKEY.length&&require('crypto').timingSafeEqual(Buffer.from(wk),Buffer.from(WKEY));
+ const wk=String(q.headers['x-worker-key']||'');const isW=/^uber(-desired|-ack|-hb)?$/.test(p)&&WKEY&&wk.length===WKEY.length&&require('crypto').timingSafeEqual(Buffer.from(wk),Buffer.from(WKEY));
  if(!isW&&(!PIN||pin!==PIN))return send(r,403,{error:'PIN'});
  try{
  if(p==='sales'){if(u.searchParams.get('refresh')==='1'||Date.now()-S.at>3*60e3)await refresh();return send(r,200,sales())}
