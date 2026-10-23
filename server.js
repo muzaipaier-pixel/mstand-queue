@@ -422,7 +422,24 @@ const kds=new Map();
 function kdsLoc(){st.kdsLocal=st.kdsLocal||{};return st.kdsLocal}
 function kdsSrc(o){const n=((o.source&&o.source.name)||'');if(/giftcard/i.test(n))return null;if(/uber/i.test(n))return 'Uber';if(o.reference_id==='mstand-web')return '手机点单';if(/kiosk|セルフ|self/i.test(n))return '自助';return '店头'}
 function pickupF(o){const fs=o.fulfillments||[];return fs.find(f=>f.type==='PICKUP')||fs[0]||null}
+// Square Online abandoned carts / unpaid drafts must never hit KDS (they fall through kdsSrc→店头 and labelOf→id last4).
+// Keep mstand-web 手机点单 unpaid OPEN (isUnpaidWeb) — those are intentional kitchen alerts.
+function isSquareOnlineSrc(o){return /square.?online/i.test(((o.source&&o.source.name)||''))}
+function isUnpaidSquareOnline(o){
+ if(!isSquareOnlineSrc(o))return false;
+ if(o.state==='DRAFT')return true;
+ if(!(o.tenders||[]).length)return true;
+ const due=Number((o.net_amount_due_money||{}).amount);
+ return Number.isFinite(due)&&due>0;
+}
+function kdsShouldDrop(o){
+ if(!o||!o.id)return true;
+ if(o.state==='DRAFT')return true; // any channel
+ if(isUnpaidSquareOnline(o))return true;
+ return false;
+}
 async function kdsUpsert(o){
+ if(kdsShouldDrop(o)){kds.delete(o.id);return}
  const src=kdsSrc(o);if(!src){kds.delete(o.id);return}
  if(Date.now()-Date.parse(o.created_at)>16*3600e3){kds.delete(o.id);return}
  const f=pickupF(o);const fs=f?f.state:'';
