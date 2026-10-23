@@ -144,6 +144,11 @@ document.getElementById('gbCard').innerHTML='<div style="font-weight:700">🗑 �
  <div class="card"><div class="ct">原料库存（开店库存 − 今日用量，店里+Uber）</div><table id="stk"></table>
   <div class="row"><button class="big b2" onclick="saveStock()">保存</button><button class="ghost" onclick="askDo('今日重新开始？','从现在开始重新计算用量','确定','#ff9a2e',function(){stockPost({restock:true})})">重新开始</button></div>
   </div>
+ <div class="card"><div class="ct">登录与同步</div>
+  <div class="us">点一下确认横屏、Uber 同步电脑、售罄同步是否正常；都好就一句「都正常」，有问题只列异常。</div>
+  <div class="row"><button class="big b2" onclick="checkLogin()">检查登录</button></div>
+  <div class="us" id="loginCk" style="margin-top:8px;white-space:pre-wrap"></div>
+ </div>
  <div class="card"><div class="ct">每周经营报告</div><pre id="wkT" style="white-space:pre-wrap;font-family:inherit;font-size:14px;line-height:1.55;margin:0">点开店长页自动载入</pre>
   <div class="row"><button class="ghost" onclick="loadWeek(1)">重新计算</button></div></div>
 </div></div>
@@ -157,7 +162,7 @@ function $(i){return document.getElementById(i)}
 function yen(n){return n==null?'-':'¥'+Math.round(n).toLocaleString()}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return '&#'+c.charCodeAt(0)+';'})}
 function toast(t,bad){var e=$('toast');e.textContent=t;e.style.background=bad?'#ef4b4b':'#2fb36b';e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display='none'},bad?6000:2500)}
-var VER='v10',LAST='-';
+var VER='v11',LAST='-';
 function dbg(){var e=$('dbg');if(e)e.textContent='iPad '+VER+' · 上次请求 '+LAST}
 function T(){var ok=[],er=[],st=0,val,o={then:function(f,e){if(f)ok.push(f);if(e)er.push(e);fl();return o},'catch':function(e){er.push(e);fl();return o},
  _r:function(v){st=1;val=v;fl()},_j:function(v){st=2;val=v;fl()}};function fl(){var L;if(st===1){L=ok;ok=[];for(var i=0;i<L.length;i++){try{L[i](val)}catch(x){st=2;val=x;rep('cb '+x.message)}}}if(st===2){L=er;er=[];for(var j=0;j<L.length;j++){try{L[j](val)}catch(x){}}}}return o}
@@ -275,6 +280,12 @@ function loadHl(){api('health').then(function(h){HL=h;var n=h.now,G='#2fb36b',Y=
  var sc=h.screen&&n-h.screen<60000,od=h.shop==='open'&&h.orderGate,us=h.uberSync&&n-h.uberSync<10*60000,up=h.uberSales&&n-h.uberSales<45*60000,hb=h.uberHb&&n-h.uberHb<3*60000;
  $('hl').innerHTML=dot(sc?G:R,'横屏'+(sc?'在线':'离线'))+dot(od?G:Y,'手机点单'+(od?'接单中':'暂停'))+dot(us&&hb?G:(us||hb?Y:R),'Uber同步')+usDot(h,n)+dot(up?G:Y,'Uber数据')+'<span style="margin-left:auto;color:#a08070;font-weight:400">点这里看详情</span>';
  $('hlD').innerHTML='横屏最后连接：'+ago(h.screen,n)+'<br>手机点单：'+(od?'接单中':'暂停（店铺状态「'+(SHN[h.shop]||h.shop)+'」）')+' · 今日打开 '+h.orderVisitsToday+' 次 · 最后打开 '+ago(h.orderVisit,n)+' · 最后下单 '+ago(h.lastOrder,n)+'<br>Uber 售罄同步最后运行：'+ago(h.uberSync,n)+'<br>Uber 暂停同步最后心跳：'+ago(h.uberHb,n)+'<br>Uber 店铺状态：'+usTxt(h,n)+'<br>Uber 营业数据最后推送：'+ago(h.uberSales,n)+'<br><span style="color:#a08070">重新上线后记录会清空，几分钟内恢复</span>'}).catch(function(){})}
+
+function checkLogin(){var e=$('loginCk');if(e)e.textContent='检查中…';
+ api('login-check').then(function(r){if(r.ok){toast('都正常');if(e)e.textContent='都正常 · '+new Date().toTimeString().slice(0,8);return}
+  var ps=r.problems||[];if(e)e.innerHTML=ps.map(esc).join('<br>');
+  toast(ps[0]+(ps.length>1?' 等'+ps.length+'项':''),true);
+  askDo('发现以下问题',ps.map(esc).join('<br>'),'知道了','#ef4b4b',function(){})}).catch(function(){toast('检查失败，请重试',true);if(e)e.textContent='检查失败'})}
 function hlTap(){var d=$('hlD');d.style.display=d.style.display==='none'?'block':'none';loadHl()}
 var booted=0;function boot(){if(booted++)return;initDlg();sse();loadOv();loadSales();loadMenu();loadTops();loadHot();setInterval(loadHot,30000);loadHl();setInterval(loadHl,20000);setInterval(loadTops,60000);setInterval(loadOv,15000);setInterval(loadSales,60000);setInterval(loadMenu,60000);setInterval(tickCd,1000)}
 initDlg();if(PIN)api('overview').then(function(){$('lock').style.display='none';boot()}).catch(function(){});

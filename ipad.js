@@ -169,6 +169,21 @@ return async function api(u,q,r){const j=q.method==='POST'?await body(q):{};
    save()}return send(r,200,stockView())}
  if(p==='cfg'&&q.method==='POST'){if(j.peak)C.cfg.peak=Math.max(1,Math.min(50,parseInt(j.peak)||6));save();return send(r,200,C.cfg)}
  if(p==='health'){const G=global.SEEN||{},sh=ST().shop||null;return send(r,200,{now:Date.now(),screen:G.screen||null,orderVisit:G.orderVisit||null,orderVisitsToday:G.ovN||0,lastOrder:G.lastOrder||null,shop:sh?sh.mode:'open',orderGate:process.env.SHOP_GATE_ORDER!=='0',uberSync:G.uberSync||null,uberSales:C.uber&&C.uber.at||null,uberHb:C.uberHb&&C.uberHb.at||null,uberStore:C.uberStore||null,uberWant:shopWantsPause(sh)?'paused':'open'})}
+ if(p==='login-check'){const G=global.SEEN||{},now=Date.now(),sh=ST().shop||null,mode=sh?sh.mode:'open',probs=[];
+  const screen=G.screen||null;if(!screen||now-screen>60e3){const m=screen?Math.round((now-screen)/60e3):null;probs.push(m!=null?'横屏离线约'+m+'分钟':'横屏离线（无连接记录）')}
+  const hb=C.uberHb;if(!hb||now-hb.at>3*60e3){const m=hb?Math.round((now-hb.at)/60e3):null;probs.push(m!=null?'Uber同步电脑离线约'+m+'分钟':'Uber同步电脑离线（无心跳）')}
+  const U=uberStatus();if(U.state==='fail')probs.push('Uber切换失败：'+(U.text||'').replace(/^失败：/,''));
+  else if(U.state==='offline'&&!probs.some(x=>/Uber同步电脑/.test(x)))probs.push(U.text||'Uber同步离线');
+  else if(U.state==='pending')probs.push('Uber状态切换中，请稍等');
+  const us=C.uberStore;if(us&&us.err==='login')probs.push('Uber需重新登录（Manager）');
+  else if(us&&now-us.at>12*60e3)probs.push('Uber店铺状态很久没更新约'+Math.round((now-us.at)/60e3)+'分钟');
+  else if(us&&now-us.at<=12*60e3){if(mode==='open'&&us.state!=='online'&&us.state!=='unknown')probs.push('店里营业中，但 Uber 不在接单（现在：'+(us.state==='paused'?'已暂停':us.state==='closed'?'营业时间外':us.state==='offline'?'离线':us.state)+'）');
+   if(shopWantsPause(sh)&&us.state==='online')probs.push('店里已暂停，但 Uber 还在接单')}
+  const sync=G.uberSync;if(sync&&now-sync>30*60e3)probs.push('Uber售罄同步很久没跑约'+Math.round((now-sync)/60e3)+'分钟');
+  else if(!sync&&hb&&now-hb.at<=3*60e3)probs.push('Uber售罄同步尚无运行记录（同步电脑在线）');
+  // phone order gate is intentional when shop not open — only flag if open but gate env off
+  if(mode==='open'&&process.env.SHOP_GATE_ORDER==='0')probs.push('手机点单被环境开关关掉了');
+  return send(r,200,{ok:!probs.length,problems:probs,at:now,uber:U,shop:mode})}
  if(p==='overview'){const prep=ST().preparing||[];return send(r,200,{now:Date.now(),cfg:C.cfg,open:prep.length,peak:prep.length>=C.cfg.peak,revAlert:C.reviews&&C.reviews.alert||null,stockLow:stockView().items.filter(i=>i.low).map(i=>i.name),screen:{vol:ST().screenVol==null?1:ST().screenVol,critVoice:ST().critVoice!==false,critShow:ST().critShow!==false,annOp:ST().annOp==null?0.62:ST().annOp,ann:ST().ann||null,annHist:C.annHist||[],shop:ST().shop||null},chan:{seq:C.chanSeq||0,uber:uberStatus(),orderGate:process.env.SHOP_GATE_ORDER!=='0'},wait:global.WAIT_EST?global.WAIT_EST():null,closedStale:!!(ST().shop&&ST().shop.mode==='closed'&&tokyoDay(ST().shop.at)!==tokyoDay()&&new Date(Date.now()+9*3600e3).getUTCHours()>=10)})}
  // box-side worker (uber-sync on the shop PC) polls desired Uber state and acks; Render cannot drive a browser
  if(p==='uber-desired'){shopExpire();const sh=ST().shop;return send(r,200,{seq:C.chanSeq||0,paused:shopWantsPause(sh),mode:sh?sh.mode:'open',until:sh&&sh.until||null,now:Date.now()})}
