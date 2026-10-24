@@ -144,6 +144,7 @@ return async function api(u,q,r){const j=q.method==='POST'?await body(q):{};
  const wk=String(q.headers['x-worker-key']||'');const isW=/^uber(-desired|-ack|-hb|-toppings|-hot|-status|-week|-reviews)?$/.test(p)&&WKEY&&wk.length===WKEY.length&&require('crypto').timingSafeEqual(Buffer.from(wk),Buffer.from(WKEY));
  if(!isW&&(!PIN||pin!==PIN))return send(r,403,{error:'PIN'});
  try{
+ if(p==='kds-open'){const k=String(process.env.KDS_KEY||'').trim();if(!k)return send(r,500,{error:'KDS_KEY not set'});return send(r,200,{url:'/kds?key='+encodeURIComponent(k)})}
  if(p==='sales'){if(u.searchParams.get('refresh')==='1'||Date.now()-S.at>3*60e3)await refresh();return send(r,200,sales())}
  if(p==='uber'&&q.method==='GET'){const day=tokyoDay(),u_=C.uber;return send(r,200,{has:!!(u_&&u_.day===day&&u_.today),day,at:u_&&u_.at||null})}
  if(p==='uber'&&q.method==='POST'){const day=tokyoDay();const n=x=>x&&{rev:Math.max(0,parseInt(x.rev)||0),orders:Math.max(0,parseInt(x.orders)||0),cups:x.cups==null?null:Math.max(0,parseInt(x.cups)||0)};
