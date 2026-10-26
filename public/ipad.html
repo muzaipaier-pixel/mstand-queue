@@ -73,6 +73,20 @@ tr.low td{color:#d33;font-weight:800}
 #toast{display:none;position:fixed;left:50%;top:16px;-webkit-transform:translateX(-50%);transform:translateX(-50%);z-index:400;color:#fff;font-weight:800;font-size:18px;padding:14px 22px;border-radius:16px;box-shadow:0 4px 16px rgba(0,0,0,.25)}
 @media (orientation:portrait){.home{display:block}.c1{width:auto;margin-bottom:14px}.list{max-height:none}.mg{grid-template-columns:1fr}}
 .ub{flex:1;background:#eee;color:#333;font-size:18px;padding:16px 8px}.ub.on{background:#7a6cf0;color:#fff}
+.sbh{display:flex;align-items:center;gap:10px}.rfb{margin-left:auto;border:0;border-radius:14px;height:48px;padding:0 18px;font-size:17px;font-weight:900;background:#ff5c8a;color:#fff}.rfb[disabled]{background:#f3b6c7}
+.sut{font-size:13px;color:#8a6d60;font-weight:700;margin:6px 0 12px}
+.kp{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.kc{background:#fff7f2;border-radius:18px;padding:12px 14px}.kc h4{margin:0 0 4px;font-size:15px;color:#a08070}
+.kc .big{font-size:30px;font-weight:900;color:#3d2a20;line-height:1.15;background:none;height:auto;padding:0;border:0;display:block;text-align:left;width:auto}.kc .sub{font-size:13px;color:#8a6d60;font-weight:700;margin-bottom:6px}
+.kc .ln{display:flex;justify-content:space-between;font-size:15px;font-weight:800;padding:3px 0;border-top:1px dashed #f0e2da}.kc .ln span{color:#8a6d60;font-weight:700}
+.gl{margin-top:14px;background:#fff7f2;border-radius:18px;padding:12px 14px}.glt{display:flex;justify-content:space-between;font-size:16px}.glt span{font-size:22px;font-weight:900;color:#ff5c8a}
+.gbar{position:relative;height:22px;background:#f3e3d9;border-radius:11px;overflow:hidden;margin:8px 0}.gbar i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#ff8aa8,#ff5c8a);border-radius:11px}.gbar s{position:absolute;top:0;bottom:0;width:3px;background:#3d2a20;opacity:.5}
+.gls{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:14px;color:#8a6d60}.gls b{color:#3d2a20;font-size:16px}
+.lg{display:inline-block;width:10px;height:10px;border-radius:3px;margin:0 3px 0 6px}.ls,.dr .s{background:#ff8aa8}.lu,.dr .u{background:#2fb36b}
+.dt{display:flex;flex-direction:column}.dr{display:grid;grid-template-columns:86px 1fr 98px;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f6ebe4;font-size:14px}
+.dr .d{font-weight:800}.dr .d small{color:#a08070;font-weight:700;margin-left:2px}.dr .b{display:flex;height:16px;border-radius:5px;overflow:hidden;background:#fbf1eb}.dr .b i{display:block;height:100%}
+.dr .v{text-align:right;font-weight:900}.dr .v small{display:block;font-size:11px;color:#8a6d60;font-weight:700}.dr.off{color:#b9a69b}.dr.off .v{color:#b9a69b}.dr.today{background:#fff3ea;border-radius:8px}.dr.wk{border-top:2px solid #ead7cb}
+.rest{display:inline-block;background:#eee;color:#888;border-radius:6px;padding:1px 8px;font-size:12px;font-weight:800}
+@media(max-width:700px){.kp{grid-template-columns:1fr}.kc .big{font-size:28px}.dr{grid-template-columns:74px 1fr 90px}}
 </style></head><body>
 <div class="lock" id="lock"><h2 style="color:#ff5c8a">M Stand 店长</h2><input id="pin" type="password" inputmode="numeric" maxlength="8" placeholder="PIN"><button class="big" style="width:280px;margin-top:14px" onclick="login()">进入</button><div id="msg" style="color:#d33;margin-top:10px"></div></div>
 <div id="toast"></div>
@@ -114,16 +128,13 @@ document.getElementById('gbCard').innerHTML='<div style="font-weight:700">🗑 �
 </div>
 
 <div class="more" id="more"><div class="mg">
- <div class="card"><div class="ct">销售</div>
-  <table class="kvt">
-  <tr><td class="l">今日杯数（店内+Uber）</td><td class="v" id="sCups">-</td></tr>
-  <tr><td class="l">今日店内</td><td class="v" id="sRev">-</td></tr>
-  <tr><td class="l">今日 Uber</td><td class="v" id="uRev">-</td></tr>
-  <tr><td class="l">本月店内</td><td class="v" id="mShop">-</td></tr>
-  <tr><td class="l">本月 Uber</td><td class="v" id="mUber">-</td></tr>
-  <tr><td class="l">本月合计</td><td class="v" id="mTot">-</td></tr></table>
-  <div class="bar"><i id="mBar" style="width:0"></i></div>
-  <table class="kvt"><tr><td class="l">还差</td><td class="v" id="mGap2">-</td></tr><tr><td class="l">每天需（剩 <span id="mDays">-</span> 天）</td><td class="v" id="mPer">-</td></tr></table>
+ <div class="card sbd" style="grid-column:1/-1"><div class="sbh"><div class="ct" style="margin:0">营业数据</div><button class="rfb" id="rfB" onclick="refreshSales()">🔄 一键更新数据</button></div>
+  <div class="sut" id="sUpd">加载中…</div>
+  <div class="kp" id="kp"></div>
+  <div class="gl"><div class="glt"><b>本月目标 ¥1,200,000</b><span id="gPct">-</span></div><div class="gbar"><i id="gBar"></i><s id="gPace"></s></div>
+   <div class="gls"><span>已完成 <b id="gTot">-</b></span><span>还差 <b id="gGap">-</b></span><span>剩 <b id="gDays">-</b> 天 · 每天需 <b id="gPer">-</b></span></div></div>
+  <div class="ct" style="margin-top:14px">每日明细 <span style="font-weight:600">（<i class="lg ls"></i>店内 <i class="lg lu"></i>Uber）</span></div>
+  <div class="dt" id="dt"></div>
   <div class="us" id="uNote"></div></div>
  <div class="card"><div class="ct">制作中（💗熟客）</div><div id="prep"></div></div>
  <div class="card"><div class="ct">横屏公告 · 音量</div>
@@ -217,11 +228,26 @@ function renderAH(l){AH=l||[];var e=$('annH');if(!AH.length){e.innerHTML='<div c
  e.innerHTML=AH.map(function(h,i){return '<div style="display:flex;align-items:center;border-bottom:1px solid #f0e2da;padding:6px 0"><div style="flex:1;min-width:0" onclick="useAnn('+i+')"><div style="font-weight:800">'+esc_(h.text)+'</div><div style="font-size:12px;color:#8a6d60;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc_(h.ja||'')+' · '+esc_(h.en||'')+'</div></div><button class="ghost" style="flex:none;margin-left:6px" onclick="useAnn('+i+')">用</button><button class="ghost" style="flex:none;margin-left:6px;color:#d33" onclick="delAnn('+i+')">删</button></div>'}).join('')}
 function esc_(x){return String(x).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function clearAnn(){api('screen',{ann:''}).then(loadOv)}
-function loadSales(){api('sales').then(function(s){var t=s.today||{cups:0,rev:0,orders:0},u=s.uber||{};
+var WD=['日','一','二','三','四','五','六'];
+function kcard(t,sub,sh,ub){var tot=(sh?sh.rev:0)+(ub?ub.rev||0:0),o=(sh?sh.orders:0)+(ub?ub.orders||0:0);
+ return '<div class="kc"><h4>'+t+'</h4><div class="sub">'+sub+'</div><b class="big">'+yen(tot)+'</b><div class="sub">共 '+o.toLocaleString()+' 单'+(ub?'':' · Uber 未接入')+'</div>'+
+ '<div class="ln"><span>店内</span>'+yen(sh?sh.rev:0)+' · '+(sh?sh.orders:0)+'单</div><div class="ln"><span>Uber</span>'+(ub?yen(ub.rev)+' · '+(ub.orders||0)+'单':'—')+'</div></div>'}
+function md(k){return (+k.slice(5,7))+'/'+(+k.slice(8,10))}
+function drawSales(s){var t=s.today||{cups:0,rev:0,orders:0},u=s.uber||{},w=s.week||{};
  $('tRev').textContent=yen(t.rev+(u.today?u.today.rev:0));$('mGap').textContent=s.gap?yen(s.gap):'达成 🎉';
- var ut=u.today||{},um=u.mtd||{},uc=function(x){return (x.orders!=null?' · '+x.orders+'单':'')+(x.cups!=null?' · '+x.cups+'杯':'')};$('sCups').textContent=(t.cups+(ut.cups||0))+' 杯'+(ut.cups!=null?'（店内 '+t.cups+' + Uber '+ut.cups+'）':'')+' · '+(t.orders+(ut.orders||0))+' 单';$('sRev').textContent=yen(t.rev)+' · '+t.orders+'单 · '+t.cups+'杯';$('uRev').textContent=u.today?yen(ut.rev)+uc(ut):'—';
- $('mTot').textContent=yen(s.total)+' / '+yen(s.target);$('mShop').textContent=yen(s.mtd?s.mtd.rev:0)+(s.mtd?' · '+s.mtd.orders+'单 · '+s.mtd.cups+'杯':'');$('mUber').textContent=u.mtd?yen(um.rev)+uc(um):'未接入';$('mGap2').textContent=s.gap?yen(s.gap):'达成';$('mDays').textContent=s.daysLeft;$('mBar').style.width=Math.min(100,s.total/s.target*100)+'%';$('mPer').textContent=yen(s.perDay);
- $('uNote').textContent=u.src==='none'?'Uber 本月数据未接入，只算店内':(u.pushedAt?'Uber 数据更新于 '+hm(u.pushedAt):'');if(s.err)$('uNote').textContent+=' Square: '+s.err}).catch(function(){})}
+ $('kp').innerHTML=kcard('今天',md(s.day)+' 周'+WD[new Date(s.day+'T00:00:00Z').getUTCDay()],t,u.today)+kcard('本周',md(w.start||s.day)+' 起（周一开始）',w.shop,w.uber)+kcard('本月',s.day.slice(0,7).replace('-','年')+'月',s.mtd,u.mtd);
+ var pct=s.total/s.target*100,d=+s.day.slice(8,10),dim=d+s.daysLeft-1;
+ $('gPct').textContent=pct.toFixed(1)+'%';$('gBar').style.width=Math.min(100,pct)+'%';$('gPace').style.left=Math.min(99.5,d/dim*100)+'%';
+ $('gTot').textContent=yen(s.total);$('gGap').textContent=s.gap?yen(s.gap):'已达成 🎉';$('gDays').textContent=s.daysLeft;$('gPer').textContent=s.gap?yen(s.perDay):'—';
+ var ds=(s.days||[]).slice().reverse(),mx=1;ds.forEach(function(x){if(x.total>mx)mx=x.total});
+ $('dt').innerHTML=ds.map(function(x){var dw=new Date(x.day+'T00:00:00Z').getUTCDay(),us=x.uber?x.uber.rev||0:0,today=x.day===s.day;
+  var v=x.closed?'<span class="rest">休息</span>':yen(x.total)+'<small>店'+x.shop.orders+'单'+(x.uber?' · U'+(x.uber.orders||0)+'单':' · U?')+'</small>';
+  return '<div class="dr'+(x.closed?' off':'')+(today?' today':'')+(dw===0?' wk':'')+'"><div class="d">'+md(x.day)+'<small>周'+WD[dw]+(today?' 今天':'')+'</small></div><div class="b"><i class="s" style="width:'+(x.shop.rev/mx*100)+'%"></i><i class="u" style="width:'+(us/mx*100)+'%"></i></div><div class="v">'+v+'</div></div>'}).join('');
+ var n=[];if(s.at)n.push('店内（Square）更新于 '+hm(s.at));n.push(u.src==='none'?'Uber 本月数据未接入，只算店内':(u.pushedAt?'Uber 更新于 '+hm(u.pushedAt):''));if(s.uberReq&&(!u.pushedAt||u.pushedAt<s.uberReq))n.push('Uber 已请求更新，约 5 分钟内到');if(s.err)n.push('Square 出错：'+s.err);
+ $('sUpd').textContent='最后更新（日本时间）：'+(s.at?hm(s.at):'—');$('uNote').textContent=n.filter(Boolean).join(' · ')+' · 「U?」= 那天 Uber 明细还没推送'}
+function loadSales(){api('sales').then(drawSales).catch(function(){})}
+function refreshSales(){var b=$('rfB');b.disabled=true;b.textContent='⏳ 更新中…';
+ api('sales-refresh',{}).then(function(s){drawSales(s);toast('已更新 '+hm(s.at))}).catch(function(){toast('更新失败，请稍后再试')}).then(function(){b.disabled=false;b.textContent='🔄 一键更新数据'})}
 function loadOv(){api('overview').then(function(o){OV=o;try{var w=o.wait,e=document.getElementById('waitL');e.textContent=!w||w.hidden?'预计等待：暂停营业中不显示':w.min?'预计等待约 '+w.min+' 分钟（'+w.orders+' 单 '+w.cups+' 杯）':'预计等待：即刻取餐';}catch(x){}CLK=o.now?o.now-new Date().getTime():CLK;
  var sh=o.screen.shop,m=sh?sh.mode:'open',b=document.querySelectorAll('.sb'),i;for(i=0;i<b.length;i++)b[i].className='sb'+(b[i].getAttribute('data-m')===m?' on':'');
  $('cd').className='cd'+(sh&&sh.until?' on':'');tickCd();

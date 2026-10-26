@@ -42,13 +42,18 @@ async function ordersSince(startIso,maxPages){let out=[],cur,p=0;
  do{const d=await sq('/orders/search',{method:'POST',body:JSON.stringify({location_ids:[LOC],limit:500,cursor:cur,query:{filter:{date_time_filter:{created_at:{start_at:startIso}},state_filter:{states:['OPEN','COMPLETED']}},sort:{sort_field:'CREATED_AT',sort_order:'ASC'}}})});
   out=out.concat(d.orders||[]);cur=d.cursor;p++}while(cur&&p<maxPages);return out.filter(o=>(o.tenders||[]).length>0)} // paid orders only (kiosk orders can stay OPEN)
 const agg=os=>{const a={cups:0,rev:0,orders:0};os.forEach(o=>{a.cups+=cupsOf(o);a.rev+=amt(o);a.orders++});return a};
-let S={at:0,err:null,day:'',today:null,mtd:null,uberSqToday:null,uberSqMtd:null,todayOrders:[],hourly:[]};
-async function refresh(){if(!TOK){S.err='no Square token';return}
- try{const day=tokyoDay(),m0=day.slice(0,7)+'-01';
-  const all=await ordersSince(new Date(dayStart(m0)).toISOString(),40);
-  const t0=dayStart(day);const td=all.filter(o=>Date.parse(o.created_at)>=t0);
+let S={at:0,err:null,day:'',today:null,mtd:null,week:null,uberSqToday:null,uberSqMtd:null,todayOrders:[],hourly:[],daily:{}};
+const monStart=day=>{const d=new Date(day+'T00:00:00Z'),w=(d.getUTCDay()+6)%7;return new Date(d-w*864e5).toISOString().slice(0,10)};
+let refreshing=null;
+function refresh(){if(!refreshing)refreshing=refresh_().finally(()=>{refreshing=null});return refreshing}
+async function refresh_(){if(!TOK){S.err='no Square token';return}
+ try{const day=tokyoDay(),m0=day.slice(0,7)+'-01',w0=monStart(day),from=w0<m0?w0:m0;
+  const all0=await ordersSince(new Date(dayStart(from)).toISOString(),60);
+  const all=all0.filter(o=>tokyoDay(Date.parse(o.created_at))>=m0),wk=all0.filter(o=>tokyoDay(Date.parse(o.created_at))>=w0);
+  const t0=dayStart(day);const td=all0.filter(o=>Date.parse(o.created_at)>=t0);
   const hourly=new Array(24).fill(0);td.filter(o=>!isUber(o)).forEach(o=>{hourly[new Date(Date.parse(o.created_at)+9*3600e3).getUTCHours()]+=cupsOf(o)});
-  S={at:Date.now(),err:null,day,today:agg(td.filter(o=>!isUber(o))),mtd:agg(all.filter(o=>!isUber(o))),uberSqToday:agg(td.filter(isUber)),uberSqMtd:agg(all.filter(isUber)),todayOrders:td,hourly};
+  const daily={};all0.filter(o=>!isUber(o)).forEach(o=>{const k=tokyoDay(Date.parse(o.created_at));const a=daily[k]||(daily[k]={rev:0,orders:0,cups:0});a.rev+=amt(o);a.orders++;a.cups+=cupsOf(o)});
+  S={at:Date.now(),err:null,day,today:agg(td.filter(o=>!isUber(o))),mtd:agg(all.filter(o=>!isUber(o))),week:agg(wk.filter(o=>!isUber(o))),uberSqToday:agg(td.filter(isUber)),uberSqMtd:agg(all.filter(isUber)),todayOrders:td,hourly,daily};
  }catch(e){S.err=e.message;console.error('ipad sales',e.message)}}
 if(TOK){setTimeout(refresh,8000);setInterval(refresh,3*60e3)}
 function uberView(){const u=C.uber||null,day=tokyoDay();
@@ -59,7 +64,14 @@ function uberView(){const u=C.uber||null,day=tokyoDay();
 function sales(){const day=tokyoDay(),U=uberView();const shop=S.mtd?S.mtd.rev:0,ub=U.mtd?(U.mtd.rev||0):0;
  const dim=new Date(Date.UTC(+day.slice(0,4),+day.slice(5,7),0)).getUTCDate(),d=+day.slice(8,10);
  const gap=Math.max(0,MONTH_TARGET-shop-ub);
- return {day,at:S.at,err:S.err,today:S.today,mtd:S.mtd,uber:U,target:MONTH_TARGET,total:shop+ub,gap,daysLeft:dim-d+1,perDay:Math.ceil(gap/Math.max(1,dim-d+1)),hourly:S.hourly}}
+ // per-day rows (Uber daily comes from the box push's `daily`; missing = unknown)
+ const ud=(C.uber&&C.uber.daily)||{},w0=monStart(day),m0=day.slice(0,7)+'-01',from=w0<m0?w0:m0,days=[];
+ for(let t=Date.parse(from+'T00:00:00Z');;t+=864e5){const k=new Date(t).toISOString().slice(0,10);if(k>day)break;
+  const sh=S.daily[k]||{rev:0,orders:0,cups:0},u=k===day&&U.today?U.today:(ud[k]||null);
+  days.push({day:k,shop:sh,uber:u,total:sh.rev+(u?u.rev||0:0),closed:!sh.orders&&!(u&&u.orders)&&k!==day,inMonth:k>=m0})}
+ const wd=days.filter(x=>x.day>=w0),uw=wd.reduce((a,x)=>{if(x.uber){a.rev+=x.uber.rev||0;a.orders+=x.uber.orders||0;a.n++}return a},{rev:0,orders:0,n:0});
+ const week={start:w0,shop:S.week,uber:uw.n?{rev:uw.rev,orders:uw.orders}:null};
+ return {day,at:S.at,err:S.err,today:S.today,mtd:S.mtd,week,uber:U,target:MONTH_TARGET,total:shop+ub,gap,daysLeft:dim-d+1,perDay:Math.ceil(gap/Math.max(1,dim-d+1)),hourly:S.hourly,days:days.filter(x=>x.inMonth),uberReq:C.uberReq||null}}
 // ---- stock estimate ----
 function stockView(){const day=tokyoDay();const used={};C.stock.items.forEach(i=>used[i.k]=0);
  const rx=C.recipe.map(r=>{try{return {re:new RegExp(r.re,'i'),use:r.use}}catch(e){return null}}).filter(Boolean);
@@ -145,10 +157,11 @@ return async function api(u,q,r){const j=q.method==='POST'?await body(q):{};
  if(!isW&&(!PIN||pin!==PIN))return send(r,403,{error:'PIN'});
  try{
  if(p==='kds-open'){const k=String(process.env.KDS_KEY||'').trim();if(!k)return send(r,500,{error:'KDS_KEY not set'});return send(r,200,{url:'/kds?key='+encodeURIComponent(k)})}
+ if(p==='sales-refresh'&&q.method==='POST'){C.uberReq=Date.now();save();await refresh();return send(r,200,sales())}
  if(p==='sales'){if(u.searchParams.get('refresh')==='1'||Date.now()-S.at>3*60e3)await refresh();return send(r,200,sales())}
- if(p==='uber'&&q.method==='GET'){const day=tokyoDay(),u_=C.uber;return send(r,200,{has:!!(u_&&u_.day===day&&u_.today),day,at:u_&&u_.at||null})}
+ if(p==='uber'&&q.method==='GET'){const day=tokyoDay(),u_=C.uber;return send(r,200,{has:!!(u_&&u_.day===day&&u_.today),day,at:u_&&u_.at||null,want:!!(C.uberReq&&(!u_||!u_.at||u_.at<C.uberReq)),req:C.uberReq||null})}
  if(p==='uber'&&q.method==='POST'){const day=tokyoDay();const n=x=>x&&{rev:Math.max(0,parseInt(x.rev)||0),orders:Math.max(0,parseInt(x.orders)||0),cups:x.cups==null?null:Math.max(0,parseInt(x.cups)||0)};
-  C.uber={day,month:day.slice(0,7),today:n(j.today)||(C.uber&&C.uber.day===day?C.uber.today:null),mtd:n(j.mtd)||(C.uber&&C.uber.month===day.slice(0,7)?C.uber.mtd:null),at:Date.now()};save();return send(r,200,sales())}
+  C.uber={day,month:day.slice(0,7),today:n(j.today)||(C.uber&&C.uber.day===day?C.uber.today:null),mtd:n(j.mtd)||(C.uber&&C.uber.month===day.slice(0,7)?C.uber.mtd:null),daily:(()=>{const o={};const src=j.daily&&typeof j.daily==='object'?j.daily:null;if(!src)return C.uber&&C.uber.daily||{};for(const k in src)if(/^\d{4}-\d{2}-\d{2}$/.test(k))o[k]=n(src[k]);return Object.assign({},C.uber&&C.uber.daily||{},o)})(),at:Date.now()};save();return send(r,200,sales())}
  if(p==='menu'){const m=await menu();return send(r,200,m.map(i=>({id:i.id,name:i.name,cat:i.cat,img:i.img,so:i.so,vars:i.vars.map(v=>({id:v.id,name:v.name,so:v.so}))})))}
  if(p==='soldout'&&q.method==='POST'){if(j.confirm!==true)return send(r,400,{error:'confirm required'});return send(r,200,await setSoldOut(String(j.id||''),!!j.sold,j.vars))}
  if(p==='toppings')return send(r,200,await toppings());
