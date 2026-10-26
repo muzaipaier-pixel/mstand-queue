@@ -13,7 +13,7 @@ input{width:100%;font-size:28px;padding:14px;border-radius:16px;border:2px solid
 #lock{position:fixed;inset:0;background:#fff4ec;display:flex;flex-direction:column;justify-content:center;padding:30px}#msg{color:#e33;text-align:center;height:20px}
 </style></head><body>
 <div id="lock"><h1 style="text-align:center">M Stand 叫号 · スタッフ<br>请输入 PIN / PINを入力</h1><input id="pin" type="password" inputmode="numeric" maxlength="8"><button onclick="login()">进入 / 入る</button><div id="msg"></div></div>
-<h1>M Stand 叫号 · スタッフ用 <span id="conn">●</span></h1>
+<h1>M Stand 叫号 · スタッフ用 <span id="conn">●</span> <a href="/ipad/square#term" style="font-size:16px;background:#333;color:#fff;padding:6px 12px;border-radius:10px;text-decoration:none">💳 推到 Terminal</a></h1>
 <div class="cur"><small>当前号码 / 現在の番号</small><div class="n" id="n">-</div></div>
 <button id="next" onclick="act('next')">叫下一个号 ▶<br><small style="font-size:16px">次の番号を呼ぶ</small></button>
 <div class="row"><button id="recall" onclick="act('recall')">🔁 重叫<br><small style="font-size:13px">再呼び出し</small></button></div>
