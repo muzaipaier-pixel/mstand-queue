@@ -53,6 +53,7 @@ if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r,u.searchParams.get
  if(u.pathname==='/api/checkout'&&q.method==='POST'){let b='';q.on('data',c=>{b+=c;if(b.length>2e4)q.destroy()});q.on('end',()=>checkout(b,q,r));return;}
  if(u.pathname==='/api/order-status'){orderStatus(u.searchParams.get('id')||'',r);return;}
  if(u.pathname.startsWith('/api/kds')){kdsApi(u,q,r);return;}
+ if(u.pathname.startsWith('/api/sq/')){SQT(u,q,r);return;}
  if(u.pathname==='/api/orders'||u.pathname.startsWith('/api/orders/')){ORDERS(u,q,r);return;}
  if(u.pathname==='/api/receipts'||u.pathname.startsWith('/api/receipts/')){RECEIPTS(u,q,r);return;}
  if(u.pathname==='/api/costs'||u.pathname.startsWith('/api/costs/')){COSTS(u,q,r);return;}
@@ -577,3 +578,4 @@ const COSTS=require('./lib/costs')({PIN});
 const ORDERS=require('./lib/orders')({PIN});
 const RECEIPTS=require('./lib/receipts')({PIN});
 const IPAD=require('./ipad')({sq,LOC,st:()=>st,save,push,PIN,menu,invalidateMenu:()=>{menuC.at=0;menu().catch(()=>{})},TOK});
+const SQT=require('./lib/sqtools')({sq,LOC,PIN});
