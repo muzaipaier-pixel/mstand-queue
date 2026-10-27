@@ -462,7 +462,7 @@ async function kdsSeed(){try{
  for(const o of (od.orders||[]))await kdsUpsert(o);console.log('kds seeded',kds.size);
 }catch(e){console.error('kds seed',e.message)}}
 function kdsList(){const d=new Date(Date.now()+9*3600e3);d.setUTCHours(0,0,0,0);const start=d-9*3600e3;
- return [...kds.values()].map(({raw,...x})=>({...x,unpaid:isUnpaidWeb(raw)})).filter(x=>Date.parse(x.created_at)>=start&&(x.state==='OPEN'||Date.now()-Date.parse(x.updated_at)<3*3600e3)).sort((a,b)=>Date.parse(a.created_at)-Date.parse(b.created_at))}
+ return [...kds.values()].map(({raw,...x})=>({...x,unpaid:isUnpaidWeb(raw),total:Number(((raw||{}).net_amount_due_money||(raw||{}).total_money||{}).amount||0)})).filter(x=>Date.parse(x.created_at)>=start&&(x.state==='OPEN'||Date.now()-Date.parse(x.updated_at)<3*3600e3)).sort((a,b)=>Date.parse(a.created_at)-Date.parse(b.created_at))}
 function jres(r,c,o){r.writeHead(c,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});r.end(JSON.stringify(o))}
 function isUnpaidWeb(o){if(!o||o.reference_id!=='mstand-web'||o.state!=='OPEN')return false;if((o.tenders||[]).length)return false;
  const p=st.preparing.find(y=>y.order===o.id||y.paidOrder===o.id);if(p&&(!p.unpaid||p.paidOrder))return false;return true}
@@ -602,9 +602,10 @@ async function kdsTerminal(u,q,r){
   if(!isUnpaidWeb(x.raw))return jres(r,409,{error:'只能推未付款的手机单'});
   const cur=T[id];
   if(cur&&!cur.dry&&/PENDING|IN_PROGRESS/.test(cur.status||'')&&Date.now()-cur.at<5*60e3)return jres(r,409,{error:'已在 Terminal 上等待付款',...cur});
+  const PT=['CARD_PRESENT','FELICA_TRANSPORTATION_GROUP','FELICA_ID','FELICA_QUICPAY','FELICA_ALL','QR_CODE'];const pt=String(j.pt||'CARD_PRESENT');if(PT.indexOf(pt)<0)return jres(r,400,{error:'bad payment type'});
   const amt=Number((x.raw.net_amount_due_money||x.raw.total_money||{}).amount||0);
-  const body={idempotency_key:id.slice(0,20)+'-'+((cur&&cur.tries||0)+1),checkout:{order_id:id,amount_money:{amount:amt,currency:'JPY'},reference_id:'kds-'+String(id).slice(-8),note:'スマホ注文 '+x.name,device_options:{device_id:TERM_DEV,skip_receipt_screen:false},deadline_duration:'PT5M'}};
-  const t={tries:(cur&&cur.tries||0)+1,at:Date.now(),amount:amt,orderId:id};
+  const body={idempotency_key:id.slice(0,20)+'-'+((cur&&cur.tries||0)+1),checkout:{order_id:id,amount_money:{amount:amt,currency:'JPY'},reference_id:'kds-'+String(id).slice(-8),note:'スマホ注文 '+x.name,payment_type:pt,device_options:{device_id:TERM_DEV,skip_receipt_screen:false},deadline_duration:'PT5M'}};
+  const t={tries:(cur&&cur.tries||0)+1,at:Date.now(),amount:amt,orderId:id,pt};
   if(!live){Object.assign(t,{dry:true,status:'DRY_RUN',wouldPost:'/v2/terminals/checkouts',body,order:{id,ticket:x.name,lines:(x.raw.line_items||[]).map(l=>({catalog_object_id:l.catalog_object_id,name:l.name,variation:l.variation_name,qty:l.quantity,modifiers:(l.modifiers||[]).map(m=>({catalog_object_id:m.catalog_object_id,name:m.name}))}))}});T[id]=t;return jres(r,200,t)}
   const c=(await sq('/terminals/checkouts',{method:'POST',body:JSON.stringify(body)})).checkout||{};Object.assign(t,{checkoutId:c.id,status:c.status});T[id]=t;save();jres(r,200,t)
  }catch(e){jres(r,e.status||502,{error:'square '+(e.status||e.message)})}})}
