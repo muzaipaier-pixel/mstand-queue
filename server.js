@@ -18,7 +18,7 @@ const saveSync=()=>{if(sTimer){clearTimeout(sTimer);sTimer=null}if(!sDirty)retur
 process.on('beforeExit',saveSync);
 ['SIGTERM','SIGINT'].forEach(sig=>process.on(sig,()=>{saveSync();process.exit(0)}));
 const clients=new Set();
-const pub=()=>{const{seenPay,sqSince,rdySince,calledOrders,kdsLocal,ipad,...o}=st;o.now=Date.now();try{o.wait=waitEst()}catch(e){o.wait=null}return o};
+const pub=()=>{const{seenPay,sqSince,rdySince,calledOrders,kdsLocal,ipad,term,...o}=st;o.now=Date.now();try{o.wait=waitEst()}catch(e){o.wait=null}return o};
 // estimated wait. Calibrated 2026-10-22 from 3 weeks of Square in-store orders (placed_at -> prepared_at, n=109):
 // median 2.0 min @1 cup, 4.2 @2, 4.4 @3, ~13 @4-6 (single staff) -> base 1 + 2 min/cup.
 global.WAIT_EST=()=>waitEst();
@@ -477,6 +477,7 @@ function kdsApi(u,q,r){
  const key=q.headers['x-kds-key']||u.searchParams.get('key')||'';
  if(!KDS_KEY||key!==KDS_KEY)return jres(r,403,{error:'key'});
  if(u.pathname==='/api/kds'&&q.method==='GET')return jres(r,200,{orders:kdsList(),now:Date.now()});
+ if(/^\/api\/kds\/terminal/.test(u.pathname))return kdsTerminal(u,q,r);
  if(q.method!=='POST'||!/^\/api\/kds\/(done|recall|cancel)$/.test(u.pathname))return jres(r,404,{});
  let b='';q.on('data',c=>{b+=c;if(b.length>2000)q.destroy()});q.on('end',async()=>{
   let j={};try{j=JSON.parse(b)}catch(e){}
@@ -579,3 +580,39 @@ const ORDERS=require('./lib/orders')({PIN});
 const RECEIPTS=require('./lib/receipts')({PIN});
 const IPAD=require('./ipad')({sq,LOC,st:()=>st,save,push,PIN,menu,invalidateMenu:()=>{menuC.at=0;menu().catch(()=>{})},TOK});
 const SQT=require('./lib/sqtools')({sq,LOC,PIN});
+
+// ---- Push phone-order ticket to Square Terminal (gated by SQ_TERMINAL_LIVE; dry-run default) ----
+const TERM_DEV=process.env.SQ_TERMINAL_DEVICE||'450CS145C1000868';
+function termMap(){return st.term||(st.term={})}
+async function kdsTerminal(u,q,r){
+ let b='';q.on('data',c=>{b+=c;if(b.length>2000)q.destroy()});q.on('end',async()=>{
+ let j={};try{j=JSON.parse(b||'{}')}catch(e){}
+ const id=String(j.id||u.searchParams.get('id')||'');const x=kds.get(id);const T=termMap();const live=process.env.SQ_TERMINAL_LIVE==='1';
+ try{
+  if(u.pathname==='/api/kds/terminal-status'){const t=T[id];if(!t)return jres(r,200,{status:'NONE'});
+   if(t.dry||!t.checkoutId)return jres(r,200,t);
+   const c=(await sq('/terminals/checkouts/'+encodeURIComponent(t.checkoutId))).checkout||{};t.status=c.status;t.at2=Date.now();
+   if(c.status==='COMPLETED'){const p=st.preparing.find(y=>y.order===id);if(p){p.unpaid=false;p.paidVia='terminal'}try{const g=(await sq('/orders/'+encodeURIComponent(id))).order;if(g)await kdsUpsert(g)}catch(e){}push('prep')}
+   save();return jres(r,200,t)}
+  if(u.pathname==='/api/kds/terminal-cancel'){const t=T[id];if(!t)return jres(r,404,{error:'none'});
+   if(!t.dry&&t.checkoutId&&/PENDING|IN_PROGRESS/.test(t.status||''))await sq('/terminals/checkouts/'+encodeURIComponent(t.checkoutId)+'/cancel',{method:'POST'});
+   t.status='CANCELED';save();return jres(r,200,t)}
+  if(q.method!=='POST'||u.pathname!=='/api/kds/terminal')return jres(r,404,{});
+  if(!x)return jres(r,404,{error:'unknown order'});
+  if(!isUnpaidWeb(x.raw))return jres(r,409,{error:'只能推未付款的手机单'});
+  const cur=T[id];
+  if(cur&&!cur.dry&&/PENDING|IN_PROGRESS/.test(cur.status||'')&&Date.now()-cur.at<5*60e3)return jres(r,409,{error:'已在 Terminal 上等待付款',...cur});
+  const amt=Number((x.raw.net_amount_due_money||x.raw.total_money||{}).amount||0);
+  const body={idempotency_key:id.slice(0,20)+'-'+((cur&&cur.tries||0)+1),checkout:{order_id:id,amount_money:{amount:amt,currency:'JPY'},reference_id:'kds-'+String(id).slice(-8),note:'スマホ注文 '+x.name,device_options:{device_id:TERM_DEV,skip_receipt_screen:false},deadline_duration:'PT5M'}};
+  const t={tries:(cur&&cur.tries||0)+1,at:Date.now(),amount:amt,orderId:id};
+  if(!live){Object.assign(t,{dry:true,status:'DRY_RUN',wouldPost:'/v2/terminals/checkouts',body,order:{id,ticket:x.name,lines:(x.raw.line_items||[]).map(l=>({catalog_object_id:l.catalog_object_id,name:l.name,variation:l.variation_name,qty:l.quantity,modifiers:(l.modifiers||[]).map(m=>({catalog_object_id:m.catalog_object_id,name:m.name}))}))}});T[id]=t;return jres(r,200,t)}
+  const c=(await sq('/terminals/checkouts',{method:'POST',body:JSON.stringify(body)})).checkout||{};Object.assign(t,{checkoutId:c.id,status:c.status});T[id]=t;save();jres(r,200,t)
+ }catch(e){jres(r,e.status||502,{error:'square '+(e.status||e.message)})}})}
+// Dev-only sample tickets for screenshots (never set in production)
+if(process.env.KDS_SAMPLE==='1')setTimeout(()=>{const t=Date.now(),mk=(id,name,src,min,lines,web)=>{const raw={id,reference_id:web?'mstand-web':'',state:'OPEN',created_at:new Date(t-min*60e3).toISOString(),updated_at:new Date().toISOString(),total_money:{amount:lines.reduce((a,l)=>a+l.p*+l.quantity,0),currency:'JPY'},line_items:lines.map(l=>({catalog_object_id:l.v,name:l.name,variation_name:l.var,quantity:l.quantity,modifiers:l.mods.map(m=>({catalog_object_id:m[0],name:m[1]}))}))};
+ kds.set(id,{id,name,source:src,readonly:false,created_at:raw.created_at,updated_at:raw.updated_at,state:'OPEN',raw,note:'',items:raw.line_items.map(l=>({name:l.name,qty:l.quantity,variation:l.variation_name,mods:l.modifiers.map(m=>m.name),note:''}))})};
+ const S=(n,v,q,mods,p)=>({name:n,var:v,v:'VAR_'+n.length+v.length,quantity:String(q),mods,p});
+ mk('SAMPLE_PHONE1','ゆき','手机点单',3,[S('上品四季春','ICED, M',2,[['MOD_HALF','甘さ 50%'],['MOD_LI','少冰'],['MOD_TAP','タピオカ']],650),S('チーズクリーム宇治抹茶','ICED, L',1,[['MOD_100','甘さ 100%']],780)],true);
+ mk('SAMPLE_POS1','#23','店头',6,[S('上品四季春','ICED, M',1,[['MOD_0','甘さ 0%'],['MOD_LI','少冰']],650),S('朝露ジャスミン','ICED, M',2,[['MOD_HALF','甘さ 50%'],['MOD_NOI','去冰'],['MOD_TAP','タピオカ']],600)],false);
+ mk('SAMPLE_KIOSK','#24','自助',1,[S('上品四季春','ICED, M',1,[['MOD_100','甘さ 100%']],650),S('満杯パッションフルーツ','ICED, L',1,[['MOD_75','甘さ 75%'],['MOD_NATA','ナタデココ']],720)],false);
+ console.log('kds sample loaded')},4000);

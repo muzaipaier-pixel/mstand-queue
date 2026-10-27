@@ -27,8 +27,8 @@ button.rc{background:#eee;color:#555}.done .hd{background:#888!important}
 @keyframes bp{50%{opacity:.75}}
 #unlock{position:fixed;inset:0;background:#000c;z-index:9;display:flex;align-items:center;justify-content:center;color:#fff;font-size:30px;font-weight:900;text-align:center;line-height:1.6}#unlock div{background:#c2185b;padding:30px 40px;border-radius:20px}
 </style></head><body>
-<header><h1>M Stand <b>KDS</b></h1><div class="tabs"><span class="tab on" data-v="open">进行中 <span id="nO"></span></span><span class="tab" data-v="done">已完成 <span id="nD"></span></span></div><div id="clock"></div></header>
-<div id="nbar" onclick="ack()"></div><div id="unlock" onclick="unlockAudio()"><div>🔔 点一下开启新订单提示音<br>タップして通知音をオン</div></div><div id="grid"></div><div id="toast"></div>
+<header><h1>M Stand <b>KDS</b></h1><div class="tabs"><span class="tab bt" id="bt" onclick="batch=!batch;render()" style="background:#e8a33d;color:#000">🧋 合并制作</span><span class="tab on" data-v="open">进行中 <span id="nO"></span></span><span class="tab" data-v="done">已完成 <span id="nD"></span></span></div><div id="clock"></div></header>
+<div id="nbar" onclick="ack()"></div><div id="unlock" onclick="unlockAudio()"><div>🔔 点一下开启新订单提示音<br>タップして通知音をオン</div></div><div id="grid"></div><div id="toast"></div><div id="dry" style="display:none;position:fixed;inset:40px;background:#fff;color:#111;z-index:99;border-radius:14px;padding:16px;overflow:auto"><b>预览模式（SQ_TERMINAL_LIVE 未开）：以下是会发给 Square 的订单和 Terminal 结账内容，没有真的发出</b> <button onclick="this.parentNode.style.display='none'">关闭</button><pre style="font-size:13px;white-space:pre-wrap"></pre></div>
 <script>
 var q=location.search,key=(q.match(/key=([^&]+)/)||[])[1]||'',view='open',data=[],skew=0,busy={};
 function now(){return Date.now()+skew}
@@ -36,7 +36,7 @@ function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return
 function mmss(ms){var s=Math.max(0,Math.floor(ms/1000)),m=Math.floor(s/60);return m>=60?Math.floor(m/60)+'h'+('0'+m%60).slice(-2):m+':'+('0'+s%60).slice(-2)}
 function isDone(o){return o.state==='PREPARED'||o.state==='COMPLETED'}
 function toast(t){var e=document.getElementById('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display='none'},2500)}
-function render(){var t=now(),h='',nO=0,nD=0,list=data.slice();if(view==='done')list.sort(function(a,b){return b.updated_at<a.updated_at?-1:1});
+function render(){if(batch)return renderBatch();var t=now(),h='',nO=0,nD=0,list=data.slice();if(view==='done')list.sort(function(a,b){return b.updated_at<a.updated_at?-1:1});
 list.forEach(function(o){var d=isDone(o);d?nD++:nO++;if((view==='done')!==d)return;
 var ms=t-new Date(o.created_at),m=ms/60000,cl=d?'':m>=10?'r':m>=5?'y':'',d8=new Date(o.created_at),i=data.indexOf(o);
 var nw=!d&&fresh[o.id]&&t<fresh[o.id];h+='<div class="t '+cl+(d?' done':'')+(nw?' nw':'')+(o.source==='手机点单'?' ph':'')+'" ontouchstart="seen(\''+esc(o.id)+'\')" onmousedown="seen(\''+esc(o.id)+'\')">'+(nw?'<span class="nb">'+(o.source==='手机点单'?'NEW 手机·未付款':'NEW')+'</span>':'')+'<div class="hd src-'+o.source+'"'+(!d&&!o.readonly?' onclick="act('+i+')"':'')+'><div class="r1"><span class="nm">'+esc(o.name)+'</span><span class="tm">'+mmss(ms)+'</span></div>'+
@@ -45,11 +45,30 @@ var nw=!d&&fresh[o.id]&&t<fresh[o.id];h+='<div class="t '+cl+(d?' done':'')+(nw?
 o.items.forEach(function(it){h+='<div class="it"><span class="q">'+(it.qty||1)+'</span><div><div class="in">'+esc(it.name)+'</div>'+(it.variation?'<div class="md v">'+esc(it.variation)+'</div>':'')+
 it.mods.map(function(x){return'<div class="md">· '+esc(x)+'</div>'}).join('')+(it.note?'<div class="md">📝 '+esc(it.note)+'</div>':'')+'</div></div>'});
 h+=(o.note?'<div class="nt">📝 '+esc(o.note)+'</div>':'')+'<div class="sp"></div>'+
-(o.readonly?'<button class="rc" disabled>Uber 单 · 仅显示</button>':busy[o.id]?'<button class="rc" disabled>处理中…</button>':d?(o.state==='PREPARED'?'<button class="rc" onclick="act('+i+',1)">召回</button>':'<button class="rc" disabled>已取餐</button>'):'<button onclick="act('+i+')">完成</button>')+(!d&&o.unpaid&&!busy[o.id]?'<button class="rc" style="background:#e0242f;color:#fff;font-size:20px;padding:10px" onclick="cancelO('+i+')">取消（恶作剧单）</button>':'')+'</div>'});
+(o.readonly?'<button class="rc" disabled>Uber 单 · 仅显示</button>':busy[o.id]?'<button class="rc" disabled>处理中…</button>':d?(o.state==='PREPARED'?'<button class="rc" onclick="act('+i+',1)">召回</button>':'<button class="rc" disabled>已取餐</button>'):'<button onclick="act('+i+')">完成</button>')+(!d&&o.unpaid&&o.source==='手机点单'?termBtn(o,i):'')+(!d&&o.unpaid&&!busy[o.id]?'<button class="rc" style="background:#e0242f;color:#fff;font-size:20px;padding:10px" onclick="cancelO('+i+')">取消（恶作剧单）</button>':'')+'</div>'});
 document.getElementById('grid').innerHTML=h||'<p style="color:#aaa;font-size:24px;padding:20px">没有订单</p>';
 document.getElementById('nO').textContent=nO;document.getElementById('nD').textContent=nD;
 var c=new Date(t);document.getElementById('clock').textContent=('0'+c.getHours()).slice(-2)+':'+('0'+c.getMinutes()).slice(-2);
-[].forEach.call(document.querySelectorAll('.tab'),function(e){e.className='tab'+(e.getAttribute('data-v')===view?' on':'')})}
+[].forEach.call(document.querySelectorAll('.tab[data-v]'),function(e){e.className='tab'+(e.getAttribute('data-v')===view?' on':'')})}
+var batch=false,term={};
+function termBtn(o,i){var t=term[o.id]||{},s=t.status||'';
+ if(s==='PENDING'||s==='IN_PROGRESS')return '<button class="rc" style="background:#333;color:#fff" onclick="termCancel('+i+')">⏳ Terminal 等待付款…（点此取消）</button>';
+ if(s==='COMPLETED')return '<button class="rc" disabled style="background:#2fb36b;color:#fff">✅ 已在 Terminal 付款</button>';
+ return '<button class="rc" style="background:#7a4dff;color:#fff" onclick="termPush('+i+')">💳 推到 Terminal 结账'+(s==='CANCELED'||s==='DRY_RUN'?'（重试）':'')+'</button>'}
+function termPush(i){var o=data[i];if(!o||busy[o.id])return;busy[o.id]=1;render();
+ api('POST','/api/kds/terminal',{id:o.id},function(s,j){delete busy[o.id];if(s===200){term[o.id]=j;if(j.dry)showDry(j);else{toast('已推到 Terminal：'+o.name);termPoll(o.id)}}else{toast('失败：'+(j.error||s));if(j.status)term[o.id]=j}render()})}
+function termPoll(id){var n=0;(function p(){api('GET','/api/kds/terminal-status?id='+encodeURIComponent(id),null,function(s,j){if(s===200)term[id]=j;render();
+ if(j.status==='COMPLETED'){toast('付款完成 ✅');load();return}if(/CANCEL/.test(j.status||'')){toast('Terminal 已取消，可重试');return}if(++n<120)setTimeout(p,3000)})})()}
+function termCancel(i){var o=data[i];api('POST','/api/kds/terminal-cancel',{id:o.id},function(s,j){if(s===200)term[o.id]=j;render()})}
+function showDry(j){var w=document.getElementById('dry');w.style.display='block';w.querySelector('pre').textContent=JSON.stringify({order:j.order,checkout:j.body},null,1)}
+function mkind(m){return /甘さ|甜|糖|%/.test(m)?'s':/氷|冰|ice/i.test(m)?'i':'t'}
+function renderBatch(){var g={},n=0;data.forEach(function(o){if(isDone(o))return;n++;o.items.forEach(function(it){var k=it.name+(it.variation?'｜'+it.variation:''),e=g[k]||(g[k]={name:it.name,v:it.variation,q:0,s:{},i:{},t:{}}),q=+it.qty||1;e.q+=q;
+ var f={s:0,i:0};it.mods.forEach(function(m){var c=mkind(m);e[c][m]=(e[c][m]||0)+q;f[c]=1});if(!f.s)e.s['标准甜度']=(e.s['标准甜度']||0)+q;if(!f.i)e.i['正常冰']=(e.i['正常冰']||0)+q})});
+ var L=Object.keys(g).sort(function(a,b){return g[b].q-g[a].q}),fm=function(o){return Object.keys(o).sort(function(a,b){return o[b]-o[a]}).map(function(k){return esc(k)+' <b>'+o[k]+'</b>'}).join(' / ')};
+ var h='<div style="color:#ccc;font-size:18px;padding:6px 4px;width:100%;flex-basis:100%;grid-column:1/-1">合并制作 · 未完成 '+n+' 单（点「🧋 合并制作」切回单张）</div>';
+ L.forEach(function(k){var e=g[k];h+='<div class="t" style="min-width:300px"><div class="hd" style="background:#e8a33d;color:#111"><div class="r1"><span class="nm">'+esc(e.name)+' ×'+e.q+'</span></div><div class="r2"><span>'+esc(e.v||'')+'</span></div></div>'+
+ '<div class="it"><div><div class="md" style="font-size:20px">🍬 '+fm(e.s)+'</div><div class="md" style="font-size:20px">🧊 '+fm(e.i)+'</div>'+(Object.keys(e.t).length?'<div class="md" style="font-size:20px">➕ '+fm(e.t)+'</div>':'')+'</div></div></div>'});
+ document.getElementById('grid').innerHTML=h;document.getElementById('nO').textContent=n}
 function api(m,p,b,cb){var x=new XMLHttpRequest();x.open(m,p);x.setRequestHeader('X-KDS-Key',decodeURIComponent(key));x.setRequestHeader('Content-Type','application/json');
 x.onload=function(){var j={};try{j=JSON.parse(x.responseText)}catch(e){}cb(x.status,j)};x.onerror=function(){cb(0,{})};x.send(b?JSON.stringify(b):null)}
 function act(i,rc){var o=data[i];if(!o||busy[o.id])return;busy[o.id]=1;render();
@@ -58,7 +77,7 @@ function cancelO(i){var o=data[i];if(!o||busy[o.id])return;if(!confirm('确定�
 api('POST','/api/kds/cancel',{id:o.id},function(s,j){delete busy[o.id];if(s===200){data.splice(i,1);toast(j.warn||('已取消：'+o.name))}else toast('失败：'+(j.error||s));render();load()})}
 function load(){api('GET','/api/kds',null,function(s,j){if(s===403){document.getElementById('grid').innerHTML='<p style="color:#fff;font-size:24px;padding:20px">网址里的 key 不对，请用正确的 KDS 链接打开。</p>';return}
 if(s===200){skew=j.now-Date.now();data=j.orders||[];detectNew();render()}})}
-[].forEach.call(document.querySelectorAll('.tab'),function(e){e.onclick=function(){view=e.getAttribute('data-v');render()}});
+[].forEach.call(document.querySelectorAll('.tab[data-v]'),function(e){e.onclick=function(){view=e.getAttribute('data-v');render()}});
 
 var fresh={},known=null,ac=null,rep=0,repT=null,titleT=null;
 function unlockAudio(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume();var b=ac.createBuffer(1,1,22050),n=ac.createBufferSource();n.buffer=b;n.connect(ac.destination);n.start(0)}catch(e){}
