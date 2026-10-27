@@ -386,6 +386,7 @@ async function checkout(b,q,r){
    const qn=Math.min(20,Math.max(1,parseInt(x.q)||1)),l={catalog_object_id:x.v,quantity:String(qn)};
    if(ids.length)l.modifiers=ids.map(id=>({catalog_object_id:id,quantity:'1'}));l._yen=(v.price+ids.reduce((a,id)=>a+om[id].o.price,0))*qn;lines.push(l)}
   if(!lines.length)return bad(400,'items');
+  const pay=String(j.pay||'');if(ORDER_PAYS.indexOf(pay)<0)return bad(400,'pay');
   const ip=String(q.headers['x-forwarded-for']||q.socket.remoteAddress||'').split(',')[0].trim();
   if(limited(ip))return bad(429,'rate');
   const now=Date.now();while(webRecent.length&&now-webRecent[0].at>Math.max(AP.devMin,AP.burstMin)*60e3)webRecent.shift();
@@ -396,24 +397,33 @@ async function checkout(b,q,r){
   if(mine.length>=AP.devMax)return bad(429,'device');
   if(now<burstUntil)return bad(503,'busy');
   if(webRecent.filter(w=>now-w.at<AP.burstMin*60e3).length>=AP.burstN){burstUntil=now+AP.burstBlockMin*60e3;console.warn('phone order burst guard on');return bad(503,'busy')}
-  if(process.env.ORDER_DRY_RUN==='1'){const id='DRY'+now.toString(36).toUpperCase();webRecent.push({id,ip,dev,at:now});st.preparing.push({id:'web-'+id,order:id,num:name,no:shortNo(id),unpaid:true,web:true,items:'(dry-run)',total:yen,at:now});return jres(r,200,{order_id:id,no:shortNo(id),dry:true})}
+  const fee=pay==='CASH'?0:feeOf(yen);
+  if(process.env.ORDER_DRY_RUN==='1'){const id='DRY'+now.toString(36).toUpperCase();webRecent.push({id,ip,dev,at:now});st.preparing.push({id:'web-'+id,order:id,num:name,no:shortNo(id),unpaid:true,web:true,pay,items:'(dry-run)',total:yen+fee,at:now});return jres(r,200,{order_id:id,no:shortNo(id),dry:true,pay,total:yen+fee})}
   const body={idempotency_key:require('crypto').randomUUID(),
-   order:{location_id:LOC,state:'OPEN',source:{name:'M Stand スマホ注文'},ticket_name:name,reference_id:'mstand-web',line_items:lines,
-    fulfillments:[{type:'PICKUP',state:'PROPOSED',pickup_details:{recipient:{display_name:name},schedule_type:'ASAP',prep_time_duration:'PT10M',note:'スマホ注文（レジで支払い）'}}]}};
+   order:{location_id:LOC,state:'OPEN',source:{name:'M Stand スマホ注文'},ticket_name:name,reference_id:'mstand-web',line_items:lines,metadata:{pay},...(pay==='CASH'?{}:{service_charges:[FEE_SC]}),
+    fulfillments:[{type:'PICKUP',state:'PROPOSED',pickup_details:{recipient:{display_name:name},schedule_type:'ASAP',prep_time_duration:'PT10M',note:'スマホ注文（支払: '+PAY_LABEL[pay]+'）'}}]}};
   const o=(await sq('/orders',{method:'POST',body:JSON.stringify(body)})).order||{};
   const no=shortNo(o.id);webRecent.push({id:o.id,ip,dev,at:Date.now()});
   // Unpaid API orders are NOT visible in Square POS, so list it on the queue right away (marked unpaid)
-  if(!st.preparing.some(x=>x.order===o.id)){st.preparing.push({id:'web-'+o.id,order:o.id,num:name,no,unpaid:true,web:true,items:(o.line_items||[]).map(l=>l.name+(l.variation_name?'('+l.variation_name+')':'')+(l.quantity!=='1'?'×'+l.quantity:'')).join('、'),total:Number((o.total_money||{}).amount||0),at:Date.now()});st.seq++;save();push('prep')}
+  if(!st.preparing.some(x=>x.order===o.id)){st.preparing.push({id:'web-'+o.id,order:o.id,num:name,no,unpaid:true,web:true,pay,items:(o.line_items||[]).map(l=>l.name+(l.variation_name?'('+l.variation_name+')':'')+(l.quantity!=='1'?'×'+l.quantity:'')).join('、'),total:Number((o.total_money||{}).amount||0),at:Date.now()});st.seq++;save();push('prep')}
   (global.SEEN||(global.SEEN={})).lastOrder=Date.now();r.writeHead(200,{'Content-Type':'application/json'});r.end(JSON.stringify({order_id:o.id,no}));
  }catch(e){console.error('checkout',e.message);bad(502,'square')}
 }
+// ---- Cashless surcharge (user-approved 3.75% on non-cash phone orders). Square floors apportioned % charges per order. ----
+const FEE_UID='MSTAND_CASHLESS_FEE',FEE_NAME='キャッシュレス決済手数料';
+const FEE_SC={uid:FEE_UID,name:FEE_NAME,percentage:'3.75',calculation_phase:'APPORTIONED_PERCENTAGE_PHASE',treatment_type:'APPORTIONED_TREATMENT',scope:'ORDER',taxable:true};
+const feeOf=y=>Math.floor(Number(y||0)*375/10000);
+const PAY_LABEL={CASH:'現金',CARD_PRESENT:'クレジットカード',FELICA_TRANSPORTATION_GROUP:'交通系IC',FELICA_ID:'iD',FELICA_QUICPAY:'QUICPay',QR_CODE:'QRコード決済',FELICA_ALL:'電子マネー'};
+const ORDER_PAYS=['CASH','CARD_PRESENT','FELICA_TRANSPORTATION_GROUP','FELICA_ID','FELICA_QUICPAY','QR_CODE'];
+const isFee=c=>c&&(c.uid===FEE_UID||c.name===FEE_NAME);
+const feeAmt=o=>((o&&o.service_charges)||[]).filter(isFee).reduce((a,c)=>a+Number(((c.applied_money||c.total_money)||{}).amount||0),0);
 const shortNo=id=>'W'+String(id||'').replace(/[^A-Z0-9]/gi,'').slice(-4).toUpperCase();
 async function orderStatus(id,r){
  r.setHeader('Content-Type','application/json');
  if(!/^[A-Za-z0-9]{10,40}$/.test(id)){r.writeHead(400);return r.end('{}')}
  try{const o=(await sq('/orders/'+id)).order||{};if(o.location_id!==LOC||o.reference_id!=='mstand-web'){r.writeHead(404);return r.end('{}')}
   const f=(o.fulfillments||[])[0]||{};
-  r.end(JSON.stringify({no:shortNo(o.id),name:cleanName(o.ticket_name),paid:o.state==='COMPLETED'||!!(o.tenders||[]).length||Number((o.net_amount_due_money||{}).amount)===0&&Number((o.total_money||{}).amount)>0,state:f.state||o.state,total:Number((o.total_money||{}).amount||0),items:(o.line_items||[]).map(l=>({n:l.name,v:l.variation_name,q:l.quantity}))}))}
+  r.end(JSON.stringify({no:shortNo(o.id),name:cleanName(o.ticket_name),paid:o.state==='COMPLETED'||!!(o.tenders||[]).length||Number((o.net_amount_due_money||{}).amount)===0&&Number((o.total_money||{}).amount)>0,state:f.state||o.state,total:Number((o.total_money||{}).amount||0),fee:feeAmt(o),pay:PAY_LABEL[(o.metadata||{}).pay]||'',items:(o.line_items||[]).map(l=>({n:l.name,v:l.variation_name,q:l.quantity}))}))}
  catch(e){r.writeHead(502);r.end('{}')}
 }
 
@@ -452,7 +462,7 @@ async function kdsUpsert(o){
  const old=kds.get(o.id);
  const name=old&&old.name||await labelOf(o);
  const pd=f&&(f.pickup_details||f.delivery_details)||{};
- kds.set(o.id,{id:o.id,name,source:src,readonly:src==='Uber',created_at:o.created_at,updated_at:old&&old.state!==st2?new Date().toISOString():o.updated_at,state:st2,raw:o,note:(pd.note||o.note||'').slice(0,200),
+ kds.set(o.id,{id:o.id,name,source:src,readonly:src==='Uber',created_at:o.created_at,updated_at:old&&old.state!==st2?new Date().toISOString():o.updated_at,state:st2,raw:o,pay:(o.metadata||{}).pay||'',fee:feeAmt(o),note:(pd.note||o.note||'').slice(0,200),
   items:(o.line_items||[]).map(l=>({name:l.name,qty:l.quantity,variation:l.variation_name||'',mods:(l.modifiers||[]).map(m=>m.name),note:l.note||''}))});
  if(kds.size>400){const a=[...kds.values()].sort((x,y)=>Date.parse(x.created_at)-Date.parse(y.created_at));kds.delete(a[0].id)}
 }
@@ -584,6 +594,20 @@ const SQT=require('./lib/sqtools')({sq,LOC,PIN});
 // ---- Push phone-order ticket to Square Terminal (gated by SQ_TERMINAL_LIVE; dry-run default) ----
 const TERM_DEV=process.env.SQ_TERMINAL_DEVICE||'450CS145C1000868';
 function termMap(){return st.term||(st.term={})}
+async function ensureFee(id,want,pay){
+ for(let n=0;n<3;n++){
+  const o=(await sq('/orders/'+encodeURIComponent(id))).order;if(!o||o.location_id!==LOC)throw Object.assign(new Error('order'),{status:404});
+  const has=(o.service_charges||[]).filter(isFee);
+  if(has.length===(want?1:0)&&(o.metadata||{}).pay===pay){await kdsUpsert(o);return o}
+  const body={idempotency_key:(id+'-fee-'+o.version+'-'+(want?1:0)),order:{location_id:LOC,version:o.version,metadata:{...(o.metadata||{}),pay}},fields_to_clear:[]};
+  if(want&&!has.length)body.order.service_charges=[FEE_SC];
+  // remove every fee entry (also any accidental extra one) when going cash; keep exactly one when cashless
+  (want?has.slice(1):has).forEach(c=>body.fields_to_clear.push('service_charges['+c.uid+']'));
+  if(!body.fields_to_clear.length)delete body.fields_to_clear;
+  try{const u=(await sq('/orders/'+encodeURIComponent(id),{method:'PUT',body:JSON.stringify(body)})).order;if(u){await kdsUpsert(u);if((u.service_charges||[]).filter(isFee).length===(want?1:0))return u}}
+  catch(e){if(e.status!==409&&e.status!==400)throw e}
+ }
+ throw Object.assign(new Error('fee update failed'),{status:409})}
 async function kdsTerminal(u,q,r){
  let b='';q.on('data',c=>{b+=c;if(b.length>2000)q.destroy()});q.on('end',async()=>{
  let j={};try{j=JSON.parse(b||'{}')}catch(e){}
@@ -602,10 +626,18 @@ async function kdsTerminal(u,q,r){
   if(!isUnpaidWeb(x.raw))return jres(r,409,{error:'只能推未付款的手机单'});
   const cur=T[id];
   if(cur&&!cur.dry&&/PENDING|IN_PROGRESS/.test(cur.status||'')&&Date.now()-cur.at<5*60e3)return jres(r,409,{error:'已在 Terminal 上等待付款',...cur});
-  const PT=['CARD_PRESENT','FELICA_TRANSPORTATION_GROUP','FELICA_ID','FELICA_QUICPAY','FELICA_ALL','QR_CODE'];const pt=String(j.pt||'CARD_PRESENT');if(PT.indexOf(pt)<0)return jres(r,400,{error:'bad payment type'});
-  const amt=Number((x.raw.net_amount_due_money||x.raw.total_money||{}).amount||0);
+  const PT=['CASH','CARD_PRESENT','FELICA_TRANSPORTATION_GROUP','FELICA_ID','FELICA_QUICPAY','FELICA_ALL','QR_CODE'];const pt=String(j.pt||x.pay||'CARD_PRESENT');if(PT.indexOf(pt)<0)return jres(r,400,{error:'bad payment type'});
+  const wantFee=pt!=='CASH';
+  // Fee add/remove. Live: UpdateOrder on a freshly fetched order (version-checked, uid-keyed so it can never be added twice). Dry: preview only.
+  let o2=x.raw,feeChange=null;
+  if(live){o2=await ensureFee(id,wantFee,pt)}
+  else{const due=Number((x.raw.net_amount_due_money||x.raw.total_money||{}).amount||0),had=feeAmt(x.raw),base=due-had,f=wantFee?(had||feeOf(base)):0;
+   feeChange={had,fee:f,base,would:wantFee===!!had?'none':(wantFee?'add service charge '+FEE_UID+' 3.75%':'clear service_charges['+FEE_UID+']')};
+   o2={...x.raw,net_amount_due_money:{amount:base+f,currency:'JPY'}}}
+  const amt=Number((o2.net_amount_due_money||o2.total_money||{}).amount||0);
+  if(pt==='CASH'){const t={tries:(cur&&cur.tries||0),at:Date.now(),amount:amt,orderId:id,pt,status:'CASH',dry:!live,feeChange};T[id]=t;save();push('prep');return jres(r,200,t)}
   const body={idempotency_key:id.slice(0,20)+'-'+((cur&&cur.tries||0)+1),checkout:{order_id:id,amount_money:{amount:amt,currency:'JPY'},reference_id:'kds-'+String(id).slice(-8),note:'スマホ注文 '+x.name,payment_type:pt,device_options:{device_id:TERM_DEV,skip_receipt_screen:false},deadline_duration:'PT5M'}};
-  const t={tries:(cur&&cur.tries||0)+1,at:Date.now(),amount:amt,orderId:id,pt};
+  const t={tries:(cur&&cur.tries||0)+1,at:Date.now(),amount:amt,orderId:id,pt,fee:feeAmt(o2)||(feeChange&&feeChange.fee)||0,feeChange};
   if(!live){Object.assign(t,{dry:true,status:'DRY_RUN',wouldPost:'/v2/terminals/checkouts',body,order:{id,ticket:x.name,lines:(x.raw.line_items||[]).map(l=>({catalog_object_id:l.catalog_object_id,name:l.name,variation:l.variation_name,qty:l.quantity,modifiers:(l.modifiers||[]).map(m=>({catalog_object_id:m.catalog_object_id,name:m.name}))}))}});T[id]=t;return jres(r,200,t)}
   const c=(await sq('/terminals/checkouts',{method:'POST',body:JSON.stringify(body)})).checkout||{};Object.assign(t,{checkoutId:c.id,status:c.status});T[id]=t;save();jres(r,200,t)
  }catch(e){jres(r,e.status||502,{error:'square '+(e.status||e.message)})}})}
