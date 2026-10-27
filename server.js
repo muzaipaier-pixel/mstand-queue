@@ -608,11 +608,3 @@ async function kdsTerminal(u,q,r){
   if(!live){Object.assign(t,{dry:true,status:'DRY_RUN',wouldPost:'/v2/terminals/checkouts',body,order:{id,ticket:x.name,lines:(x.raw.line_items||[]).map(l=>({catalog_object_id:l.catalog_object_id,name:l.name,variation:l.variation_name,qty:l.quantity,modifiers:(l.modifiers||[]).map(m=>({catalog_object_id:m.catalog_object_id,name:m.name}))}))}});T[id]=t;return jres(r,200,t)}
   const c=(await sq('/terminals/checkouts',{method:'POST',body:JSON.stringify(body)})).checkout||{};Object.assign(t,{checkoutId:c.id,status:c.status});T[id]=t;save();jres(r,200,t)
  }catch(e){jres(r,e.status||502,{error:'square '+(e.status||e.message)})}})}
-// Dev-only sample tickets for screenshots (never set in production)
-if(process.env.KDS_SAMPLE==='1')setTimeout(()=>{const t=Date.now(),mk=(id,name,src,min,lines,web)=>{const raw={id,reference_id:web?'mstand-web':'',state:'OPEN',created_at:new Date(t-min*60e3).toISOString(),updated_at:new Date().toISOString(),total_money:{amount:lines.reduce((a,l)=>a+l.p*+l.quantity,0),currency:'JPY'},line_items:lines.map(l=>({catalog_object_id:l.v,name:l.name,variation_name:l.var,quantity:l.quantity,modifiers:l.mods.map(m=>({catalog_object_id:m[0],name:m[1]}))}))};
- kds.set(id,{id,name,source:src,readonly:false,created_at:raw.created_at,updated_at:raw.updated_at,state:'OPEN',raw,note:'',items:raw.line_items.map(l=>({name:l.name,qty:l.quantity,variation:l.variation_name,mods:l.modifiers.map(m=>m.name),note:''}))})};
- const S=(n,v,q,mods,p)=>({name:n,var:v,v:'VAR_'+n.length+v.length,quantity:String(q),mods,p});
- mk('SAMPLE_PHONE1','ゆき','手机点单',3,[S('上品四季春','ICED, M',2,[['MOD_HALF','甘さ 50%'],['MOD_LI','少冰'],['MOD_TAP','タピオカ']],650),S('チーズクリーム宇治抹茶','ICED, L',1,[['MOD_100','甘さ 100%']],780)],true);
- mk('SAMPLE_POS1','#23','店头',6,[S('上品四季春','ICED, M',1,[['MOD_0','甘さ 0%'],['MOD_LI','少冰']],650),S('朝露ジャスミン','ICED, M',2,[['MOD_HALF','甘さ 50%'],['MOD_NOI','去冰'],['MOD_TAP','タピオカ']],600)],false);
- mk('SAMPLE_KIOSK','#24','自助',1,[S('上品四季春','ICED, M',1,[['MOD_100','甘さ 100%']],650),S('満杯パッションフルーツ','ICED, L',1,[['MOD_75','甘さ 75%'],['MOD_NATA','ナタデココ']],720)],false);
- console.log('kds sample loaded')},4000);
