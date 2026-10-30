@@ -56,6 +56,7 @@ if(u.pathname==='/voice'){voice(u.searchParams.get('n')||'',r,u.searchParams.get
  if(u.pathname.startsWith('/api/kds')){kdsApi(u,q,r);return;}
  if(u.pathname.startsWith('/api/sq/')){SQT(u,q,r);return;}
  if(u.pathname==='/api/orders'||u.pathname.startsWith('/api/orders/')){ORDERS(u,q,r);return;}
+ if(u.pathname.startsWith('/api/sitechat')){SITECHAT(u,q,r);return;}
  if(u.pathname==='/api/receipts'||u.pathname.startsWith('/api/receipts/')){RECEIPTS(u,q,r);return;}
  if(u.pathname==='/api/costs'||u.pathname.startsWith('/api/costs/')){COSTS(u,q,r);return;}
  if(u.pathname.startsWith('/api/ipad/')){const t0=Date.now();r.on('finish',()=>{if(/worker|uber-(desired|hb)/.test(u.pathname)&&r.statusCode===200)return;ALOG.push(new Date().toISOString().slice(11,19)+' ipad '+q.method+' '+u.pathname.slice(10)+' '+r.statusCode+' '+(Date.now()-t0)+'ms ua='+String(q.headers['user-agent']||'').replace(/^Mozilla\/5\.0 /,'').slice(0,90));if(ALOG.length>200)ALOG.shift()});IPAD(u,q,r);return;}
@@ -588,6 +589,7 @@ function funState(){return {top3:stats.day===tokyoDay()?stats.top3:[],weather:wx
 
 const COSTS=require('./lib/costs')({PIN});
 const ORDERS=require('./lib/orders')({PIN});
+const SITECHAT=require('./lib/sitechat')({PIN});
 const RECEIPTS=require('./lib/receipts')({PIN});
 const IPAD=require('./ipad')({sq,LOC,st:()=>st,save,push,PIN,menu,invalidateMenu:()=>{menuC.at=0;menu().catch(()=>{})},TOK});
 const SQT=require('./lib/sqtools')({sq,LOC,PIN});
