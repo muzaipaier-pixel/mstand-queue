@@ -140,6 +140,18 @@ function setShop(m,mins,uber){m=['open','prep','shop','closed'].includes(m)?m:'o
 // countdown end -> back to 営業中 server-side (also after restart: state persisted, checked every second); bumps seq so the worker RESUMES Uber
 function shopExpire(){const sh=ST().shop;if(sh&&sh.until&&Date.now()>=sh.until){setShop('open');ST().seq++;save();push('screen');return true}return false}
 setInterval(shopExpire,1000);
+
+// Google reviews via Places API (New): details w/ field mask, at most every 6h (persisted cache)
+const GKEY=String(process.env.GOOGLE_PLACES_KEY||'').trim(),GPID=process.env.GOOGLE_PLACE_ID||'ChIJ8UzBQjyNGGAR_k9oLMe_Nsg';
+async function googleRev(force){if(!GKEY)return;const R=C.reviews=C.reviews||{};const pg=R.google;if(!force&&pg&&pg.at&&Date.now()-pg.at<6*3600e3)return;
+ try{const x=await fetch('https://places.googleapis.com/v1/places/'+GPID+'?languageCode=zh-CN',{headers:{'X-Goog-Api-Key':GKEY,'X-Goog-FieldMask':'rating,userRatingCount,reviews'},signal:AbortSignal.timeout(10000)});
+  if(!x.ok)throw new Error('http '+x.status);const d=await x.json();
+  const list=(d.reviews||[]).map(v=>({id:v.name,author:v.authorAttribution&&v.authorAttribution.displayName||'',stars:v.rating,text:(v.originalText||v.text||{}).text||'',time:v.publishTime,rel:v.relativePublishTimeDescription||''})).sort((a,b)=>String(b.time).localeCompare(String(a.time)));
+  const seen=new Set(pg&&pg.seen||[]);const fresh=pg?list.filter(v=>!seen.has(v.id)&&v.stars<=3):[];
+  if(fresh.length)R.alert={at:Date.now(),src:'Google',n:fresh.length,text:'Google 新增 '+fresh.length+' 个 '+fresh.map(v=>v.stars+'星').join('、')+' 评价：'+fresh.map(v=>(v.author||'匿名')+'「'+v.text.slice(0,40)+'」').join('；')};
+  R.google={avg:d.rating,count:d.userRatingCount,latest:list.slice(0,5),seen:[...new Set([...seen,...list.map(v=>v.id)])].slice(-200),at:Date.now()};save()}
+ catch(e){console.error('google reviews',e.message);if(pg)pg.at=Date.now()-5*3600e3;else R.google=null}}
+setTimeout(googleRev,15000);setInterval(googleRev,30*60e3);
 const WKEY=String(process.env.WORKER_KEY||'').trim();
 function uberStatus(){const a=C.uberAck,hb=C.uberHb,seq=C.chanSeq||0,now=Date.now();const sh=ST().shop;const want=shopWantsPause(sh)?'paused':'open';
  const stale=!hb||now-hb.at>3*60e3;
@@ -173,8 +185,8 @@ return async function api(u,q,r){const j=q.method==='POST'?await body(q):{};
  if(p==='weekly'){if(!TOK)return send(r,200,{err:'no Square token'});const W=require('./lib/weekly');const st=u.searchParams.get('start')||W.lastWeekStart();
   if(!(C.weekly&&C.weekly.range.start===st&&Date.now()-C.weekly.at<6*3600e3&&!u.searchParams.get('fresh'))){try{const R=await W.compute(sq,LOC,{start:st,uber:C.uberWk||null});C.weekly={range:R.range,text:R.text,at:R.at};save()}catch(e){return send(r,200,{err:e.message})}}return send(r,200,C.weekly)}
  if(p==='uber-week'&&q.method==='POST'){if(!isW)return send(r,403,{});C.uberWk={orders:(j.orders||[]).slice(-3000).map(o=>({t:+o.t,cups:+o.cups||0})),daily:j.daily||{},at:Date.now()};C.weekly=null;save();return send(r,200,{ok:true})}
- if(p==='uber-reviews'&&q.method==='POST'){if(!isW)return send(r,403,{});const prev=C.reviews||{};const low=x=>x&&x.ratings?(+x.ratings['1']||0)+(+x.ratings['2']||0):0;const nu=j.uber||prev.uber||null;let alert=prev.alert||null;if(prev.uber&&nu&&low(nu)>low(prev.uber))alert={at:Date.now(),src:'Uber',n:low(nu)-low(prev.uber),text:'Uber 新增 '+(low(nu)-low(prev.uber))+' 个 1-2 星评价'};C.reviews={uber:nu,google:j.google||prev.google||null,alert,at:Date.now()};save();return send(r,200,{ok:true})}
- if(p==='reviews'){if(q.method==='POST'&&j.ack&&C.reviews){C.reviews.alert=null;save()}return send(r,200,C.reviews||{})}
+ if(p==='uber-reviews'&&q.method==='POST'){if(!isW)return send(r,403,{});const prev=C.reviews||{};const low=x=>x&&x.ratings?(+x.ratings['1']||0)+(+x.ratings['2']||0):0;const nu=j.uber||prev.uber||null;let alert=prev.alert||null;if(prev.uber&&nu&&low(nu)>low(prev.uber))alert={at:Date.now(),src:'Uber',n:low(nu)-low(prev.uber),text:'Uber 新增 '+(low(nu)-low(prev.uber))+' 个 1-2 星评价'};C.reviews={uber:nu,google:prev.google||null,alert,at:Date.now()};save();return send(r,200,{ok:true})}
+ if(p==='reviews'){if(q.method==='POST'&&j.ack&&C.reviews){C.reviews.alert=null;save()}const R=C.reviews||{};return send(r,200,Object.assign({},R,{google:R.google?{avg:R.google.avg,count:R.google.count,latest:R.google.latest,at:R.google.at}:null}))}
  if(p==='stock'){if(q.method==='POST'){
    if(j.items)C.stock.items=j.items.slice(0,30).map(i=>({k:String(i.k).replace(/\W/g,'').slice(0,20),name:String(i.name||i.k).slice(0,30),unit:String(i.unit||'').slice(0,6),start:+i.start||0,low:+i.low||0}));
    if(j.recipe)C.recipe=j.recipe.slice(0,60).map(x=>({re:String(x.re).slice(0,60),use:Object.fromEntries(Object.entries(x.use||{}).map(([k,v])=>[k,+v||0]))}));
