@@ -38,6 +38,7 @@ const push=(ev)=>{const d=`data: ${JSON.stringify({...pub(),event:ev})}\n\n`;[..
 const types={'.html':'text/html; charset=utf-8','.js':'text/javascript','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.wav':'audio/wav','.mp3':'audio/mpeg','.svg':'image/svg+xml','.webmanifest':'application/manifest+json'};
 http.createServer((q,r)=>{
  const u=new URL(q.url,'http://x');
+ if(u.pathname==='/'&&String(q.headers.host||'').split(':')[0].toLowerCase()==='order.kkmurado.com'){r.writeHead(302,{Location:'/order'+u.search});return r.end()}
  if(u.pathname.length>1&&u.pathname.endsWith('/'))u.pathname=u.pathname.replace(/\/+$/,'')||'/'; // /order/ -> /order
  try{const rf=String(q.headers.referer||'');const S_=global.SEEN||(global.SEEN={});
   if(/\/screen(\?|$)/.test(rf.replace(/^https?:\/\/[^/]+/,''))||u.pathname==='/screen'){S_.screen=Date.now();S_.screenUa=String(q.headers['user-agent']||'').slice(0,60)}
