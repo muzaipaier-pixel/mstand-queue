@@ -255,7 +255,7 @@ async function buildClip(n,langQ,itemsQ,kind,fxQ){
 }
 // returns {h, url}; starts generation (memory+disk) immediately, dedupes in-flight
 function pregen(n,items,fx,langQ){
- const iq=itemsQOf(items),fq=fxQOf(fx),key=vcKey(n,langQ,iq,'call',fq),h=crypto.createHash('sha1').update('v3|'+key).digest('hex').slice(0,20);
+ const iq=itemsQOf(items),fq=fxQOf(fx),key=vcKey(n,langQ,iq,'call',fq),h=crypto.createHash('sha1').update('v4|'+key).digest('hex').slice(0,20);
  vcMeta.set(h,{n,iq,fq,langQ});if(vcMeta.size>2000)vcMeta.delete(vcMeta.keys().next().value);
  if(!vcMem.has(h)&&!vcJob.has(h)){const t0=Date.now();
   const pr=(async()=>{const f=path.join(VC_DIR,h+'.mp3');

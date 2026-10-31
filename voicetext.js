@@ -67,20 +67,20 @@ const CNUM=['零','一','两','三','四','五','六','七','八','九','十'];
 function phrase(n,lang,items){
  const nm=names(n);items=items||[];
  const cups=items.reduce((a,b)=>a+(b.q||1),0);
- const list=[];if(cups&&cups<=2)items.forEach(it=>{const d=drink(it.n);for(let i=0;i<(it.q||1);i++)list.push(d)});
+ const list=[];if(cups&&cups<=2)items.forEach(it=>{const d=drink(it.n),g=list.find(x=>x.d.ja===d.ja);if(g)g.q+=(it.q||1);else list.push({d,q:it.q||1})});
  if(lang==='zh'){
   const who=nm.num?nm.num+'号宝宝':(nm.zh?nm.zh+'宝宝':'宝宝');
-  const what=list.length?'你的'+list.map(d=>d.zh).join('和')+'做好啦':cups>2?'你的'+(CNUM[cups]||cups)+'杯饮品做好啦':'你的饮品做好啦';
+  const what=list.length?'你的'+list.map(x=>(x.q>1?(CNUM[x.q]||x.q)+'杯':'')+x.d.zh).join('和')+'做好啦':cups>2?'你的'+(CNUM[cups]||cups)+'杯饮品做好啦':'你的饮品做好啦';
   return who+'，'+what+'，请取餐';
  }
  if(lang==='en'){
   const who=nm.num?'Number '+nm.num:nm.en;
-  const ds=list.map(d=>d.en).filter(Boolean);
-  const what=ds.length===list.length&&ds.length?'your '+ds.join(' and ')+(ds.length>1?' are':' is')+' ready':cups>2?'your '+cups+' drinks are ready':'your order is ready';
+  const ds=list.map(x=>x.d.en?(x.q>1?'two '+x.d.en+'s':x.d.en):'').filter(Boolean);
+  const what=ds.length===list.length&&ds.length?'your '+ds.join(' and ')+(ds.length>1||list.some(x=>x.q>1)?' are':' is')+' ready':cups>2?'your '+cups+' drinks are ready':'your order is ready';
   return who?who+', '+what:what.charAt(0).toUpperCase()+what.slice(1);
  }
  const who=nm.num?nm.num+'番のお客さま':nm.ja+(/[A-Za-z]$/.test(nm.ja)?' さま':'さま');
- const what=list.length?list.map(d=>d.ja).join('と')+'、':cups>2?'ドリンク'+cups+'点、':'';
+ const what=list.length?list.map(x=>x.d.ja+(x.q>1?' '+x.q+'杯':'')).join('と')+'、':cups>2?'ドリンク'+cups+'点、':'';
  return who+'、'+what+'お待たせしました';
 }
 // new-order thank-you (screen only). Numeric/empty label -> no-name version
