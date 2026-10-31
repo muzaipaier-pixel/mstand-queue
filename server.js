@@ -374,8 +374,10 @@ let burstUntil=0;
 function nameCheck(raw){const n=String(raw||'').replace(/[<>&"'`\\\u0000-\u001f]/g,'').replace(/\s+/g,' ').trim();
  if(!n)return {err:'name'};return {n:Array.from(n).slice(0,AP.nameMax).join('')}}
 function webOpen(id){const p=st.preparing.find(x=>x.order===id);return !!(p&&p.unpaid)}
+function bizHoursOpen(t){const h=new Date((t||Date.now())+9*3600e3).getUTCHours();return h>=17||h<2}
 async function checkout(b,q,r){
  if(st.shop&&st.shop.mode&&process.env.SHOP_GATE_ORDER!=='0')return jres(r,409,{error:'closed',mode:st.shop.mode}); // QR self-order paused while not 営業中
+ if(process.env.HOURS_GATE_ORDER!=='0'&&!bizHoursOpen())return jres(r,409,{error:'closed',mode:'hours'}); // outside 17:00-02:00 JST
  const bad=(c,m)=>{r.writeHead(c,{'Content-Type':'application/json'});r.end(JSON.stringify({error:m}))};
  try{
   let j;try{j=JSON.parse(b)}catch(e){return bad(400,'json')}

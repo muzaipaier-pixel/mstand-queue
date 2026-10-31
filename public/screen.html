@@ -220,7 +220,7 @@ var bizK='';function bizUpd(m,tm){try{var e=$('biz');if(!e)return;var c,j,z,h;
  else if(m&&m.mode){c='pr';j='\u6e96\u5099\u4e2d';z='\u51c6\u5907\u4e2d\u00b7\u8bf7\u7a0d\u5019 / PREPARING';h=tm?'<span id="shopcd"></span>':'\u5c11\u3005\u304a\u5f85\u3061\u304f\u3060\u3055\u3044'}
  else if(bizIsOpen()){c='op';j='<span class="dot"></span>\u55b6\u696d\u4e2d';z='\u8425\u4e1a\u4e2d / OPEN NOW';h='17:00\u301c02:00 \u00b7 \u3054\u6ce8\u6587\u3069\u3046\u305e\uff01'}
  else{c='pr';j='\u6e96\u5099\u4e2d';z='\u4f11\u606f\u4e2d / CLOSED';h='17:00 OPEN \u00b7 17\u70b9\u5f00\u59cb\u8425\u4e1a'}
- var k=c+j+z+h;if(k===bizK)return;bizK=k;e.className=c;e.style.display=c==='op'?'none':'block';$('bizdim').style.display=e.style.display;e.innerHTML='<div class="bj">'+j+'</div><div class="bz">'+z+'</div><div class="bh">'+h+'</div>'}catch(x){}}
+ var k=c+j+z+h;if(k===bizK)return;bizK=k;e.className=c;e.style.display=c==='op'?'none':'block';$('bizdim').style.display=e.style.display;try{$('qrc').style.display=c==='op'?'':'none'}catch(y){}e.innerHTML='<div class="bj">'+j+'</div><div class="bz">'+z+'</div><div class="bh">'+h+'</div>'}catch(x){}}
 var bizM=null,bizT='';bizUpd(null,'');setInterval(function(){bizUpd(bizM,bizT)},30000);
 function shopUpd(s){try{if(typeof s.now==='number')clkOff=s.now-new Date().getTime();var m=s.shop,b=$('shopb'),k='';if(m&&m.mode){var tm='';if(m.until){var d=new Date(m.until+9*3600e3);tm=('0'+d.getUTCHours()).slice(-2)+':'+('0'+d.getUTCMinutes()).slice(-2)}k=m.mode+tm}
  bizM=m&&m.mode?m:null;bizT=tm||'';bizUpd(bizM,bizT);
