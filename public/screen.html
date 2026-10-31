@@ -212,12 +212,12 @@ var lastTxt=null,curTxt='-',seenPrep=null;
 // new order (not completion): short trilingual thank-you, waits if a call is playing
 function thank(name){try{if(SOUND&&window.noticeThanks)window.noticeThanks()}catch(e){}}
 var SVOL=1,annTxt='',shopK='',shopEnd=0,clkOff=0,shopTm=null;
-function shopTick(){try{var e=$('shopcd');if(!e||!shopEnd)return;var ms=shopEnd-(new Date().getTime()+clkOff);if(ms<0)ms=0;var sec=Math.ceil(ms/1000),mm=Math.floor(sec/60),ss=sec%60,t=(mm<10?'0':'')+mm+':'+(ss<10?'0':'')+ss;e.innerHTML='\u8fd8\u9700 '+t+' / \u3042\u3068 '+t;if(ms<=0){$('shopb').style.display='none';shopK=''}}catch(x){}}
+function shopTick(){try{var e=$('shopcd')||{};if(!shopEnd)return;var ms=shopEnd-(new Date().getTime()+clkOff);if(ms<0)ms=0;var sec=Math.ceil(ms/1000),mm=Math.floor(sec/60),ss=sec%60,t=(mm<10?'0':'')+mm+':'+(ss<10?'0':'')+ss;e.innerHTML='\u8fd8\u9700 '+t+' / \u3042\u3068 '+t;var z=$('bizcd');if(z)z.innerHTML='\u3042\u3068 '+t+' / \u8fd8\u9700 '+t;if(ms<=0){$('shopb').style.display='none';shopK=''}}catch(x){}}
 function bizIsOpen(){var d=new Date(new Date().getTime()+clkOff+9*3600e3),h=d.getUTCHours();return h>=17||h<2}
 var bizK='';function bizUpd(m,tm){try{var e=$('biz');if(!e)return;var c,j,z,h;
  if(m&&m.mode==='closed'){c='cl';j='\u672c\u65e5\u7d42\u4e86';z='\u4eca\u65e5\u5df2\u6253\u70ca / CLOSED';h='\u55b6\u696d\u6642\u9593 17:00\u301c02:00'}
- else if(m&&m.mode==='shop'){c='wt';j='\u8cb7\u3044\u51fa\u3057\u4e2d';z='\u91c7\u8d2d\u4e2d\u00b7\u9a6c\u4e0a\u56de\u6765 / BACK SOON';h=tm?'<span id="shopcd"></span>':'\u5c11\u3005\u304a\u5f85\u3061\u304f\u3060\u3055\u3044'}
- else if(m&&m.mode){c='pr';j='\u6e96\u5099\u4e2d';z='\u51c6\u5907\u4e2d\u00b7\u8bf7\u7a0d\u5019 / PREPARING';h=tm?'<span id="shopcd"></span>':'\u5c11\u3005\u304a\u5f85\u3061\u304f\u3060\u3055\u3044'}
+ else if(m&&m.mode==='shop'){c='wt';j='\u8cb7\u3044\u51fa\u3057\u4e2d';z='\u91c7\u8d2d\u4e2d\u00b7\u9a6c\u4e0a\u56de\u6765 / BACK SOON';h=tm?'<span id="bizcd"></span>':'\u5c11\u3005\u304a\u5f85\u3061\u304f\u3060\u3055\u3044'}
+ else if(m&&m.mode){c='pr';j='\u6e96\u5099\u4e2d';z='\u51c6\u5907\u4e2d\u00b7\u8bf7\u7a0d\u5019 / PREPARING';h=tm?'<span id="bizcd"></span>':'\u5c11\u3005\u304a\u5f85\u3061\u304f\u3060\u3055\u3044'}
  else if(bizIsOpen()){c='op';j='<span class="dot"></span>\u55b6\u696d\u4e2d';z='\u8425\u4e1a\u4e2d / OPEN NOW';h='17:00\u301c02:00 \u00b7 \u3054\u6ce8\u6587\u3069\u3046\u305e\uff01'}
  else{c='pr';j='\u6e96\u5099\u4e2d';z='\u4f11\u606f\u4e2d / CLOSED';h='17:00 OPEN \u00b7 17\u70b9\u5f00\u59cb\u8425\u4e1a'}
  var k=c+j+z+h;if(k===bizK)return;bizK=k;e.className=c;e.style.display=c==='op'?'none':'block';$('bizdim').style.display=e.style.display;try{$('qrc').style.display=c==='op'?'':'none'}catch(y){}e.innerHTML='<div class="bj">'+j+'</div><div class="bz">'+z+'</div><div class="bh">'+h+'</div>'}catch(x){}}
